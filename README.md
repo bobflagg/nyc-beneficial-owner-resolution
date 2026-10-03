@@ -163,7 +163,7 @@ result = gate_bbls(conn, member_bbls)       # GateResult(passed, reasons, ...)
 
 The full adjudication protocol (the INDETERMINATE class, a circularity control, and a data-vintage
 control) and the packaged case studies (Croman, Escobar, Miller, Levitov, AXL, Citadel) ship with
-the release — see the roadmap. Everything above is computed **off-graph from Postgres** and
+the first release. Everything above is computed **off-graph from Postgres** and
 reproduces the live knowledge graph's partition (owner groups 100% of nodes; operational network
 99.9%, the tail being Louvain — [`docs/parity.md`](docs/parity.md)).
 
@@ -222,27 +222,9 @@ BOR's export and is where the Neo4j graph, the conversational agent, and the pub
 
 Grounded **entirely in already-public record** — it surfaces and organizes, it does not collect.
 Every inferred claim is typed as inferred and carries a standardized caveat — *leads, not
-verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. The dataset-release policy for this repo is deliberately scoped to
-match this stance (a Phase-3 decision — see the roadmap).
-
-## Roadmap
-
-- **v1 (built & validated)** — beneficial owner group + deed veil-pierce + the paired WoW
-  divergence + the WoW gate, computed off-graph from Postgres and reproducing the live-graph
-  partition ([`docs/parity.md`](docs/parity.md)). *Remaining for v1:* the full stratified
-  adjudication protocol and the packaged case studies.
-- **v1.1 (built)** — the operational-network layer (aggregator-masked WCC + Louvain), off-graph.
-  WCC reproduces the KG exactly; the >300-BBL Louvain tail (~a few dozen large operators) is
-  approximate — GDS Louvain is not byte-reproducible ([`docs/parity.md`](docs/parity.md)).
-- **v2 (artifact review)** — DuckDB-native over the public HPD / ACRIS / PLUTO CSVs, so the whole
-  thing reproduces with no private database (mirrors `nlr`'s public-CSV roadmap).
-
-## Cite & release
-
-Reproducibility is documented in [`docs/parity.md`](docs/parity.md). To cut a versioned, DOI'd release —
-including the **person-free dataset export** (`bor.export`) — follow
-[`docs/release.md`](docs/release.md). Citation metadata is in [`CITATION.cff`](CITATION.cff) (the
-Zenodo DOI is filled in on the first release).
+verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. The
+dataset-release policy for this repo is deliberately scoped to match this stance, to be settled
+with the first release.
 
 ## License
 
