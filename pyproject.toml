@@ -1,5 +1,5 @@
 [project]
-name = "beneficial-ownership-resolution"
+name = "nyc-beneficial-owner-resolution"
 version = "0.1.0.dev0"
 description = "Reliability-typed beneficial-ownership resolution over NYC public records: false-split resolution (record linkage), a name-free deed veil-pierce, and beneficial owner groups — with a paired benchmark against Who Owns What."
 readme = "README.md"

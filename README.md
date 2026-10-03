@@ -1,4 +1,4 @@
-# Beneficial Ownership Resolution
+# NYC Beneficial Owner Resolution
 
 **Reliability-typed beneficial-ownership resolution over NYC public records.** Given the
 city's public registration and deed record, it decides *who is behind a building* — and,
@@ -110,7 +110,7 @@ Citadel) are tracked for the release phase — see the roadmap.
 
 ```
 nlr  (record linkage / false-split resolution)         ── standalone, gold-validated
-  └── beneficial-ownership-resolution  (this repo)      ── + deed, owner groups, benchmark  [KG-free]
+  └── nyc-beneficial-owner-resolution  (this repo)      ── + deed, owner groups, benchmark  [KG-free]
         └── WatchlineNYC  (the deployed product)        ── materializes the export into Neo4j; UI + agent
 ```
 

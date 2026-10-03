@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or dataset, please cite it as below."
-title: "Beneficial Ownership Resolution"
+title: "NYC Beneficial Owner Resolution"
 abstract: >-
   Reliability-typed beneficial-ownership resolution over NYC public records.
   Resolves false splits (probabilistic record linkage), pierces the shell game
@@ -16,7 +16,7 @@ authors:
     given-names: Robert
     # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO
 license: MIT
-repository-code: "https://github.com/bobflagg/beneficial-ownership-resolution"
+repository-code: "https://github.com/bobflagg/nyc-beneficial-owner-resolution"
 version: 0.1.0.dev0
 # doi: "10.5281/zenodo.XXXXXXX"   # TODO — mint on first tagged release (Phase 3)
 keywords:

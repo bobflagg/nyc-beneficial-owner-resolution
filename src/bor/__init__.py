@@ -1,4 +1,4 @@
-"""beneficial-ownership-resolution (``bor``)
+"""nyc-beneficial-owner-resolution (``bor``)
 
 Reliability-typed beneficial-ownership resolution over NYC public records — the software
 artifact behind "Leads, Not Verdicts: Reliability-Typed Beneficial-Ownership Resolution for
