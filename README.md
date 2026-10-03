@@ -175,8 +175,10 @@ cp .env.example .env        # set PG* for the NYC public-record Postgres (see do
 uv run python -m bor.build_lwc   # build landlords_with_connections from wow_landlords (~1-2 min)
 ```
 
-BOR depends only on the *data* — a Postgres seeded from JustFix's public `justfixwow` dump — not on
-any WatchlineNYC pipeline; it builds the one derived table (`landlords_with_connections`) itself.
+BOR installs [`nlr`](https://github.com/bobflagg/nyc-landlord-resolution)
+for record linkage and otherwise depends only on the *data* — a Postgres seeded from JustFix's
+public `justfixwow` dump — not on any WatchlineNYC pipeline; it builds the one derived table
+(`landlords_with_connections`) itself.
 See [`docs/data.md`](docs/data.md) for the required tables and where they come from.
 
 ## Use it
@@ -215,7 +217,9 @@ nlr  (record linkage / false-split resolution)         ── standalone, gold-v
         └── WatchlineNYC  (the deployed product)        ── materializes the export into Neo4j; UI + agent
 ```
 
-BOR is **KG-free** — it runs over Postgres (v1) and never requires Neo4j. WatchlineNYC consumes
+BOR builds on **[NYC Landlord Resolution](https://github.com/bobflagg/nyc-landlord-resolution)**
+(`nlr`), the standalone record-linkage engine that supplies the `CONNECTED_BY_SPLINK` signal. BOR
+itself is **KG-free** — it runs over Postgres (v1) and never requires Neo4j. WatchlineNYC consumes
 BOR's export and is where the Neo4j graph, the conversational agent, and the public site live.
 
 ## Responsible use
