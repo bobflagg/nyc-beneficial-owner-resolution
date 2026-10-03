@@ -93,7 +93,13 @@ Accuracy is settled by **blind human adjudication** on a *preregistered, stratif
 candidate pairs, each labeled SAME / DIFFERENT / INDETERMINATE against the primary record before
 being unblinded and scored against WoW's decision. On the **259 pairs where the resolver and WoW
 disagree, the resolver is right 236 times to WoW's 23** (McNemar p < 0.001; inter-annotator
-κ = 0.89). Per-stratum precision:
+κ = 0.89).
+
+![Head-to-head on the 259 pairs where the resolver and Who Owns What disagree: the resolver is
+right 236 times and Who Owns What 23 — McNemar p < 0.001, annotator κ = 0.89, over 512
+adjudicated pairs.](docs/measured-vs-wow.svg)
+
+Per-stratum precision:
 
 | Stratum | What it tests | Precision |
 |---|---|---|
