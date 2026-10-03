@@ -1,47 +1,126 @@
 # NYC Beneficial Owner Resolution
 
-**Reliability-typed beneficial-ownership resolution over NYC public records.** Given the
-city's public registration and deed record, it decides *who is behind a building* — and,
-unlike registration clustering, it separates three claims of different evidentiary weight
-(**operation**, **management**, **ownership**) and types each as **directly-sourced** or
-**inferred**. Every derived link reads as an investigative lead, not a legal determination.
+Knowing who actually *owns* a building — the person or group that ultimately profits from it
+and answers for it, not the single-purpose LLC on the deed or the managing agent on the
+registration — is what lets housing accountability reach the right party. A tenant lawyer naming
+a defendant, a journalist tracing who really controls a cluster of distressed buildings, a
+regulator deciding whom to pressure: all of it depends on seeing past the shell. But ownership
+in New York is deliberately obscured — a building is deeded to its own LLC, blocks are bought
+together and re-deeded into `$0` single-purpose shells, and registrations run through a managing
+agent or a law office that dozens of unrelated owners also use. Guess wrong in one direction and
+a real owner hides behind the shells and evades accountability; guess wrong in the other and you
+over-attribute someone else's buildings to an agent, a lawyer, or a namesake — a defamation risk,
+not just an error. This project resolves beneficial ownership from the public record and,
+crucially, **says how sure it is**: every derived link is typed as *directly-sourced* or
+*inferred* — a lead to verify, never a legal verdict.
 
-This is the software + data + benchmark artifact for the paper *"Leads, Not Verdicts:
-Reliability-Typed Beneficial-Ownership Resolution for Housing Accountability."* It builds on
-JustFix's [Who Owns What](https://github.com/JustFixNYC/who-owns-what) (WoW) — crediting and
-benchmarking against it, not replacing it — and on the standalone record-linkage engine
-[`nyc-landlord-resolution`](https://github.com/bobflagg/nyc-landlord-resolution) (`nlr`).
+It is the software + data + benchmark artifact for the paper *"Leads, Not Verdicts:
+Reliability-Typed Beneficial-Ownership Resolution for Housing Accountability,"* and it builds on —
+crediting and benchmarking against, never replacing — JustFix's
+[Who Owns What](https://github.com/JustFixNYC/who-owns-what) (WoW) and the sibling record-linkage
+engine [`nyc-landlord-resolution`](https://github.com/bobflagg/nyc-landlord-resolution) (`nlr`).
 
-> **Status: v1 + v1.1 built & validated.** All three layers — beneficial owner group, deed
-> veil-pierce, and operational network — plus the paired WoW benchmark run off-graph and reproduce
-> the live knowledge graph's partition (owner groups 100% of nodes; operational network 99.9% of
-> portfolios, the tail being Louvain — see [`docs/parity.md`](docs/parity.md)). See the roadmap.
+## Who Owns What
 
-## What it resolves
+JustFix's **[Who Owns What](https://github.com/JustFixNYC/who-owns-what)** (WoW) is the gold
+standard for grouping NYC landlords: it models them as a graph of registration contacts linked by
+shared names and business addresses, then clusters that graph (WCC + Louvain) into portfolios —
+the backbone of countless tenant tools and news investigations. Because its links are
+name/address matches, it is strong and conservative, and it has two characteristic,
+*asymmetrically harmful* failure modes:
 
-Registration clustering fails in two opposite, *asymmetrically harmful* directions:
+- **False splits** — one owner, fragmented across typo'd offices and differently-named shells,
+  reads as many owners, so a real owner evades accountability (the harm lands on tenants). This is
+  fixed by the sibling project **[NYC Landlord Resolution](https://github.com/bobflagg/nyc-landlord-resolution)**
+  (`nlr`), which reunites the fragments with probabilistic record linkage and feeds WoW a single
+  high-confidence `CONNECTED_BY_SPLINK` edge — merging only, never splitting.
+- **False merges** — separate owners who merely share a registration office (a registered agent,
+  a management company, a law firm) read as one owner, so buildings are over-attributed to a party
+  who does not own them — a wrongful-targeting and defamation risk. **This is what this project
+  fixes.**
 
-- **False split** — one owner, fragmented across differently-named LLCs and typo'd offices,
-  reads as many owners → a real owner evades accountability (harm borne by tenants).
-  **Fixed** by probabilistic record linkage (`nlr`) → `CONNECTED_BY_SPLINK`.
-- **False merge** — separate owners sharing a registration office read as one → buildings are
-  over-attributed to a party (wrongful-targeting / defamation risk). **Fixed** by resolving
-  ownership as its own community from ownership signals only, never a shared address.
+The two errors pull in opposite directions, so fixing one naively worsens the other: `nlr`
+recovers splits by matching *identities* harder; this project avoids merges by resolving
+*ownership* as its own thing — from ownership signals only, never a shared address.
 
-### The layers (each separately typed)
+## Fixing false merges
+
+The fix is to stop inferring ownership from the very thing that causes false merges — a shared
+business address — and resolve it from **ownership signals only**: who a deed conveys to, and
+which registration identities are genuinely the same person. Two buildings join the same
+**beneficial owner group** when a shared conveyance deed (`CONNECTED_BY_DEED`) or a resolved
+shared owner identity (`CONNECTED_BY_SPLINK`, from `nlr`) ties them — a registered-agent office
+they happen to share never does.
+
+The signature move is a **deed veil-pierce**: a *name-free* link from a shared ACRIS deed. Its
+**linked-successor guard** reaches the hardest case — owners who buy a block together and then
+re-deed each building into its own `$0` single-purpose shell, a common-control structure no name-
+or address-based method can see. Precision hygiene keeps management artifacts out:
+**aggregator-address masking** (a hub office used by many unrelated owners is never an ownership
+signal) and **co-op/condo exclusion** (those buildings are owned by their shareholders, not a
+landlord).
+
+Ownership is only one of several claims, and the project keeps them **separate and separately
+typed** — each as *directly-sourced* or *inferred* — so a reader always knows the evidentiary
+weight behind a link:
 
 | Layer | Question | Signals | Status |
 |---|---|---|---|
 | **Beneficial owner group** | Who *owns* it? | `CONNECTED_BY_SPLINK` ∪ `CONNECTED_BY_DEED` | **v1** |
 | **Deed veil-pierce** | co-owned by conveyance? | ACRIS multi-parcel deed + linked-successor guard | **v1** |
-| **Operational network** | What does it *operate through*? | name / address / splink, aggregator-masked (WCC + Louvain) | **v1.1 ✓** |
-| **Management** | Who *runs* it? | `MANAGED_BY` (disclosed agent) | (in WatchlineNYC) |
+| **Operational network** | What does it *operate through*? | name / address / splink, aggregator-masked (WCC + Louvain) | **v1.1** |
+| **Management** | Who *runs* it? | `MANAGED_BY` (disclosed agent) | in WatchlineNYC |
 
-The **deed veil-pierce** is the signature move: a name-free link from a shared ACRIS deed,
-with a *linked-successor guard* that reaches owners who bought a block together and re-deeded
-each building into its own `$0` single-purpose shell — the case no name/address method can see.
-Precision hygiene: **aggregator-address masking** and **co-op/condo exclusion** (co-ops/condos
-are owned by shareholders, not a landlord) remove management artifacts a naive inference mints.
+Every derived link reads as an investigative **lead to verify, not a legal determination**, and
+the merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden.
+
+## How it measures up
+
+Two complementary evaluations, both paired against WoW's own output — the `wow.wow_portfolios`
+table in the public `justfixwow` Postgres — so the baseline is literally what WoW produces, not a
+reimplementation of its clustering.
+
+First, a **divergence** measure: where, and in which direction, the owner-group partition disagrees
+with WoW's registration clustering. This is divergence, *not* accuracy — adjudication decides who
+is right — but it sizes the problem:
+
+```bash
+uv run python -m bor.eval.divergence
+# → 760 owners cross WoW portfolios (WoW split them); 616 WoW portfolios hide >1 owner (WoW merged them)
+```
+
+Accuracy is settled by **blind human adjudication** on a *preregistered, stratified* sample of 512
+candidate pairs, each labeled SAME / DIFFERENT / INDETERMINATE against the primary record before
+being unblinded and scored against WoW's decision. On the **259 pairs where the resolver and WoW
+disagree, the resolver is right 236 times to WoW's 23** (McNemar p < 0.001; inter-annotator
+κ = 0.89). Per-stratum precision:
+
+| Stratum | What it tests | Precision |
+|---|---|---|
+| **S1a — deed-held** | a shared conveyance deed → SAME owner | **97%** |
+| **S1b — deed-linked successor** | the re-deed-into-`$0`-shells chain → SAME owner | **71%** |
+| **S2 — model / splink** | a resolved shared identity → SAME owner | **97%** |
+| **S3 — aggregator** | distinct owners at a shared hub → correctly kept SEPARATE | **98%** |
+| **S4 — hard-negative surname** | same-surname but no ownership link → correctly kept SEPARATE | **89%** |
+
+S1/S2 measure *merge* precision (when it joins, is it right?); S3/S4 measure *split* precision
+(when it keeps owners apart, is it right?). The **deed-linked-successor** stratum (S1b, 71%) is the
+honest weak spot — the hardest veil-pierce, and the one most in need of a stronger guard.
+
+A library-level **WoW gate** answers the same question for a single group — does WoW genuinely
+split its members into ≥2 non-aggregator portfolios (a real veil-pierce), or over-lump them on a
+shared aggregator address?
+
+```python
+from bor.eval.gate import gate_bbls
+result = gate_bbls(conn, member_bbls)       # GateResult(passed, reasons, ...)
+```
+
+The full adjudication protocol (the INDETERMINATE class, a circularity control, and a data-vintage
+control) and the packaged case studies (Croman, Escobar, Miller, Levitov, AXL, Citadel) ship with
+the release — see the roadmap. Everything above is computed **off-graph from Postgres** and
+reproduces the live knowledge graph's partition (owner groups 100% of nodes; operational network
+99.9%, the tail being Louvain — [`docs/parity.md`](docs/parity.md)).
 
 ## Install
 
@@ -55,7 +134,7 @@ BOR depends only on the *data* — a Postgres seeded from JustFix's public `just
 any WatchlineNYC pipeline; it builds the one derived table (`landlords_with_connections`) itself.
 See [`docs/data.md`](docs/data.md) for the required tables and where they come from.
 
-## Use
+## Use it
 
 ```python
 from bor import resolve_owner_groups, bbl_assignments
@@ -83,29 +162,6 @@ with pg_conn() as conn:
 # each carries members, bbls, building_count, and split ('wcc' = exact | 'louvain' = oversized tail)
 ```
 
-## Evaluate — the paired benchmark against Who Owns What
-
-A paired head-to-head against `wow.wow_portfolios`: where, and in which direction, the owner-group
-partition diverges from WoW's registration clustering (a *divergence* measure, not accuracy —
-adjudication decides who is right). On the current graph:
-
-```bash
-uv run python -m bor.eval.divergence
-# → 760 owners cross WoW portfolios (WoW split them); 616 WoW portfolios hide >1 owner (WoW merged them)
-```
-
-The **WoW gate** is a library check — does WoW genuinely split a group's members into ≥2
-non-aggregator portfolios (a real veil-pierce), or over-lump them on a shared aggregator address?
-
-```python
-from bor.eval.gate import gate_bbls
-result = gate_bbls(conn, member_bbls)       # GateResult(passed, reasons, ...)
-```
-
-The full adjudication protocol (an **INDETERMINATE** class, a **circularity control**, and a
-**data-vintage control**) and the worked case studies (Croman, Escobar, Miller, Levitov, AXL,
-Citadel) are tracked for the release phase — see the roadmap.
-
 ## How it relates to the other repos
 
 ```
@@ -116,6 +172,14 @@ nlr  (record linkage / false-split resolution)         ── standalone, gold-v
 
 BOR is **KG-free** — it runs over Postgres (v1) and never requires Neo4j. WatchlineNYC consumes
 BOR's export and is where the Neo4j graph, the conversational agent, and the public site live.
+
+## Responsible use
+
+Grounded **entirely in already-public record** — it surfaces and organizes, it does not collect.
+Every inferred claim is typed as inferred and carries a standardized caveat — *leads, not
+verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. See the
+paper's dual-use reflection; the dataset-release policy for this repo is deliberately scoped to
+match it (a Phase-3 decision — see the roadmap).
 
 ## Roadmap
 
@@ -128,14 +192,6 @@ BOR's export and is where the Neo4j graph, the conversational agent, and the pub
   approximate — GDS Louvain is not byte-reproducible ([`docs/parity.md`](docs/parity.md)).
 - **v2 (artifact review)** — DuckDB-native over the public HPD / ACRIS / PLUTO CSVs, so the whole
   thing reproduces with no private database (mirrors `nlr`'s public-CSV roadmap).
-
-## Responsible use
-
-Grounded **entirely in already-public record**; it surfaces and organizes, it does not collect.
-Every inferred claim is typed as inferred and carries a standardized caveat — *leads, not
-verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. See the
-paper's dual-use reflection; the dataset-release policy for this repo is deliberately scoped to
-match it (a Phase-3 decision — see the roadmap).
 
 ## Cite & release
 
