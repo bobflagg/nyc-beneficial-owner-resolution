@@ -73,6 +73,42 @@ weight behind a link:
 Every derived link reads as an investigative **lead to verify, not a legal determination**, and
 the merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden.
 
+## Two examples
+
+Both are real cases from the live [WatchlineNYC](https://github.com/bobflagg/WatchlineNYC) graph,
+which consumes BOR's export (data as of 2026-09-19). Each map toggles between the two views; as
+always, these are algorithmic inferences — leads to verify, not determinations of legal ownership.
+
+### One operational network, many owners — Miller
+
+**[→ Open the map](https://bobflagg.github.io/WatchlineNYC/docs/maps/miller.html)**
+
+WoW groups 27 buildings into a single portfolio (#183), and it is right about what it sees: all 27
+register the same business address, a Lakewood, NJ office, so they are one *operational network*.
+Read as an ownership claim, though, the portfolio would attribute all 27 buildings to one party.
+The ownership layer resolves from identity and deed signals instead of the shared office and
+separates them into **five owner groups** of 7, 7, 4, 4 and 3 buildings. Two single-building
+registrations stay unmerged — one of them a one-letter misspelling of another owner's surname,
+which name-anchored blocking deliberately won't link (the documented recall cost of precision-first
+matching). It is the whole design rule in one picture: same office, different owners.
+
+### The deed veil-pierce — Citadel
+
+**[→ Open the map](https://bobflagg.github.io/WatchlineNYC/docs/maps/citadel.html)**
+
+Fifteen buildings were bought together on **one 2008 deed** ($58.4M, to a single grantee, Citadel
+Estates LLC). In 2015 the same grantee re-titled each building, at **$0**, into one of **twelve
+single-purpose LLCs**. The registrations then name three different registrants whose only
+common thread is a shared hub office — masked as an aggregator, so it carries no identity link — and
+name- and address-based linkage sees three unconnected fragments (the map's *Without deed* view).
+Only the deed ties them together: the **linked-successor guard** recovers the bundle because the
+original grantee is the grantor of every later nominal transfer into a shell. WoW places all 15
+inside one 83-building portfolio — the operational network at that hub — and the deed supplies what
+the shared office cannot: which of those buildings are *owned* together.
+
+Citadel is a case the guard gets right. The deed-linked-successor stratum is the weakest in the
+benchmark below (S1b, 71%), so read it as an illustration of the mechanism, not a typical outcome.
+
 ## How it measures up
 
 Two complementary evaluations, both paired against WoW's own output — the `wow.wow_portfolios`
