@@ -5,7 +5,7 @@ registration-clustering partition, over the buildings BOTH systems group (multi-
 portfolios ∩ multi-member owner groups). A DIVERGENCE measure, not accuracy — there is no ground
 truth; adjudication decides who is right.
 
-Two directions (the harms-asymmetry the paper frames):
+Two directions (the harms asymmetry):
   * owners crossing portfolios — an owner group spans >=2 WoW portfolios: BOR *unifies* what WoW
     split (the false-split fix; one owner's differently-named LLCs reunited).
   * portfolios hiding >1 owner — a WoW portfolio spans >=2 owner groups: WoW *merged* separate

@@ -1,8 +1,6 @@
 """nyc-beneficial-owner-resolution (``bor``)
 
-Reliability-typed beneficial-ownership resolution over NYC public records — the software
-artifact behind "Leads, Not Verdicts: Reliability-Typed Beneficial-Ownership Resolution for
-Housing Accountability."
+Reliability-typed beneficial-ownership resolution over NYC public records.
 
 Builds on the standalone record-linkage engine ``nlr`` (false-split resolution) and adds:
   * the name-free deed veil-pierce (ACRIS co-conveyance + linked-successor guard),

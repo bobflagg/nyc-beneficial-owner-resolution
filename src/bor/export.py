@@ -2,7 +2,7 @@
 
 Writes the resolved layers as a small set of CSVs suitable for a versioned, DOI'd data release.
 
-**Person-free by default.** The paper's dual-use reflection argues for capability governance over a
+**Person-free by default.** The project's dual-use reflection argues for capability governance over a
 one-click bulk person-profiling affordance, and flags the doxxing / mosaic risk of a person-linked
 dataset. So this export is keyed on **BBL** (a public parcel identifier) and **opaque group ids**,
 and carries composition + building counts but **no owner names**. Names are the sensitive join; a
@@ -22,8 +22,7 @@ from bor.splink_bridge import DEFAULT_THRESHOLD
 
 _DICTIONARY = """# Beneficial Ownership Resolution — dataset
 
-Resolved from NYC public records (HPD registrations, ACRIS deeds, PLUTO); see the repo README and
-the paper *"Leads, Not Verdicts."* Every grouping is an **inference** — a lead to verify, not a
+Resolved from NYC public records (HPD registrations, ACRIS deeds, PLUTO); see the repo README. Every grouping is an **inference** — a lead to verify, not a
 legal determination of ownership. Keyed on BBL (public parcel id) and opaque group ids; {names_clause}.
 
 ## Files

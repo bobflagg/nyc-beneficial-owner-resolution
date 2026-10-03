@@ -1,14 +1,14 @@
 # Release checklist — citeable artifact
 
-How to cut a versioned, DOI'd release of this repo (the "software + data" artifact for the paper).
+How to cut a versioned, DOI'd release of this repo (the "software + data" artifact).
 Steps marked **(you)** need account access I don't have (GitHub release UI, Zenodo).
 
 ## 0. Decide the release policy (blocking)
 
 The dataset export (`bor.export`) is **person-free by default** — BBL-keyed, opaque group ids, no
-owner names — matching the paper's dual-use stance. Confirm this is the release scope, or decide to
+owner names — matching the project's dual-use stance. Confirm this is the release scope, or decide to
 opt into names (`--include-names`). Recommendation: **keep it person-free.** The person name is the
-sensitive join and the mosaic/doxxing vector the paper itself flags; the public good (grouping
+sensitive join and the mosaic/doxxing vector it raises; the public good (grouping
 public parcels, typed as inferred) is fully delivered without it.
 
 ## 1. Freeze the resolution version

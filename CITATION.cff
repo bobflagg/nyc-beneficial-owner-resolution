@@ -7,9 +7,7 @@ abstract: >-
   with a name-free deed veil-pierce (co-conveyance + linked-successor guard),
   and builds beneficial owner groups distinct from the operational nexus — each
   claim typed as directly-sourced or inferred, with a paired benchmark against
-  JustFix's Who Owns What. The software+data artifact for the paper "Leads, Not
-  Verdicts: Reliability-Typed Beneficial-Ownership Resolution for Housing
-  Accountability."
+  JustFix's Who Owns What.
 type: software
 authors:
   - family-names: Flagg

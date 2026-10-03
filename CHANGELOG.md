@@ -18,8 +18,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   (`bor/sql/`), so BOR needs only the data, not the WatchlineNYC pipeline. See `docs/data.md`.
 - **Dataset export** — `bor.export`, person-free by default (BBL-keyed, opaque ids).
 - **Tests** — unit (pure logic) + DB-gated regression suite.
-- **Docs** — `docs/parity.md`, `docs/data.md`, `docs/paper-mapping.md`, `docs/release.md`; the
-  paper drafts + methodology + case studies under `paper/`.
+- **Docs** — `docs/parity.md`, `docs/data.md`, `docs/release.md`.
 - Depends on [`nlr`](https://github.com/bobflagg/nyc-landlord-resolution) `v0.1.0` for record
   linkage; `splink` pinned to `4.0.16`.
 

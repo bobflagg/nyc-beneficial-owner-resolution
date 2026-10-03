@@ -14,8 +14,7 @@ not just an error. This project resolves beneficial ownership from the public re
 crucially, **says how sure it is**: every derived link is typed as *directly-sourced* or
 *inferred* — a lead to verify, never a legal verdict.
 
-It is the software + data + benchmark artifact for the paper *"Leads, Not Verdicts:
-Reliability-Typed Beneficial-Ownership Resolution for Housing Accountability,"* and it builds on —
+It is a software + data + benchmark artifact that builds on —
 crediting and benchmarking against, never replacing — JustFix's
 [Who Owns What](https://github.com/JustFixNYC/who-owns-what) (WoW) and the sibling record-linkage
 engine [`nyc-landlord-resolution`](https://github.com/bobflagg/nyc-landlord-resolution) (`nlr`).
@@ -183,9 +182,8 @@ BOR's export and is where the Neo4j graph, the conversational agent, and the pub
 
 Grounded **entirely in already-public record** — it surfaces and organizes, it does not collect.
 Every inferred claim is typed as inferred and carries a standardized caveat — *leads, not
-verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. See the
-paper's dual-use reflection; the dataset-release policy for this repo is deliberately scoped to
-match it (a Phase-3 decision — see the roadmap).
+verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. The dataset-release policy for this repo is deliberately scoped to
+match this stance (a Phase-3 decision — see the roadmap).
 
 ## Roadmap
 
@@ -201,8 +199,7 @@ match it (a Phase-3 decision — see the roadmap).
 
 ## Cite & release
 
-The repo maps to the paper's contributions in [`docs/paper-mapping.md`](docs/paper-mapping.md);
-reproducibility is in [`docs/parity.md`](docs/parity.md). To cut a versioned, DOI'd release —
+Reproducibility is documented in [`docs/parity.md`](docs/parity.md). To cut a versioned, DOI'd release —
 including the **person-free dataset export** (`bor.export`) — follow
 [`docs/release.md`](docs/release.md). Citation metadata is in [`CITATION.cff`](CITATION.cff) (the
 Zenodo DOI is filled in on the first release).
