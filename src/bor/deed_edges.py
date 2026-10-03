@@ -9,7 +9,7 @@ on PF-...739 (Williamsburg): it merged a 22-building bundle spanning 17 differen
 
 A SPECIALIST signal, by design: most buildings are bought individually (own deed), so it is sparse
 (only the co-conveyed portfolios link). It feeds the OWNERSHIP layer only (owner_groups reads
-CONNECTED_BY_SPLINK|CONNECTED_BY_DEED), never the address-nexus Portfolio — deeds are ownership
+CONNECTED_BY_SPLINK|CONNECTED_BY_DEED), never the address-network Portfolio — deeds are ownership
 evidence, not an operational network.
 
 STALENESS GUARD — use each building's LATEST deed, not any deed. Two buildings are grouped only when
