@@ -13,34 +13,43 @@ to verify, never a legal verdict.
 ## Who Owns What
 
 JustFix's **[Who Owns What](https://github.com/JustFixNYC/who-owns-what)** (WoW) is the gold
-standard for grouping NYC landlords: it models them as a graph of registration contacts linked by
-shared names and business addresses, then clusters that graph (WCC + Louvain) into portfolios —
-the backbone of countless tenant tools and news investigations. Because its links are
-name/address matches, it is strong and conservative, and it has two characteristic,
-*asymmetrically harmful* failure modes:
+standard for grouping NYC landlords: it links registration contacts by shared names and business
+addresses, then clusters that graph (WCC + Louvain) into portfolios — the backbone of countless
+tenant tools and news investigations. Read for what it is, a WoW portfolio is an **operational
+network**: the buildings run through the same people, offices, and managing hands. That is
+exactly the right answer for an organizer finding neighbors under the same landlord operation.
 
-- **False splits** — one owner, fragmented across typo'd offices and differently-named shells,
-  reads as many owners, so a real owner evades accountability (the harm lands on tenants). This is
-  fixed by the sibling project **[NYC Landlord Resolution](https://github.com/bobflagg/nyc-landlord-resolution)**
-  (`nlr`), which reunites the fragments with probabilistic record linkage and feeds WoW a single
+Two things can go wrong around it, and they differ in kind:
+
+- **Noise in the signal (false splits).** One operation recorded under typo'd addresses and
+  variant names fragments into several portfolios. The question is still *who operates this?* —
+  the measurement is just noisy. This is fixed by the sibling project
+  **[NYC Landlord Resolution](https://github.com/bobflagg/nyc-landlord-resolution)** (`nlr`),
+  which reunites the fragments with probabilistic record linkage and feeds WoW a single
   high-confidence `CONNECTED_BY_SPLINK` edge — merging only, never splitting.
-- **False merges** — separate owners who merely share a registration office (a registered agent,
-  a management company, a law firm) read as one owner, so buildings are over-attributed to a party
-  who does not own them — a wrongful-targeting and defamation risk. **This is what this project
-  fixes.**
+- **A signal asked a second question.** A shared business address is strong evidence that two
+  buildings are *operated* together and weak evidence that they are *owned* by the same party:
+  one registered agent, management company, or law firm serves dozens of unrelated owners. The
+  portfolio isn't wrong — but read as an ownership claim it attributes buildings to a party who
+  doesn't own them, a wrongful-targeting and defamation risk.
 
-The two errors pull in opposite directions, so fixing one naively worsens the other: `nlr`
-recovers splits by matching *identities* harder; this project avoids merges by resolving
-*ownership* as its own thing — from ownership signals only, never a shared address.
+**Don't ask one signal two questions.** That is this project's design rule. Each signal answers
+one question and no other: a shared office or managing agent speaks to *operation*; a shared
+conveyance deed or a resolved owner identity speaks to *ownership*; a disclosed agent speaks to
+*management*. BOR keeps these as separate, separately typed layers — it preserves WoW's
+operational network and adds the ownership layer alongside it, resolved from ownership signals
+only.
 
-## Fixing false merges
+## Ownership gets its own question
 
-The fix is to stop inferring ownership from the very thing that causes false merges — a shared
-business address — and resolve it from **ownership signals only**: who a deed conveys to, and
-which registration identities are genuinely the same person. Two buildings join the same
-**beneficial owner group** when a shared conveyance deed (`CONNECTED_BY_DEED`) or a resolved
-shared owner identity (`CONNECTED_BY_SPLINK`, from `nlr`) ties them — a registered-agent office
-they happen to share never does.
+Ownership is resolved from **ownership signals only**: who a deed conveys to, and which
+registration identities are genuinely the same person. A shared business address — the signal
+WoW's portfolios are built on — says two buildings are *operated* together; it says little about
+who *owns* them, so it never joins an owner group. Two buildings join the same **beneficial owner
+group** when a shared conveyance deed (`CONNECTED_BY_DEED`) or a resolved shared owner identity
+(`CONNECTED_BY_SPLINK`, from `nlr`) ties them — a registered-agent office they happen to share
+never does. WoW's operational network isn't discarded: it stays as its own layer (below), where
+a shared office is exactly the right evidence.
 
 The signature move is a **deed veil-pierce**: a *name-free* link from a shared ACRIS deed. Its
 **linked-successor guard** reaches the hardest case — owners who buy a block together and then
@@ -70,24 +79,27 @@ Two complementary evaluations, both paired against WoW's own output — the `wow
 table in the public `justfixwow` Postgres — so the baseline is literally what WoW produces, not a
 reimplementation of its clustering.
 
-First, a **divergence** measure: where, and in which direction, the owner-group partition disagrees
-with WoW's registration clustering. This is divergence, *not* accuracy — adjudication decides who
-is right — but it sizes the problem:
+First, a **divergence** measure: where, and in which direction, the owner-group partition differs
+from WoW's portfolios. Some divergence is expected by design — portfolios answer *who operates*,
+owner groups answer *who owns*. This is divergence, *not* accuracy — adjudication decides who is
+right — but it sizes the difference:
 
 ```bash
 uv run python -m bor.eval.divergence
-# → 760 owners cross WoW portfolios (WoW split them); 616 WoW portfolios hide >1 owner (WoW merged them)
+# → 760 owners cross WoW portfolios; 616 WoW portfolios span >1 owner group
 ```
 
 Accuracy is settled by **blind human adjudication** on a *preregistered, stratified* sample of 512
 candidate pairs, each labeled SAME / DIFFERENT / INDETERMINATE against the primary record before
-being unblinded and scored against WoW's decision. On the **259 pairs where the resolver and WoW
-disagree, the resolver is right 236 times to WoW's 23** (McNemar p < 0.001; inter-annotator
-κ = 0.89).
+being unblinded and scored against WoW's decision. Pairs are labeled for *beneficial ownership*,
+so the comparison reads a WoW portfolio as an ownership claim — a question it was not built to
+answer, which is exactly the cost of asking one signal two questions. On the **259 pairs where
+the two disagree about ownership, the ownership layer is right 236 times and WoW's portfolio,
+read as ownership, 23** (McNemar p < 0.001; inter-annotator κ = 0.89).
 
-![Head-to-head on the 259 pairs where the resolver and Who Owns What disagree: the resolver is
-right 236 times and Who Owns What 23 — McNemar p < 0.001, annotator κ = 0.89, over 512
-adjudicated pairs.](docs/measured-vs-wow.svg)
+![Head-to-head on the 259 pairs where the ownership layer and Who Owns What disagree about
+ownership: the ownership layer is right 236 times and a WoW portfolio, read as an ownership claim,
+23 — McNemar p < 0.001, annotator κ = 0.89, over 512 adjudicated pairs.](docs/measured-vs-wow.svg)
 
 Per-stratum precision:
 
@@ -104,8 +116,9 @@ S1/S2 measure *merge* precision (when it joins, is it right?); S3/S4 measure *sp
 honest weak spot — the hardest veil-pierce, and the one most in need of a stronger guard.
 
 A library-level **WoW gate** answers the same question for a single group — does WoW genuinely
-split its members into ≥2 non-aggregator portfolios (a real veil-pierce), or over-lump them on a
-shared aggregator address?
+split its members into ≥2 non-aggregator portfolios (a real veil-pierce), or do the members merely
+sit in an aggregator-hub portfolio — an operational network spanning many owners, not a
+veil-pierce?
 
 ```python
 from bor.eval.gate import gate_bbls

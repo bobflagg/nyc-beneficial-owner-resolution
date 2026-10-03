@@ -5,11 +5,12 @@ registration-clustering partition, over the buildings BOTH systems group (multi-
 portfolios ∩ multi-member owner groups). A DIVERGENCE measure, not accuracy — there is no ground
 truth; adjudication decides who is right.
 
-Two directions (the harms asymmetry):
+Two directions (a WoW portfolio is an operational network; an owner group is an ownership claim):
   * owners crossing portfolios — an owner group spans >=2 WoW portfolios: BOR *unifies* what WoW
-    split (the false-split fix; one owner's differently-named LLCs reunited).
-  * portfolios hiding >1 owner — a WoW portfolio spans >=2 owner groups: WoW *merged* separate
-    owners (typically on a shared registration office) that BOR keeps apart (the false-merge fix).
+    split (noise in the operational signal; one owner's differently-named LLCs reunited).
+  * portfolios hiding >1 owner — a WoW portfolio spans >=2 owner groups: the portfolio is an
+    operational network (typically tied by a shared registration office) that spans several
+    distinct owners, which BOR keeps apart. Not an error in the portfolio — a different question.
 
 Mirrors WatchlineNYC's compare_kg.wow_divergence exactly, but computes the owner-group partition
 off-graph (via bor.owner_groups) instead of reading it from Neo4j. Uses all member bbls, matching

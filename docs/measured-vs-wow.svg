@@ -17,17 +17,17 @@
 
   <!-- hero numbers -->
   <text x="48"  y="150" class="big teal" font-size="104">236</text>
-  <text x="240" y="118" class="lbl" font-size="21">new resolver</text>
+  <text x="240" y="118" class="lbl" font-size="21">ownership layer</text>
   <text x="240" y="146" class="lbl" font-size="21">correct</text>
-  <text x="400" y="140" class="mut" font-size="30">vs</text>
-  <text x="462" y="150" class="big rust" font-size="104">23</text>
-  <text x="590" y="118" class="lbl" font-size="21">JustFix</text>
-  <text x="590" y="146" class="lbl" font-size="21">correct</text>
+  <text x="426" y="140" class="mut" font-size="30">vs</text>
+  <text x="494" y="150" class="big rust" font-size="104">23</text>
+  <text x="622" y="118" class="lbl" font-size="21">WoW, read as</text>
+  <text x="622" y="146" class="lbl" font-size="21">ownership: correct</text>
 
   <!-- sentence -->
-  <text x="48" y="222" class="body" font-size="26">On the <tspan class="bold">259 pairs where the two systems disagree,</tspan> the new</text>
-  <text x="48" y="258" class="body" font-size="26">resolver is right 236 times and JustFix 23 times — a McNemar test</text>
-  <text x="48" y="294" class="body" font-size="26">rejects parity at <tspan class="bold">p &lt; 0.001</tspan>.</text>
+  <text x="48" y="222" class="body" font-size="26">On the <tspan class="bold">259 pairs where the two disagree about</tspan></text>
+  <text x="48" y="258" class="body" font-size="26"><tspan class="bold">ownership,</tspan> the ownership layer is right 236 times; WoW's</text>
+  <text x="48" y="294" class="body" font-size="26">portfolio, read as ownership, 23 — <tspan class="bold">p &lt; 0.001</tspan> (McNemar).</text>
 
   <!-- stacked bar (236/259 = 91% teal, 23/259 = 9% rust) -->
   <g>
@@ -38,9 +38,9 @@
   <!-- legend -->
   <g class="mono" font-size="18">
     <rect x="48" y="366" width="15" height="15" rx="3" class="teal"/>
-    <text x="72" y="379" class="lbl">New resolver correct · 236 (91%)</text>
-    <rect x="448" y="366" width="15" height="15" rx="3" class="rust"/>
-    <text x="472" y="379" class="lbl">JustFix correct · 23 (9%)</text>
+    <text x="72" y="379" class="lbl">Ownership layer correct · 236 (91%)</text>
+    <rect x="490" y="366" width="15" height="15" rx="3" class="rust"/>
+    <text x="514" y="379" class="lbl">WoW read as ownership · 23 (9%)</text>
   </g>
 
   <!-- stat tiles -->
