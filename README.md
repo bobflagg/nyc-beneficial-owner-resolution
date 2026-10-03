@@ -63,12 +63,12 @@ Ownership is only one of several claims, and the project keeps them **separate a
 typed** — each as *directly-sourced* or *inferred* — so a reader always knows the evidentiary
 weight behind a link:
 
-| Layer | Question | Signals | Status |
-|---|---|---|---|
-| **Beneficial owner group** | Who *owns* it? | `CONNECTED_BY_SPLINK` ∪ `CONNECTED_BY_DEED` | **v1** |
-| **Deed veil-pierce** | co-owned by conveyance? | ACRIS multi-parcel deed + linked-successor guard | **v1** |
-| **Operational network** | What does it *operate through*? | name / address / splink, aggregator-masked (WCC + Louvain) | **v1.1** |
-| **Management** | Who *runs* it? | `MANAGED_BY` (disclosed agent) | in WatchlineNYC |
+| Layer | Question | Signals |
+|---|---|---|
+| **Beneficial owner group** | Who *owns* it? | `CONNECTED_BY_SPLINK` ∪ `CONNECTED_BY_DEED` |
+| **Deed veil-pierce** | co-owned by conveyance? | ACRIS multi-parcel deed + linked-successor guard |
+| **Operational network** | What does it *operate through*? | name / address / splink, aggregator-masked (WCC + Louvain) |
+| **Management** | Who *runs* it? | `MANAGED_BY` (disclosed agent) |
 
 Every derived link reads as an investigative **lead to verify, not a legal determination**, and
 the merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden.
