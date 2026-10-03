@@ -5,7 +5,7 @@ abstract: >-
   Reliability-typed beneficial-ownership resolution over NYC public records.
   Resolves false splits (probabilistic record linkage), pierces the shell game
   with a name-free deed veil-pierce (co-conveyance + linked-successor guard),
-  and builds beneficial owner groups distinct from the operational nexus — each
+  and builds beneficial owner groups distinct from the operational network — each
   claim typed as directly-sourced or inferred, with a paired benchmark against
   JustFix's Who Owns What.
 type: software
