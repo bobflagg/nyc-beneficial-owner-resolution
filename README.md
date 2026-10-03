@@ -15,9 +15,11 @@ to verify, never a legal verdict.
 JustFix's **[Who Owns What](https://github.com/JustFixNYC/who-owns-what)** (WoW) is the gold
 standard for grouping NYC landlords: it links registration contacts by shared names and business
 addresses, then clusters that graph (WCC + Louvain) into portfolios — the backbone of countless
-tenant tools and news investigations. Read for what it is, a WoW portfolio is an **operational
-network**: the buildings run through the same people, offices, and managing hands. That is
-exactly the right answer for an organizer finding neighbors under the same landlord operation.
+tenant tools and news investigations. Read for what it is, a WoW portfolio is a *registration
+network*: buildings tied through the people and offices they register with. Where that tie is an
+owner's or a manager's office, it is an **operational network** — the buildings run through the
+same hands — which is exactly the right answer for an organizer finding neighbors under the same
+landlord operation.
 
 Two things can go wrong around it, and they differ in kind:
 
@@ -27,29 +29,32 @@ Two things can go wrong around it, and they differ in kind:
   **[NYC Landlord Resolution](https://github.com/bobflagg/nyc-landlord-resolution)** (`nlr`),
   which reunites the fragments with probabilistic record linkage and feeds WoW a single
   high-confidence `CONNECTED_BY_SPLINK` edge — merging only, never splitting.
-- **A signal asked a second question.** A shared business address is strong evidence that two
-  buildings are *operated* together and weak evidence that they are *owned* by the same party:
-  one registered agent, management company, or law firm serves dozens of unrelated owners. The
-  portfolio isn't wrong — but read as an ownership claim it attributes buildings to a party who
-  doesn't own them, a wrongful-targeting and defamation risk.
+- **A signal asked a second question.** A shared business address says two buildings register
+  from the same place; what that implies depends on the place. An owner's own office points to one
+  owner-operator. A management office points to shared operation but says little about ownership.
+  A shared mailbox or service provider — an office suite many small landlords file from, a
+  registered agent, a law firm — points to little about either. The portfolio accurately records
+  who registers where; read as an ownership claim, it attributes buildings to a party who doesn't
+  own them, a wrongful-targeting and defamation risk.
 
 **Don't ask one signal two questions.** That is this project's design rule. Each signal answers
-one question and no other: a shared office or managing agent speaks to *operation*; a shared
+one question and no other: an operator's or manager's office speaks to *operation*; a shared
 conveyance deed or a resolved owner identity speaks to *ownership*; a disclosed agent speaks to
-*management*. BOR keeps these as separate, separately typed layers — it preserves WoW's
-operational network and adds the ownership layer alongside it, resolved from ownership signals
+*management*; a shared mailbox or service-provider address speaks to none of them, which is why
+BOR masks aggregator addresses. BOR keeps these as separate, separately typed layers — an
+operational-network layer alongside the ownership layer, which is resolved from ownership signals
 only.
 
 ## Ownership gets its own question
 
 Ownership is resolved from **ownership signals only**: who a deed conveys to, and which
 registration identities are genuinely the same person. A shared business address — the signal
-WoW's portfolios are built on — says two buildings are *operated* together; it says little about
-who *owns* them, so it never joins an owner group. Two buildings join the same **beneficial owner
+WoW's portfolios are built on — can point to a shared operator, but says little about who *owns*
+the buildings, so it never joins an owner group. Two buildings join the same **beneficial owner
 group** when a shared conveyance deed (`CONNECTED_BY_DEED`) or a resolved shared owner identity
 (`CONNECTED_BY_SPLINK`, from `nlr`) ties them — a registered-agent office they happen to share
-never does. WoW's operational network isn't discarded: it stays as its own layer (below), where
-a shared office is exactly the right evidence.
+never does. The operational view isn't discarded: it stays as its own aggregator-masked layer
+(below), where a shared operator's office is exactly the right evidence.
 
 The signature move is a **deed veil-pierce**: a *name-free* link from a shared ACRIS deed. Its
 **linked-successor guard** reaches the hardest case — owners who buy a block together and then
@@ -79,18 +84,19 @@ Both are real cases from the live [WatchlineNYC](https://github.com/bobflagg/Wat
 which consumes BOR's export (data as of 2026-09-19). Each map toggles between the two views; as
 always, these are algorithmic inferences — leads to verify, not determinations of legal ownership.
 
-### One operational network, many owners — Miller
+### One address, many owners — Miller
 
 **[→ Open the map](https://bobflagg.github.io/WatchlineNYC/docs/maps/miller.html)**
 
-WoW groups 27 buildings into a single portfolio (#183), and it is right about what it sees: all 27
-register the same business address, a Lakewood, NJ office, so they are one *operational network*.
-Read as an ownership claim, though, the portfolio would attribute all 27 buildings to one party.
-The ownership layer resolves from identity and deed signals instead of the shared office and
-separates them into **five owner groups** of 7, 7, 4, 4 and 3 buildings. Two single-building
-registrations stay unmerged — one of them a one-letter misspelling of another owner's surname,
-which name-anchored blocking deliberately won't link (the documented recall cost of precision-first
-matching). It is the whole design rule in one picture: same office, different owners.
+WoW groups 27 buildings into a single portfolio (#183). All 27 register from one office suite in
+Lakewood, NJ — an address that hosts 31 buildings and ten distinct owner-signers citywide, with no
+recurring managing agent or registered agent behind it: a shared mailbox, not a shared operator. The
+portfolio accurately records the co-location; read as an ownership claim, it would attribute all 27
+buildings to one party. The ownership layer resolves from identity and deed signals instead of the
+shared address and separates them into **five owner groups** of 7, 7, 4, 4 and 3 buildings. Two
+single-building registrations stay unmerged — one of them a one-letter misspelling of another
+owner's surname, which name-anchored blocking deliberately won't link (the documented recall cost of
+precision-first matching). It is the design rule in one picture: same address, different owners.
 
 ### The deed veil-pierce — Citadel
 
@@ -103,8 +109,11 @@ common thread is a shared hub office — masked as an aggregator, so it carries 
 name- and address-based linkage sees three unconnected fragments (the map's *Without deed* view).
 Only the deed ties them together: the **linked-successor guard** recovers the bundle because the
 original grantee is the grantor of every later nominal transfer into a shell. WoW places all 15
-inside one 83-building portfolio — the operational network at that hub — and the deed supplies what
-the shared office cannot: which of those buildings are *owned* together.
+inside one 83-building portfolio (#161) — but that portfolio is held together by the hub itself, an
+address where 84 buildings and 35 distinct owner-role people register, so it also holds 33 landlords
+in all and 68 buildings outside the bundle. That over-lumps even as an operational grouping, which
+is why BOR masks aggregator addresses; the deed supplies what the shared address cannot: which of
+those 15 buildings are *owned* together.
 
 Citadel is a case the guard gets right. The deed-linked-successor stratum is the weakest in the
 benchmark below (S1b, 71%), so read it as an illustration of the mechanism, not a typical outcome.
@@ -116,7 +125,7 @@ table in the public `justfixwow` Postgres — so the baseline is literally what 
 reimplementation of its clustering.
 
 First, a **divergence** measure: where, and in which direction, the owner-group partition differs
-from WoW's portfolios. Some divergence is expected by design — portfolios answer *who operates*,
+from WoW's portfolios. Some divergence is expected by design — portfolios tie buildings that register together,
 owner groups answer *who owns*. This is divergence, *not* accuracy — adjudication decides who is
 right — but it sizes the difference:
 
@@ -153,7 +162,7 @@ honest weak spot — the hardest veil-pierce, and the one most in need of a stro
 
 A library-level **WoW gate** answers the same question for a single group — does WoW genuinely
 split its members into ≥2 non-aggregator portfolios (a real veil-pierce), or do the members merely
-sit in an aggregator-hub portfolio — an operational network spanning many owners, not a
+sit in an aggregator-hub portfolio — buildings lumped through a shared service address, not a
 veil-pierce?
 
 ```python
