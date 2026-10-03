@@ -1,23 +1,14 @@
 # NYC Beneficial Owner Resolution
 
-Knowing who actually *owns* a building — the person or group that ultimately profits from it
-and answers for it, not the single-purpose LLC on the deed or the managing agent on the
-registration — is what lets housing accountability reach the right party. A tenant lawyer naming
-a defendant, a journalist tracing who really controls a cluster of distressed buildings, a
-regulator deciding whom to pressure: all of it depends on seeing past the shell. But ownership
-in New York is deliberately obscured — a building is deeded to its own LLC, blocks are bought
-together and re-deeded into `$0` single-purpose shells, and registrations run through a managing
-agent or a law office that dozens of unrelated owners also use. Guess wrong in one direction and
-a real owner hides behind the shells and evades accountability; guess wrong in the other and you
-over-attribute someone else's buildings to an agent, a lawyer, or a namesake — a defamation risk,
-not just an error. This project resolves beneficial ownership from the public record and,
-crucially, **says how sure it is**: every derived link is typed as *directly-sourced* or
-*inferred* — a lead to verify, never a legal verdict.
-
-It is a software + data + benchmark artifact that builds on —
-crediting and benchmarking against, never replacing — JustFix's
-[Who Owns What](https://github.com/JustFixNYC/who-owns-what) (WoW) and the sibling record-linkage
-engine [`nyc-landlord-resolution`](https://github.com/bobflagg/nyc-landlord-resolution) (`nlr`).
+Knowing who actually *owns* a building — the person or group that profits and answers for it,
+not the single-purpose LLC on the deed or the managing agent on the registration — is what lets
+housing accountability reach the right party. But ownership in New York is deliberately obscured:
+buildings are deeded to their own LLCs, blocks are re-deeded into `$0` shells, and registrations
+run through agents and law offices shared by dozens of unrelated owners. Guess wrong one way and a
+real owner hides behind the shells; guess wrong the other and you over-attribute someone else's
+buildings to an agent or a namesake. This project resolves beneficial ownership from the public
+record and **says how sure it is** — every link typed as *directly-sourced* or *inferred*, a lead
+to verify, never a legal verdict.
 
 ## Who Owns What
 
