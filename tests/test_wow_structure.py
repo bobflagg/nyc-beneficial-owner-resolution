@@ -72,6 +72,8 @@ def test_summarize_counts_and_shares():
     assert m["address_dependent"][f"with_address_degree_ge_{MID_HUB_DEGREE}"] == 1
     assert m["address_dependent"]["with_address_degree_ge_25"] == 1
     assert m["hub_addresses"]["portfolios"] == 1 and m["hub_addresses"]["buildings"] == 10
+    assert m["address_only"]["portfolios"] == 2 and m["address_only"]["buildings"] == 12   # b and the hub
+    assert abs(m["address_only"]["share_of_multi_owner_portfolios"] - 2 / 3) < 1e-9
     assert m["multi_owner"]["median_owner_nodes"] == 2 and m["multi_owner"]["max_owner_nodes"] == 25
 
 
@@ -79,3 +81,12 @@ def test_summarize_empty_and_report_render():
     m = summarize([])
     assert m["portfolios"] == 0 and m["multi_owner"]["median_owner_nodes"] == 0
     assert "descriptive, not accuracy" in format_report(m)
+
+
+def test_address_dependent_is_not_address_only():
+    # 1-2 by name, 2-3 only by address: needs the address edge to stay connected, but has a name edge
+    g = {"nodes": [owner(1), owner(2, "2 OAK AVE"), owner(3, "2 OAK AVE")],
+         "edges": [edge(1, 2, "name"), edge(2, 3)]}
+    m = summarize([analyze_graph("x", g, 3)])
+    assert m["address_dependent"]["portfolios"] == 1
+    assert m["address_only"]["portfolios"] == 0

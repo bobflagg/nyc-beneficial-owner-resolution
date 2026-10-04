@@ -10,8 +10,10 @@ Findings are reported as counts and shares:
   * multi-owner portfolios — portfolios with two or more owner nodes, the only ones where a link
     between *different* contact records has to carry the meaning;
   * address-dependent portfolios — multi-owner portfolios whose owner nodes would fall apart into
-    separate components if every shared-address edge were removed, i.e. portfolios held together by
-    shared business addresses alone;
+    separate components if every shared-address edge were removed. Some of these also contain
+    shared-name edges, so address-dependent is not the same as address-only;
+  * address-only portfolios — multi-owner portfolios with no shared-name edge at all, so a shared
+    business address is the only thing linking their owners;
   * hub addresses — an address that many owner nodes in one portfolio list.
 
 Definitions (kept explicit because the numbers depend on them):
@@ -101,7 +103,7 @@ def summarize(stats, *, hub_degree: int = HUB_DEGREE) -> dict:
     """Aggregate per-portfolio stats into the report numbers."""
     n_port = n_bbl = 0
     edges: Counter = Counter()
-    multi_p = multi_b = dep_p = dep_b = hub_p = hub_b = dep_mid = dep_hub = 0
+    multi_p = multi_b = dep_p = dep_b = hub_p = hub_b = dep_mid = dep_hub = only_p = only_b = 0
     sizes: list[int] = []
     for s in stats:
         n_port += 1
@@ -112,6 +114,9 @@ def summarize(stats, *, hub_degree: int = HUB_DEGREE) -> dict:
         multi_p += 1
         multi_b += s.n_bbls
         sizes.append(s.n_owners)
+        if not s.edge_types.get("name", 0):
+            only_p += 1
+            only_b += s.n_bbls
         if s.max_address_degree >= hub_degree:
             hub_p += 1
             hub_b += s.n_bbls
@@ -136,7 +141,9 @@ def summarize(stats, *, hub_degree: int = HUB_DEGREE) -> dict:
                              "share_of_multi_owner_buildings": share(dep_b, multi_b),
                              "share_of_all_buildings": share(dep_b, n_bbl),
                              f"with_address_degree_ge_{MID_HUB_DEGREE}": dep_mid,
-                             f"with_address_degree_ge_{hub_degree}": dep_hub},
+                             f"with_address_degree_ge_{hub_degree}": dep_hub},        "address_only": {"portfolios": only_p, "buildings": only_b,
+                         "share_of_multi_owner_portfolios": share(only_p, multi_p),
+                         "share_of_all_buildings": share(only_b, n_bbl)},
         "hub_addresses": {"hub_degree": hub_degree, "portfolios": hub_p, "buildings": hub_b,
                           "share_of_all_buildings": share(hub_b, n_bbl)},
     }
@@ -154,6 +161,7 @@ def iter_portfolio_stats(conn):
 def format_report(m: dict) -> str:
     pct = lambda x: f"{x * 100:.1f}%"
     e, mo, ad, hub = m["edges"], m["multi_owner"], m["address_dependent"], m["hub_addresses"]
+    ao = m["address_only"]
     by = e["by_type"]
     hub_key = f"with_address_degree_ge_{hub['hub_degree']}"
     mid_key = f"with_address_degree_ge_{MID_HUB_DEGREE}"
@@ -165,11 +173,14 @@ def format_report(m: dict) -> str:
         f"multi-owner portfolios (>=2 owner nodes): {mo['portfolios']:,} ({pct(mo['share_of_portfolios'])} of portfolios) "
         f"hold {mo['buildings']:,} buildings ({pct(mo['share_of_buildings'])})",
         f"  median {mo['median_owner_nodes']:g} owner nodes, max {mo['max_owner_nodes']:,}",
-        f"  held together only by shared-address edges: {ad['portfolios']:,} "
+        f"  depend on shared-address edges to stay connected: {ad['portfolios']:,} "
         f"({pct(ad['share_of_multi_owner_portfolios'])} of multi-owner) / {ad['buildings']:,} buildings "
         f"({pct(ad['share_of_multi_owner_buildings'])} of multi-owner; {pct(ad['share_of_all_buildings'])} of all buildings)",
         f"    of those, with an address shared by >={MID_HUB_DEGREE} owner nodes: "
         f"{ad[mid_key]:,}; by >={hub['hub_degree']}: {ad[hub_key]:,}",
+        f"  address edges only (no shared-name edge at all): {ao['portfolios']:,} "
+        f"({pct(ao['share_of_multi_owner_portfolios'])} of multi-owner) / {ao['buildings']:,} buildings "
+        f"({pct(ao['share_of_all_buildings'])} of all buildings)",
         f"hub addresses (>={hub['hub_degree']} owner nodes in one portfolio): {hub['portfolios']:,} portfolios "
         f"hold {hub['buildings']:,} buildings ({pct(hub['share_of_all_buildings'])} of all)",
     ]
