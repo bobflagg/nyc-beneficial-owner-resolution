@@ -134,6 +134,18 @@ uv run python -m bor.eval.divergence
 # → 760 owners cross WoW portfolios; 616 WoW portfolios span >1 owner group
 ```
 
+WoW's own graph explains part of that difference. It records only two kinds of link, shared
+business address and shared name, and nothing about whether a shared address is an owner's office, a
+manager's, or a service provider's. In the September 2026 dump, 98.4% of its edges are shared
+business address and 1.6% shared name. Portfolios with two or more owner nodes hold 40% of all
+buildings, and 79% of those portfolios are held together by shared-address edges alone. Of those,
+73 portfolios contain an address shared by 25 or more owner nodes, holding 4.8% of all buildings.
+This is a description of structure, not an accuracy result:
+
+```bash
+uv run python -m bor.eval.wow_structure     # --out summary.json, --details portfolios.csv
+```
+
 Accuracy is settled by **blind human adjudication** on a *preregistered, stratified* sample of 512
 candidate pairs, each labeled SAME / DIFFERENT / INDETERMINATE against the primary record before
 being unblinded and scored against WoW's decision. Pairs are labeled for *beneficial ownership*,
