@@ -120,14 +120,14 @@ benchmark below (S1b, 71%), so read it as an illustration of the mechanism, not 
 
 ## How it measures up
 
-Two complementary evaluations, both paired against WoW's own output — the `wow.wow_portfolios`
-table in the public `justfixwow` Postgres — so the baseline is literally what WoW produces, not a
-reimplementation of its clustering.
+Two complementary analyses. The first describes how the ownership groupings differ from WoW's own
+output — the `wow.wow_portfolios` table in the public `justfixwow` Postgres — so the comparison
+baseline is literally what WoW produces, not a reimplementation of its clustering. The second
+evaluates the precision of the links bor asserts, with no head-to-head tally against WoW.
 
 First, a **divergence** measure: where, and in which direction, the owner-group partition differs
 from WoW's portfolios. Some divergence is expected by design — portfolios tie buildings that register together,
-owner groups answer *who owns*. This is divergence, *not* accuracy — adjudication decides who is
-right — but it sizes the difference:
+owner groups answer *who owns*. This is divergence, *not* accuracy, but it sizes the difference:
 
 ```bash
 uv run python -m bor.eval.divergence
@@ -146,31 +146,35 @@ This is a description of structure, not an accuracy result:
 uv run python -m bor.eval.wow_structure     # --out summary.json, --details portfolios.csv
 ```
 
-Accuracy is settled by **blind human adjudication** on a *preregistered, stratified* sample of 512
-candidate pairs, each labeled SAME / DIFFERENT / INDETERMINATE against the primary record before
-being unblinded and scored against WoW's decision. Pairs are labeled for *beneficial ownership*,
-so the comparison reads a WoW portfolio as an ownership claim — a question it was not built to
-answer, which is exactly the cost of asking one signal two questions. On the **259 pairs where
-the two disagree about ownership, the ownership layer is right 236 times and WoW's portfolio,
-read as ownership, 23** (McNemar p < 0.001; inter-annotator κ = 0.89).
+**Precision of the links bor asserts** is evaluated on a stratified sample of 392 candidate pairs,
+frozen before labeling. Each pair is judged SAME / DIFFERENT / INDETERMINATE against primary
+records, without the annotator being told which system or stratum produced it. Labels come from one
+human annotator and an LLM second reader, with disagreements resolved by an LLM-conducted review.
+Using only the human annotator's labels, the 71% below becomes 69% and the other figures do not
+change at the precision shown. We report precision only: recall is not estimated, and the absence
+of a link does not imply different owners. There is no head-to-head tally against WoW, because a
+WoW portfolio is a co-registration network, not an ownership classifier, and the strata are
+defined by bor's own decisions.
 
-![Head-to-head on the 259 pairs where the ownership layer and Who Owns What disagree about
-ownership: the ownership layer is right 236 times and a WoW portfolio, read as an ownership claim,
-23 — McNemar p < 0.001, annotator κ = 0.89, over 512 adjudicated pairs.](docs/measured-vs-wow.svg)
+![Precision by link type: deed-held 97%, resolved identity 97%, aggregator pairs kept apart 98%,
+deed-linked successor 71%, with 95% intervals, over a stratified sample of 392
+pairs.](docs/precision-by-signal.svg)
 
-Per-stratum precision:
+| Stratum | What it tests | Pairs | Precision (95% CI) |
+|---|---|---:|---|
+| **S1a — deed-held** | a shared conveyance deed → same owner | 70 | **97%** (90.0–99.2) |
+| **S1b — deed-linked successor** | the re-deed-into-`$0`-LLCs chain → same owner | 52 (all) | **71%** (57.6–82.2) |
+| **S2 — model / splink** | a resolved shared identity → same owner | 150 | **97%** (92.4–98.6) |
+| **S3 — aggregator** | owners sharing a masked hub kept separate | 120 | **98%** (94.1–99.5) |
 
-| Stratum | What it tests | Precision |
-|---|---|---|
-| **S1a — deed-held** | a shared conveyance deed → SAME owner | **97%** |
-| **S1b — deed-linked successor** | the re-deed-into-`$0`-shells chain → SAME owner | **71%** |
-| **S2 — model / splink** | a resolved shared identity → SAME owner | **97%** |
-| **S3 — aggregator** | distinct owners at a shared hub → correctly kept SEPARATE | **98%** |
-| **S4 — hard-negative surname** | same-surname but no ownership link → correctly kept SEPARATE | **89%** |
-
-S1/S2 measure *merge* precision (when it joins, is it right?); S3/S4 measure *split* precision
-(when it keeps owners apart, is it right?). The **deed-linked-successor** stratum (S1b, 71%) is the
-honest weak spot — the hardest veil-pierce, and the one most in need of a stronger guard.
+S1 and S2 measure *merge* precision (when it joins, is it right?); S3 measures *split* precision
+(when it keeps owners that share an aggregator address apart, is it right?). The
+**deed-linked-successor** stratum (S1b) is the honest weak spot, the hardest veil-pierce and the
+one most in need of a stronger guard. Among the links WoW does not also make, deed-held links are
+right in 33 of 35 sampled pairs and model links in 64 of 67, but successor links in only 19 of 33
+(human annotator's labels). Weighted back to the sampling frames, bor asserts about 12,250 correct
+merges, about 5,450 of them connecting buildings WoW does not group together. These are counts,
+not rates, so that precision is not read as coverage.
 
 A library-level **WoW gate** answers the same question for a single group — does WoW genuinely
 split its members into ≥2 non-aggregator portfolios (a real veil-pierce), or do the members merely
