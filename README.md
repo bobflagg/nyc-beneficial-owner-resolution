@@ -113,7 +113,9 @@ inside one 83-building portfolio (#161) — but that portfolio is held together 
 address where 84 buildings and 35 distinct owner-role people register, so it also holds 33 landlords
 in all and 68 buildings outside the bundle. That over-lumps even as an operational grouping, which
 is why BOR masks aggregator addresses; the deed supplies what the shared address cannot: which of
-those 15 buildings are *owned* together.
+those 15 buildings are *owned* together. (The resolved ownership group is a little wider, 20
+buildings: it also takes in five more registered under the same three registrants but not on the
+2008 deed. The 15 are the deed bundle.)
 
 Citadel is a case the guard gets right. The deed-linked-successor stratum is the weakest in the
 benchmark below (S1b, 71%), so read it as an illustration of the mechanism, not a typical outcome.
