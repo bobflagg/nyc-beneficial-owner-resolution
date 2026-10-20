@@ -1,6 +1,6 @@
 # Release contract (draft v0.1.0)
 
-Status: draft for review with the KG, 2026-10-20. This is the minimal W8 contract from `kg-handoff-plan-v2.md`: the shape of a bor release, a worked explanation, and a validator. The machine-readable form is `src/bor/release_schema.py`; `python -m bor.release_validate <dir>` checks a release against it. A synthetic example lives in `tests/fixtures/mini_release/`.
+Status: draft for review with the KG, 2026-10-20. Background: the plan is [kg-handoff-plan-v2.md](kg-handoff-plan-v2.md) and the measurements behind the lineage tables are [w0-findings.md](w0-findings.md). This is the minimal W8 contract from the plan: the shape of a bor release, a worked explanation, and a validator. The machine-readable form is `src/bor/release_schema.py`; `python -m bor.release_validate <dir>` checks a release against it. A synthetic example lives in `tests/fixtures/mini_release/`.
 
 Only the lineage tables are produced today (`bor.lineage`, branch `w0-mapping-tables`). Everything else is **planned**: specified so it can be reviewed before it is built. The lineage tables built from the reference dump already validate against this contract.
 

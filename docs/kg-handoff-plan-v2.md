@@ -2,7 +2,7 @@
 
 Status: draft for final review, 2026-10-20. Supersedes the W0–W10 table in `review-request-kg-handoff.md`. v2 was revised after the first review (`kg-handoff-review.md`); v2.1 after the second (`kg-handoff-plan-v2-review.md`). The author has now read KG design notes 0002–0006.
 
-This plan authorizes nothing by itself. P0 is implemented (branch `p0-shared-identity-context`). The W0 measurements are done (`w0-findings.md`) and the mapping tables are built in `bor.lineage` (branch `w0-mapping-tables`), not yet wired into `export()`. The W5 spike has not been run.
+This plan authorizes nothing by itself. P0 is implemented (branch `p0-shared-identity-context`). The W0 measurements are done (`w0-findings.md`) and the mapping tables are built in `bor.lineage` (branch `w0-mapping-tables`), not yet wired into `export()`. The minimal W8 contract is drafted in [release-contract.md](release-contract.md) (schemas in `bor.release_schema`, validator in `bor.release_validate`, synthetic fixture in `tests/fixtures/mini_release/`). The W5 spike has not been run.
 
 ## 1. Problem
 
@@ -93,7 +93,7 @@ Stage vocabulary (versioned): `identity.splink_base`, `identity.splink_feedback`
 | **W6a** | **Decision-event emission** inside W2, W3 and W5 builders, to the event schema fixed in minimal W8 | A hub-capped node that retains another valid link, and a dropped component, are represented correctly | M |
 | **W6b** | **Summaries:** assemble `decisions` and `bbl_status` from the emitted events | Status universe is the PLUTO snapshot; reasons are consistent with events | S–M |
 | **W7** | **Method metrics** generated from evaluation artifacts | A consumer displays the published estimate and interval directly, with no recalculation and no reading as link probability | S |
-| **W8** | **Schemas, validator, `explain()`.** A minimal version comes first as the contract, including the event schema | Endpoint existence, source references, membership cardinality, witness connectivity, reason consistency, metric-stage coverage, declared capabilities | M |
+| **W8** | **Schemas, validator, `explain()`.** A minimal version comes first as the contract, including the event schema (drafted: [release-contract.md](release-contract.md); `explain()` not yet) | Endpoint existence, source references, membership cardinality, witness connectivity, reason consistency, metric-stage coverage, declared capabilities | M |
 | **W9** | **Fixtures and tests:** the Citadel case plus synthetic ones (transitive feedback bridge; mixed held/successor deed; hub-capped node with another valid link; dropped component; ambiguous contact mapping; WCC split across communities); validator invariant that each BBL is in one node and at most one group per layer (true by construction in this dump: W0) | Consumer loads the fixture without Postgres | M |
 | **W10** | **Docs, changelog, frozen release, tag** | `docs/data.md`, `docs/release.md`, `DATA.md` updated; field mapping to the KG documented | S |
 
