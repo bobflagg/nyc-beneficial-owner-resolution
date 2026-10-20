@@ -98,28 +98,42 @@ def _resolve(conn, threshold: float):
     return full, clusters
 
 
-def node_clusters(conn, *, threshold: float = DEFAULT_THRESHOLD) -> pd.DataFrame:
-    """Map each ``landlords_with_connections`` node to its Splink entity.
+def node_cluster_votes(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> pd.DataFrame:
+    """The (name, bbl) join between lwc nodes and resolved identities, one row per match.
 
-    Returns ``[nodeid, cluster_id]``. A node whose buildings straddle two entities
-    (rare) takes the plurality entity of its bbls."""
-    full, clusters = _resolve(conn, threshold)
-
+    Returns ``[nodeid, name, bbl, unique_id, cluster_id]``. A node can match several identities
+    (spelling variants of one address) and, rarely, identities in different clusters."""
     sp = clusters[["unique_id", "cluster_id"]].merge(
         full[["unique_id", "name_full", "bbls"]], on="unique_id")
     sp = sp.explode("bbls").rename(columns={"bbls": "bbl", "name_full": "name"})
     sp["name"] = sp["name"].map(_norm)
-    sp = sp[["name", "bbl", "cluster_id"]].dropna()
+    sp = sp[["unique_id", "cluster_id", "name", "bbl"]].dropna()
 
     lwc = pd.read_sql(
         "SELECT nodeid, name, bbls::text[] AS bbls FROM landlords_with_connections", conn)
     ln = lwc.explode("bbls").rename(columns={"bbls": "bbl"})[["nodeid", "name", "bbl"]].copy()
     ln["name"] = ln["name"].map(_norm)
 
-    j = ln.merge(sp, on=["name", "bbl"], how="inner")
-    nc = (j.groupby("nodeid")["cluster_id"]
-            .agg(lambda s: s.mode().iloc[0]).rename("cluster_id").reset_index())
-    return nc
+    return ln.merge(sp, on=["name", "bbl"], how="inner")
+
+
+def select_cluster(votes: pd.DataFrame) -> pd.DataFrame:
+    """One cluster per node: the plurality over its (name, bbl) matches. Returns
+    ``[nodeid, cluster_id]``.
+
+    A tie goes to the smallest cluster label (``Series.mode`` sorts ascending). That is
+    deterministic for one fit but carries no meaning, and labels change between fits."""
+    return (votes.groupby("nodeid")["cluster_id"]
+                 .agg(lambda s: s.mode().iloc[0]).rename("cluster_id").reset_index())
+
+
+def node_clusters(conn, *, threshold: float = DEFAULT_THRESHOLD) -> pd.DataFrame:
+    """Map each ``landlords_with_connections`` node to its Splink entity.
+
+    Returns ``[nodeid, cluster_id]``. A node whose buildings straddle two entities
+    (rare) takes the plurality entity of its bbls."""
+    full, clusters = _resolve(conn, threshold)
+    return select_cluster(node_cluster_votes(conn, full, clusters))
 
 
 def splink_edges(conn, *, threshold: float = DEFAULT_THRESHOLD, weight: float = SPLINK_WEIGHT,

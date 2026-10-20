@@ -20,6 +20,12 @@ def pg():
 
 
 @pytest.fixture(scope="session")
+def resolved(pg):
+    from bor.splink_bridge import DEFAULT_THRESHOLD, _resolve
+    return _resolve(pg, DEFAULT_THRESHOLD)
+
+
+@pytest.fixture(scope="session")
 def owner_groups(pg):
     from bor.owner_groups import resolve_owner_groups
     return resolve_owner_groups(pg)
