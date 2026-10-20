@@ -1,12 +1,12 @@
 # W0 findings: node, contact and identity mappings
 
-2026-10-20. Read-only spike against the local `justfixwow` dump (`wow_landlords` 171,347 rows, `landlords_with_connections` 118,493 nodes). Nothing was changed in the database or in bor/nlr code. These numbers describe this dump and one Splink run (EM is unseeded, so cluster-level counts will move slightly between runs).
+2026-10-20. Read-only spike against the local `justfixwow` dump (`wow_landlords` 171,347 rows, `landlords_with_connections` 118,493 nodes). Nothing was changed in the database. The mapping tables built from these findings are in `bor.lineage` on branch `w0-mapping-tables` (section 6); where its final figures differ from the first measurement, the table-based figure is given and the change is noted. These numbers describe this dump and one Splink run (EM is unseeded, so cluster-level counts will move slightly between runs).
 
 ## Summary
 
 1. **Node → registration lineage is exact and needs no change to `build_lwc`.** `wow_landlords` has one row per BBL, and every BBL appears in exactly one node. So `node_observations(node, bbl, registrationid)` is `lwc.bbls` joined to `wow_landlords`.
-2. **The source contact is recoverable for 99.63% of nodes' BBLs** using WoW's own selection rule; 629 rows (0.37%) are ambiguous and 250 of those span more than one nlr identity.
-3. **HPD contact ids are not unique keys.** An observation key must include a content hash.
+2. **The source contact is recoverable for 99.63% of nodes' BBLs** using WoW's own selection rule; 642 rows (0.37%) are ambiguous (the first measurement, with a coarser digest, found 629; 250 of those spanned more than one nlr identity, not re-measured).
+3. **HPD contact ids are not unique keys.** An observation id needs a disambiguator: the rank `k` of the row's content among the distinct contents sharing a (registration, contact id) pair. The content digest only numbers the rows; it is not exported.
 4. **The node → identity join (name, bbl) works for 99.90% of nodes but is not exact:** 4.6% of nodes match several identities, 0.63% straddle several clusters, and 85% of those straddlers are tied and resolved by an arbitrary rule.
 5. **nlr and WoW choose different registrations for 1,249 BBLs**, because nlr's tie-break is unspecified.
 
@@ -37,12 +37,12 @@ Applying that rule to the dump:
 |---|---|
 | `wow_landlords` rows | 171,347 |
 | Matched to an owner-role person contact in the same registration, by name | 171,347 (100%) |
-| Selected role: HeadOfficer / IndividualOwner / JointOwner | 106,254 / 46,712 / 18,381 |
-| Exactly one candidate contact | 170,718 (99.63%) |
-| More than one candidate contact (same role and name, different content) | 629 (0.37%) |
-| of which candidates carry different nlr identities | 250 |
+| Selected role: HeadOfficer / IndividualOwner / JointOwner (first measurement) | 106,254 / 46,712 / 18,381 |
+| Exactly one candidate contact | 170,705 (99.63%) |
+| More than one candidate contact (same role and name, different content) | 642 (0.37%): 627 with two candidates, 15 with three |
+| of which candidates carry different nlr identities | 250 in the first measurement (629 rows); not re-measured |
 
-WoW's own tie-break among those 629 is undefined (it orders by role and name only), so the choice is arbitrary in the source. The release should report them as ambiguous and list the candidates, not pick one silently.
+WoW's own tie-break among those 642 is undefined (it orders by role and name only), so the choice is arbitrary in the source. The release should report them as ambiguous and list the candidates, not pick one silently.
 
 ## 3. nlr and WoW disagree on the registration for some BBLs
 
@@ -83,15 +83,29 @@ Reading these:
 
 ## 5. Decisions this supports
 
-1. **Observation key:** `(registrationid, registrationcontactid, content hash)`. Identical duplicate rows collapse to one observation; differing rows with the same ids stay separate.
+1. **Observation id:** `registrationid:registrationcontactid:k`, where `k` is the 0-based rank of the row's content digest among the distinct contents sharing that (registration, contact id) pair. Identical duplicate rows collapse to one observation; differing rows with the same ids get different `k`; `k` is 0 for the 99.9% of pairs that are unique. The digest (an md5 over role, name and address fields, `bor.lineage.DIGEST_SQL`) is used to number and is not exported, so ids reveal nothing about the contact.
 2. **`node_observations`** derives from `lwc.bbls ⋈ wow_landlords` (exact), with a `selected_contact` where WoW's rule gives one candidate and an `ambiguous` flag plus candidate list otherwise.
 3. **`identity_node_map`** exports the current (name, bbl) mapping as it is, with `tied` and alternatives for straddlers, and records the tie rule. Replacing the join with an exact mapping from the selected contact would change the clusters and needs its own evaluation; defer it.
 4. **Absence reasons from this data:** no `wow_landlords` row for a BBL that has a registration (10,516), no usable owner contact, unmatched node (113), and the registration mismatch (1,249) are all observable without further work.
 5. **Validator invariants:** each BBL in exactly one node and at most one group per layer; every node has at least one observation.
 
+## 6. Mapping tables built
+
+`python -m bor.lineage <dir>` writes eight CSVs (observations, node and identity lineage, node-to-cluster) and `mapping_report.json`. On this dump it reproduces the section 4 figures exactly (113 unmatched nodes, 5,437 multi-identity nodes, 751 straddling, 639 of those tied, 21,405 identities with no node) and adds:
+
+| Measure | Value |
+|---|---|
+| (node, BBL) rows | 171,347, none without a candidate contact |
+| (identity, BBL) pairs | 196,710, all traceable to an HPD contact (0 without) |
+| BBLs with more than one registration tied for first under nlr's ordering | 2,231 |
+| (identity, BBL) pairs on such a tied registration | 2,247 |
+| Distinct observations referenced | 202,840 |
+
+The 2,231 tied BBLs are a wider set than the 1,249 where nlr and WoW pick different registrations: ties exist whether or not the two choices happen to agree. The identity-to-contact SQL mirrors nlr's extraction and is temporary; W2 captures the lineage inside nlr.
+
 ## Not done
 
-- The mapping tables themselves are not built; this is the measurement only.
+- The tables are not wired into `export()` or the release manifest, and base-cluster membership (before the feedback pass) waits on W2.
 - Cluster-level counts come from one run.
 - WoW's rule was read from the source in `~/git-alt/who-owns-what`; I did not check that the dump was built from that exact revision.
 - The measurement script is in the session scratchpad, not the repo.
