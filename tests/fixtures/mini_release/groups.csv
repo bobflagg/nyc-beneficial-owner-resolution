@@ -1,2 +1,2 @@
-layer,group_id,assertion_key,composition,split,building_count,total_building_count
-owner_portfolio,OG-1,mini-0001/owner_portfolio/OG-1,identity,,3,3
+layer,group_id,assertion_key,composition,split,lot_count,total_lot_count
+owner_portfolio,OG-1,mini-0001/owner_portfolio/OG-1,identity,,3,4

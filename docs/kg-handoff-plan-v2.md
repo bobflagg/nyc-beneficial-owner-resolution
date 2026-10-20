@@ -1,6 +1,6 @@
 # Plan v2.1: bor release as the handoff to the landlord KG
 
-Status: draft for final review, 2026-10-20. Supersedes the W0–W10 table in `review-request-kg-handoff.md`. v2 was revised after the first review (`kg-handoff-review.md`); v2.1 after the second (`kg-handoff-plan-v2-review.md`). The author has now read KG design notes 0002–0006.
+Status: draft for final review, 2026-10-20. Supersedes the W0–W10 table in `review-request-kg-handoff.md`. v2 was revised after the first review (`kg-handoff-review.md`); v2.1 after the second (`kg-handoff-plan-v2-review.md`); the release contract was then drafted and amended after the KG developer's review (`release-contract-review.md`). The author has now read KG design notes 0002–0007. **Where this plan and `release-contract.md` disagree on table names, columns or vocabularies, the contract wins.**
 
 This plan authorizes nothing by itself. P0 is implemented (branch `p0-shared-identity-context`). The W0 measurements are done (`w0-findings.md`) and the mapping tables are built in `bor.lineage` (branch `w0-mapping-tables`), not yet wired into `export()`. The minimal W8 contract is drafted in [release-contract.md](release-contract.md) (schemas in `bor.release_schema`, validator in `bor.release_validate`, synthetic fixture in `tests/fixtures/mini_release/`). The W5 spike has not been run.
 
@@ -31,7 +31,7 @@ All four findings and the sequencing, dirty-tree and decision recommendations ar
 
 | Review point | Change | Notes |
 |---|---|---|
-| 1. Identity → observation chain (P1) | Added `identity_observations`, `identity_clusters` (base and final, with membership) and `decision_support` to the release | **Addition:** identity ids are NLR's content-hash `unique_id` (md5 of contact kind, name and address fields, `splink_source.py:125`), not build-local ids. KG note 0006 uses the same formula for its recorded-party nodes, so identity references need no translation. To be verified in W0, including that Splink runs on person contacts only |
+| 1. Identity → observation chain (P1) | Added `identity_observations`, `identity_clusters` (base and final, with membership) and `decision_support` to the release | **Superseded by the KG review:** identity ids in the release are run-local opaque ids (`I0000001`), not NLR's md5 `unique_id`, which hashes a person's name and address. The KG derives its own recorded-party key from the observations |
 | 2. Namespace and assertion keys (P2) | Shared objects (observations, nodes, identity decisions) keyed by run plus typed local id; layer-specific objects also keyed by layer; every foreign key states its scope; `run_id` inherited from the manifest. Added an immutable `assertion_key` per membership and supporting link | **Narrowed:** note 0005 gives the KG a stable `link_id` for Type II links. bor ships `assertion_key` as the input to the loader's derivation. Whether the KG stores evidence as list properties, per-edge relationships or promoted nodes is the KG's decision (note 0005 lists richer BOR evidence as a promotion trigger) |
 | 3. Metrics (P2) | `method_metrics` keeps `precision`, lower and upper bounds, confidence level, sample size, evaluation unit, estimator and stratum or weight references, adjudication status, and null-with-reason | My v2 dropped the values when rewriting the table; restored |
 | 4. Full graph vs forest (P2) | The manifest declares each artifact `complete` or `representative`, and the validator checks the declaration. The choice is made after the W5 size spike | Exported weights reproduce the actual `_collapse` input as-is. Any change to weighting is a separate, evaluated algorithm change |
@@ -40,6 +40,26 @@ All four findings and the sequencing, dirty-tree and decision recommendations ar
 | Deed rule (note 0004) | Manifest records bor's actual deed-selection rule and version | **Addition:** bor selects `doctype ILIKE '%DEED%'`, which includes `DEED COR` (an index correction note 0004 says is never a transfer) and `DEED, TS` (timeshare). I propose a non-blocking spike counting these among qualifying deeds. Changing the rule is a separate algorithm change |
 | Dirty-tree flag | Frozen release records a source-tree hash that includes the nlr changes used; a tagged release requires a clean tree | |
 | Masked addresses | Snapshot-scoped crosswalk: masked address id → nodes → source observations the KG already loads. No address strings or name hashes required | Works because of `node_observations`; the KG reconciles its own mail-drop list against observations |
+
+### From v2.1 to v2.2 (KG review of the contract)
+
+All eleven findings are accepted; `release-contract.md` and `bor.release_schema` carry the detail.
+
+| Finding | Change |
+|---|---|
+| 1. Missing reasons and rules | Codes added for the vetoes, the shared-company guards, the three deed-gate clauses, the two address masks and a below-threshold pair; `rule` is now a controlled vocabulary. Rejected candidates recorded by default: gate-blocked pairs only (the review's answer 3), so the fixture's rejected pair is a veto, not a low score |
+| 2. No building-level co-op reason | `coop_condo_excluded` added; `bbl_status` gains `excluded_from_footprint`; the two co-op rules (contact description, building class) are named separately |
+| 3. Policy events had no stage | `owner_portfolio.group_size` and `owner_portfolio.footprint` added |
+| 4. Primary reason undefined | Precedence stated (coverage, method input, policy, eligibility, no linkage); the validator checks it |
+| 5. Snapshot match unverifiable | Manifest gains `pluto_snapshot_id`, per-table `source_tables` fingerprints, `deed_selection_rule` and `normalizer_versions`; `snapshot_id` takes the KG's form |
+| 6. `k` not reproducible | Normative join is (registration, contact id); `observations.pair_variants` flags the 0.08% ambiguous pairs; the digest stays internal |
+| 7. Coverage vs method input | Fifth top-level reason `outside_method_input` (KG note 0007, proposed) |
+| 8. `building_count` counts BBLs | Renamed `lot_count`, `total_lot_count` |
+| 9. Tied nodes | Contract requires a witness step through a tied node to carry the caveat |
+| 10. Stale text | Fixed here; BBL-once-per-node added to the validator; base clusters marked as waiting on W2 |
+| 11. `assertion_key` | KG forms `link_id` as `<assertion_key>#<bbl>` |
+
+One addition beyond the review: Splink's *cluster* ids are also derived from the name-and-address hash, so clusters are relabelled opaquely as well as identities.
 
 ## 3. Contract principles
 
@@ -62,13 +82,13 @@ All four findings and the sequencing, dirty-tree and decision recommendations ar
 | `manifest.json` | Run id, effective as-of date (replaces `CURRENT_DATE`), immutable snapshot or source hashes, bor and nlr revisions, source-tree hash (including nlr changes used), dependency lock digest, model and settings artifacts, seeds where applicable, normalizer and rule versions (including the deed-selection rule), every constant, output checksums, schema version, and a complete/representative declaration per artifact |
 | `observations` | Opaque observation key, registration id, BBL, contact selector, role |
 | `node_observations` | LWC node → observations, from the full grouping tuple; unmatched and ambiguous rows reported |
-| `identity_observations` | Identity (NLR `unique_id`) → the contact observations it aggregates |
+| `identity_observations` | Identity (opaque id) → the contact observations it aggregates |
 | `identity_clusters` | Base and final cluster membership by identity id, with the cluster each feedback merge joined |
 | `identity_decisions` | One row per real decision, endpoints are identity ids or preserved base clusters: scored base pair (score, gate outcomes), feedback merge event (supporting shared-company registrations), curated owner, registered-LLC match (PLUTO BBL and snapshot as source) |
 | `decision_support` | Decision → the exact observations or source records that support it |
 | `identity_node_map` | Identity cluster → node: selected assignment, alternatives and tie rule (distinguished), so a node attached to several identities does not imply every observation supports every edge |
 | `evidence_items` / `evidence_members` | Multi-member assertions: deed bundles (per parcel role: still held vs transferred onward, original and latest document ids, gate values), plus references to identity decisions |
-| `groups`, `group_members` | Owner Portfolio groups with `assertion_key`; a BBL may be in more than one group, so membership is a node partition and BBL listing is separate |
+| `groups`, `group_members` | Owner Portfolio groups with `assertion_key`; a node is in at most one group per layer, and W0 measured that each BBL is in exactly one node, so each BBL is in at most one group per layer; the validator checks it |
 | `group_witness` | Per group: step, actual endpoint pair, evidence or decision reference, deterministic selection order |
 | `network_edges` | Accepted pre-split graph with name, address and identity weight contributions, reproducing the actual `_collapse` input. Complete or representative per the manifest declaration |
 | `network_membership`, `split_attempts` | Node → original component → final community; recursive split and unsuccessful attempts |

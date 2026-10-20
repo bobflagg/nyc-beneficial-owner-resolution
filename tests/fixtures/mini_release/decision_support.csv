@@ -5,3 +5,8 @@ d2,observation,101:10103:0,bridging_company
 d2,observation,103:10303:0,bridging_company
 d3,observation,104:10405:0,endpoint_a
 d3,observation,103:10305:0,endpoint_b
+d4,observation,103:10305:0,endpoint_a
+d4,observation,105:10505:0,endpoint_b
+d6,observation,106:10605:0,endpoint_a
+d6,observation,107:10705:0,endpoint_b
+d5,bbl,3000010005,excluded_lot

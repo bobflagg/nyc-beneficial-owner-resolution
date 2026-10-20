@@ -16,8 +16,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from bor.release_schema import (ARTIFACT_KINDS, MANIFEST_REQUIRED, REASON_CODES, SCHEMA_VERSION,
-                                TABLES, Table)
+from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
+                                REASON_CODES, SCHEMA_VERSION, SOURCE_TABLE_FIELDS, TABLES, Table)
 
 
 @dataclass(frozen=True)
@@ -136,11 +136,22 @@ def _missing_from(values: pd.Series, target: pd.Series) -> int:
     return int((~values.dropna().isin(set(target.dropna()))).sum())
 
 
+def _inv_observations(T):
+    o = T.get("observations")
+    if o is None:
+        return []
+    n = int((o["k"] >= o["pair_variants"]).sum())
+    return [Violation("observations", "k", "k must be below pair_variants", n)] if n else []
+
+
 def _inv_node_observations(T):
     df = T.get("node_observations")
     if df is None:
         return []
     v = []
+    n = int(df["bbl"].duplicated().sum())
+    if n:
+        v.append(Violation("node_observations", "bbl_once", "a BBL must belong to exactly one node", n))
     amb = df["ambiguous"].fillna(False).astype(bool)
     n = int((amb & (df["selected_observation_id"].notna() | (df["n_candidates"] <= 1))).sum())
     if n:
@@ -223,12 +234,23 @@ def _inv_decision_events(T):
         v.append(Violation("decision_events", "reason", "accepted events carry no reason; every other outcome has one", n))
     for side in ("subject", "counterpart"):
         for typ, (tbl, col) in _SUBJECT_TARGETS.items():
+            if typ == "group":
+                continue                      # checked below: dropped groups are not published
             if tbl not in T or col not in T[tbl].columns:
                 continue
             ids = de.loc[de[f"{side}_type"] == typ, f"{side}_id"]
             m = _missing_from(ids.astype(str), T[tbl][col].astype(str))
             if m:
                 v.append(Violation("decision_events", "reference", f"{side} {typ} not in {tbl}.{col}", m))
+    if "groups" in T:
+        grp = de[(de["subject_type"] == "group")]
+        published = set(T["groups"]["group_id"].astype(str))
+        dropped = grp["outcome"] == "dropped"
+        n = int((dropped & grp["subject_id"].astype(str).isin(published)).sum()
+                + (~dropped & ~grp["subject_id"].astype(str).isin(published)).sum())
+        if n:
+            v.append(Violation("decision_events", "reference",
+                               "a group subject is in groups unless its outcome is dropped", n))
     if "identity_clusters" in T:
         m = _missing_from(de["cluster_id"], T["identity_clusters"]["cluster_id"])
         if m:
@@ -251,9 +273,9 @@ def _inv_groups(T):
         rental = gb[gb["rental"].fillna(False).astype(bool)].groupby(["layer", "group_id"]).size().rename("r")
         total = gb.groupby(["layer", "group_id"]).size().rename("t")
         m = g.set_index(["layer", "group_id"]).join(rental).join(total)
-        n = int(((m["r"].fillna(0) != m["building_count"]) | (m["t"].fillna(0) != m["total_building_count"])).sum())
+        n = int(((m["r"].fillna(0) != m["lot_count"]) | (m["t"].fillna(0) != m["total_lot_count"])).sum())
         if n:
-            v.append(Violation("groups", "counts", "building counts disagree with group_bbls", n))
+            v.append(Violation("groups", "counts", "lot counts disagree with group_bbls", n))
     keys = [("groups", g), ("group_members", gm), ("group_witness", T.get("group_witness"))]
     seen = pd.concat([d["assertion_key"] for _, d in keys if d is not None], ignore_index=True) \
         if any(d is not None for _, d in keys) else pd.Series(dtype=str)
@@ -304,22 +326,64 @@ def _inv_witness(T):
     return v
 
 
+_RANK = {code: (PRECEDENCE.index(top), i) for i, (code, (top, _)) in enumerate(REASON_CODES.items())}
+
+
 def _inv_bbl_status(T):
     s = T.get("bbl_status")
     if s is None:
         return []
     v = []
     ing = s["status"] == "in_group"
+    exf = s["status"] == "excluded_from_footprint"
     n = int((ing & (s["group_id"].isna() | s["reason_code"].notna())).sum())
     if n:
         v.append(Violation("bbl_status", "status", "in_group rows need a group and no reason", n))
-    n = int((~ing & (s["reason_code"].isna() | s["group_id"].notna())).sum())
+    n = int((exf & (s["group_id"].isna() | s["reason_code"].isna())).sum())
+    if n:
+        v.append(Violation("bbl_status", "status", "excluded_from_footprint rows need a group and a reason", n))
+    nig = s["status"] == "not_in_group"
+    n = int((nig & (s["reason_code"].isna() | s["group_id"].notna())).sum())
     if n:
         v.append(Violation("bbl_status", "status", "not_in_group rows need a reason and no group", n))
     top = s["reason_code"].map(lambda c: REASON_CODES[c][0] if c in REASON_CODES else pd.NA)
     n = int((s["reason_code"].notna() & (top != s["top_level_reason"])).sum())
     if n:
         v.append(Violation("bbl_status", "reason", "top_level_reason disagrees with reason_code", n))
+    gb = T.get("group_bbls")
+    if gb is not None:
+        non_rental = gb.loc[~gb["rental"].fillna(True).astype(bool), ["layer", "bbl"]].assign(_nr=True)
+        m = s.merge(non_rental, on=["layer", "bbl"], how="left")
+        n = int((exf.reset_index(drop=True) != m["_nr"].fillna(False).astype(bool)).sum())
+        if n:
+            v.append(Violation("bbl_status", "footprint",
+                               "excluded_from_footprint must match group_bbls.rental = false", n))
+    de, nobs = T.get("decision_events"), T.get("node_observations")
+    if de is not None and nobs is not None:
+        ev = de[de["outcome"] != "accepted"].dropna(subset=["reason_code"]).copy()
+        ev["rank"] = ev["reason_code"].map(_RANK)
+        node_bbl = nobs[["node_id", "bbl"]].assign(node_id=lambda d: d["node_id"].astype(str))
+        parts = [ev[ev["subject_type"] == "bbl"].rename(columns={"subject_id": "bbl"})[["layer", "bbl", "rank"]],
+                 ev[ev["subject_type"] == "node"].merge(node_bbl, left_on="subject_id", right_on="node_id")[["layer", "bbl", "rank"]]]
+        nim = T.get("node_identity_matches")
+        if nim is not None:
+            for side in ("subject", "counterpart"):
+                idev = ev[ev[f"{side}_type"] == "identity"]
+                parts.append(idev.merge(nim[["identity_id", "bbl"]], left_on=f"{side}_id", right_on="identity_id")
+                             [["layer", "bbl", "rank"]])
+        grp = s.dropna(subset=["group_id"])[["layer", "bbl", "group_id"]]
+        parts.append(ev[ev["subject_type"] == "group"].merge(grp, left_on=["layer", "subject_id"], right_on=["layer", "group_id"])[["layer", "bbl", "rank"]])
+        lot_ev = pd.concat(parts, ignore_index=True)
+        # identity-layer events (vetoes, guards) bear on both layers
+        ident = lot_ev[lot_ev["layer"] == "identity"].drop(columns="layer")
+        best = pd.concat([lot_ev[lot_ev["layer"] != "identity"], *[ident.assign(layer=l) for l in s["layer"].unique()]])
+        best = best.groupby(["layer", "bbl"])["rank"].min().rename("best").reset_index()
+        m = s.dropna(subset=["reason_code"]).assign(rank=lambda d: d["reason_code"].map(_RANK)).merge(
+            best, on=["layer", "bbl"])
+        n = int((m["rank"] > m["best"]).sum())
+        if n:
+            v.append(Violation("bbl_status", "precedence",
+                               "reason_code must be the highest-precedence reason among the lot's events", n))
     return v
 
 
@@ -339,7 +403,7 @@ def _inv_metrics(T):
     return v
 
 
-_INVARIANTS = (_inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
+_INVARIANTS = (_inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
                _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
 
 
@@ -351,6 +415,13 @@ def check_manifest(manifest: dict | None, path: str | None = None) -> list[Viola
     v = [Violation("manifest", "field", f"missing {k}") for k in MANIFEST_REQUIRED if k not in manifest]
     if manifest.get("schema_version") not in (None, SCHEMA_VERSION):
         v.append(Violation("manifest", "schema_version", f"{manifest['schema_version']} != {SCHEMA_VERSION}"))
+    for name, entry in (manifest.get("source_tables") or {}).items():
+        miss = [f for f in SOURCE_TABLE_FIELDS if not isinstance(entry, dict) or f not in entry]
+        if miss:
+            v.append(Violation("manifest", "source_tables", f"{name} lacks {miss}"))
+    rule = manifest.get("deed_selection_rule")
+    if rule is not None and (not isinstance(rule, dict) or any(f not in rule for f in DEED_RULE_FIELDS)):
+        v.append(Violation("manifest", "deed_selection_rule", f"needs {list(DEED_RULE_FIELDS)}"))
     for name, kind in (manifest.get("artifacts") or {}).items():
         if name not in TABLES:
             v.append(Violation("manifest", "artifacts", f"unknown artifact {name}"))

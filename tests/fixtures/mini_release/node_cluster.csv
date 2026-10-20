@@ -1,5 +1,8 @@
 node_id,cluster_id,n_clusters,tied
-1,K1,1,False
-2,K1,1,False
-3,K1,1,False
-4,K2,1,False
+1,C0000001,1,False
+2,C0000001,1,False
+3,C0000001,1,False
+4,C0000002,1,False
+5,C0000001,1,False
+6,C0000003,1,False
+7,C0000003,1,False

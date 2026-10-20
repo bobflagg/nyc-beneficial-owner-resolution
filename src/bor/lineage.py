@@ -18,11 +18,18 @@ Tables (no names; HPD ids and BBLs only):
 * ``identity_clusters``       — final cluster of each identity.
 * ``observations``            — every observation referenced above.
 
+**Opaque ids.** nlr's identity id (and the cluster ids Splink derives from it) is an md5 of a
+person's name and address. The release uses run-local opaque ids instead (``I0000001`` for
+identities, ``C0000001`` for clusters), numbered in sorted order of the underlying value, so the
+same population always gets the same ids and W2 can reproduce them with :func:`opaque_id_maps`.
+The KG derives its own identity key from the observations (KG notes 0006 and 0007).
+
 **Observation id** ``"{registrationid}:{registrationcontactid}:{k}"``. HPD's contact id is not
 unique (1,028 repeated pairs, 616 with differing content), so ``k`` is the 0-based rank of the
 row's content digest among the distinct contents sharing the (registration, contact id) pair; it
 is 0 for the 99.9% of pairs that are unique. The digest is :data:`DIGEST_SQL`; it is used only to
-number, never exported, so the ids reveal nothing about the contact.
+number, never exported, and is not normative: consumers join on (registration, contact id) and
+treat a pair with ``pair_variants > 1`` as ambiguous, attaching evidence to every row of the pair.
 
 **Identity side is temporary.** nlr's extraction drops contact ids, so ``identity_observations``
 re-derives them with SQL that mirrors nlr's ``EXTRACT_SQL``. Every (identity, bbl) in the
@@ -124,6 +131,23 @@ FROM n
 """
 
 
+# Contact ids that repeat with differing content, over every contact type.
+_PAIR_VARIANTS_SQL = f"""
+SELECT registrationid, registrationcontactid, count(*) AS pair_variants
+FROM (SELECT DISTINCT registrationid, registrationcontactid, type, firstname, middleinitial, lastname,
+             corporationname, businesshousenumber, businessstreetname, businessapartment, businesscity,
+             businessstate, businesszip FROM hpd_contacts) d
+GROUP BY 1, 2 HAVING count(*) > 1
+"""
+
+
+def opaque_id_maps(full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dict, dict]:
+    """``(identity_map, cluster_map)``: nlr ids -> run-local opaque ids, numbered in sorted order."""
+    ident = {u: f"I{i:07d}" for i, u in enumerate(sorted(set(full["unique_id"])), 1)}
+    clus = {c: f"C{i:07d}" for i, c in enumerate(sorted({str(c) for c in clusters["cluster_id"]}), 1)}
+    return ident, clus
+
+
 def observation_id(registrationid, registrationcontactid, k) -> str:
     return f"{int(registrationid)}:{int(registrationcontactid)}:{int(k)}"
 
@@ -204,6 +228,10 @@ def build_mapping(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dic
     parts = observations["observation_id"].str.split(":", expand=True).astype(int)
     observations["registration_id"], observations["registration_contact_id"], observations["k"] = (
         parts[0], parts[1], parts[2])
+    pv = pd.read_sql(_PAIR_VARIANTS_SQL, conn).rename(columns={
+        "registrationid": "registration_id", "registrationcontactid": "registration_contact_id"})
+    observations = observations.merge(pv, on=["registration_id", "registration_contact_id"], how="left")
+    observations["pair_variants"] = observations["pair_variants"].fillna(1).astype(int)
     observations = observations.sort_values("observation_id").reset_index(drop=True)
 
     n_nodes = int(node_cl["node_id"].nunique())
@@ -228,6 +256,12 @@ def build_mapping(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dic
         "identities_without_node": int(len(set(full["unique_id"]) - set(matches["identity_id"]))),
         "observations": len(observations),
     }
+    imap, cmap = opaque_id_maps(full, clusters)
+    ident_obs["identity_id"] = ident_obs["identity_id"].map(imap)
+    matches["identity_id"] = matches["identity_id"].map(imap)
+    ident_cl["identity_id"] = ident_cl["identity_id"].map(imap)
+    for df in (ident_cl, node_cl, node_cl_alt):
+        df["cluster_id"] = df["cluster_id"].map(cmap)
     tables = {
         "observations": observations,
         "node_observations": node_obs,

@@ -20,38 +20,79 @@ SCHEMA_VERSION = "0.1.0"
 LAYERS = ("owner_portfolio", "operational_network")
 DECISION_LAYERS = ("identity",) + LAYERS
 
-# Stages that create links (versioned with SCHEMA_VERSION; extend, never repurpose).
+# Stages (versioned with SCHEMA_VERSION; extend, never repurpose). The link-creating stages, and
+# the group-level policy stages that have no link of their own.
 STAGES = (
     "identity.splink_base", "identity.splink_feedback", "identity.curated", "identity.registered_llc",
     "deed.held_since", "deed.linked_successor",
     "network.name", "network.address",
+    "owner_portfolio.group_size", "owner_portfolio.footprint",
+)
+
+# The rule that produced a decision (controlled; a consumer renders explanations from it).
+# rule_version is a free string naming the version of that rule's definition.
+RULES = (
+    "splink_model", "first_name_veto", "common_name_veto", "shared_company_feedback",
+    "shared_company_guard", "curated_owner_list", "registered_llc_owner_match",
+    "deed_latest_rule", "deed_successor_guard", "deed_hub_cap", "deed_size_range",
+    "institutional_screen", "coop_condo_contact_rule", "coop_condo_building_class_rule",
+    "aggregator_address_mask", "splink_address_evidence_mask", "group_min_size",
+    "group_footprint_rule", "name_edge", "address_edge",
 )
 
 SUBJECT_TYPES = ("identity", "base_cluster", "cluster", "node", "bbl", "address",
                  "deed_document", "parcel", "component", "group")
 OUTCOMES = ("accepted", "rejected", "masked", "excluded", "dropped")
 
-# The four top-level codes of the KG's absence contract, and the detailed codes under them.
-TOP_LEVEL_REASONS = ("no_qualifying_linkage", "excluded_by_policy",
-                     "below_eligibility_rule", "outside_source_coverage")
+# The top-level reasons a lot is absent, in precedence order: when several apply, the earliest
+# stage that removed the lot is the primary reason. The KG's contract names the first four plus
+# outside_method_input (KG design note 0007, proposed).
+TOP_LEVEL_REASONS = ("outside_source_coverage", "outside_method_input", "excluded_by_policy",
+                     "below_eligibility_rule", "no_qualifying_linkage")
+PRECEDENCE = TOP_LEVEL_REASONS
+
 REASON_CODES = {
-    "no_linkage": ("no_qualifying_linkage", "No accepted edge connected the node to another."),
+    # outside source coverage: HPD holds no record
+    "no_registration": ("outside_source_coverage", "No HPD registration for the lot."),
+    # outside method input: the source holds the record but the method did not use it
+    "no_owner_contact": ("outside_method_input",
+                         "Registered, but no qualifying person owner contact (no wow_landlords row)."),
+    "not_latest_registration": ("outside_method_input",
+                                "The contact is on a registration the method did not use."),
+    "unmatched_node": ("outside_method_input", "Node matched no resolved identity."),
+    # excluded by policy
+    "coop_condo_excluded": ("excluded_by_policy",
+                            "Building is a co-op or condo, left out of a surviving group's rental footprint."),
     "coop_condo_dominated": ("excluded_by_policy",
                              "Group dropped: rental buildings are fewer than half its footprint."),
     "institutional_screen": ("excluded_by_policy", "Deed parties screened as institutional or public."),
     "deed_hub_capped": ("excluded_by_policy", "Node on more multi-parcel deeds than the hub cap."),
     "aggregator_address_masked": ("excluded_by_policy",
-                                  "Address shared by more landlords than the aggregator threshold."),
+                                  "Address-edge mask: address shared by more landlords than the threshold."),
+    "address_evidence_masked": ("excluded_by_policy",
+                                "Splink address-evidence mask: address shared by more landlords than the threshold."),
     "curated_exclusion": ("excluded_by_policy", "Curated exclusion (for example a servicer officer)."),
+    # below an eligibility rule
     "deed_parcels_out_of_range": ("below_eligibility_rule", "Deed outside the 2-25 parcel range."),
-    "successor_guard_failed": ("below_eligibility_rule", "Linked-successor guard not satisfied."),
+    "deed_not_latest": ("below_eligibility_rule",
+                        "Staleness guard: the joint deed is no longer the parcel's latest deed."),
+    "successor_not_shell": ("below_eligibility_rule",
+                            "Linked-successor guard: the successor holds more buildings than the shell cap."),
+    "successor_transfer_not_nominal": ("below_eligibility_rule",
+                                       "Linked-successor guard: the onward transfer is not at nominal consideration."),
+    "first_name_veto": ("below_eligibility_rule", "Pair blocked by the first-name veto."),
+    "common_name_veto": ("below_eligibility_rule", "Pair blocked by the common-name veto."),
+    "shared_company_name_not_rare": ("below_eligibility_rule",
+                                     "Shared-company pass: the name is not rare enough."),
+    "shared_company_first_name_conflict": ("below_eligibility_rule",
+                                           "Shared-company pass: first names are not compatible."),
+    "shared_company_degree_cap": ("below_eligibility_rule",
+                                  "Shared-company pass: too many contacts under the company."),
     "group_below_min_size": ("below_eligibility_rule", "Component smaller than the minimum group size."),
-    "no_registration": ("outside_source_coverage", "No HPD registration for the lot."),
-    "no_owner_contact": ("outside_source_coverage",
-                         "Registered, but no qualifying person owner contact (no wow_landlords row)."),
-    "not_latest_registration": ("outside_source_coverage",
-                                "The contact is on a registration the method did not use."),
-    "unmatched_node": ("outside_source_coverage", "Node matched no resolved identity."),
+    # no qualifying linkage
+    "no_linkage": ("no_qualifying_linkage", "No accepted edge connected the node to another."),
+    "pair_below_threshold": ("no_qualifying_linkage",
+                             "A scored pair fell below the threshold (recorded only if a release opts in)."),
 }
 
 EVIDENCE_ROLES = ("held_under_joint_deed", "transferred_onward")
@@ -98,8 +139,10 @@ _TABLES = [
     # ---- lineage: nodes and identities back to HPD records (implemented, bor.lineage) -----------
     Table("observations", "implemented", ("observation_id",), (
         _c("observation_id"), _c("registration_id", "int"), _c("registration_contact_id", "int"),
-        _c("k", "int")),
-        description="HPD contact observations referenced elsewhere. id = registration:contact:k."),
+        _c("k", "int"), _c("pair_variants", "int")),
+        description="HPD contact observations referenced elsewhere. id = registration:contact:k. "
+                    "The join key is (registration_id, registration_contact_id); where pair_variants > 1 "
+                    "the pair is ambiguous and evidence attaches to every row of the pair."),
     Table("node_observations", "implemented", ("node_id", "bbl"), (
         _c("node_id", "int"), _c("bbl"), _c("registration_id", "int"), _c("n_candidates", "int"),
         _c("selected_observation_id", nullable=True), _c("ambiguous", "bool")),
@@ -135,7 +178,7 @@ _TABLES = [
         _c("subject_type", enum=SUBJECT_TYPES), _c("subject_id"),
         _c("counterpart_type", nullable=True, enum=SUBJECT_TYPES), _c("counterpart_id", nullable=True),
         _c("outcome", enum=OUTCOMES), _c("reason_code", nullable=True, enum=tuple(REASON_CODES)),
-        _c("rule"), _c("rule_version"), _c("score", "float", nullable=True),
+        _c("rule", enum=RULES), _c("rule_version"), _c("score", "float", nullable=True),
         _c("threshold", "float", nullable=True), _c("cluster_id", nullable=True),
         _c("detail", nullable=True)),
         description="One row per decision at the grain where a rule ran: accepted links and "
@@ -161,8 +204,10 @@ _TABLES = [
         _c("layer", enum=LAYERS), _c("group_id"), _c("assertion_key"),
         _c("composition", nullable=True, enum=("identity", "deed_only", "deed_bridged")),
         _c("split", nullable=True, enum=("wcc", "louvain")),
-        _c("building_count", "int"), _c("total_building_count", "int")),
-        description="Owner Portfolio groups and Operational Network portfolios."),
+        _c("lot_count", "int"), _c("total_lot_count", "int")),
+        description="Owner Portfolio groups and Operational Network portfolios. Counting unit: tax lots "
+                    "(BBLs), not buildings. lot_count is the rental footprint, total_lot_count includes "
+                    "co-op/condo lots."),
     Table("group_members", "planned", ("layer", "node_id"), (
         _c("layer", enum=LAYERS), _c("group_id"), _c("node_id", "int"), _c("assertion_key")),
         fks=(_fk(("layer", "group_id"), "groups"),),
@@ -196,10 +241,14 @@ _TABLES = [
 
     # ---- absence, masking, metrics (planned, W6b/W7) --------------------------------------------
     Table("bbl_status", "planned", ("layer", "bbl"), (
-        _c("layer", enum=LAYERS), _c("bbl"), _c("status", enum=("in_group", "not_in_group")),
+        _c("layer", enum=LAYERS), _c("bbl"),
+        _c("status", enum=("in_group", "not_in_group", "excluded_from_footprint")),
         _c("group_id", nullable=True), _c("reason_code", nullable=True, enum=tuple(REASON_CODES)),
         _c("top_level_reason", nullable=True, enum=TOP_LEVEL_REASONS)),
-        description="Summary over the PLUTO-snapshot lot universe; a missing row means nothing."),
+        description="Summary over the PLUTO-snapshot lot universe; a missing row means nothing. "
+                    "excluded_from_footprint: in a published group but left out of its rental footprint "
+                    "(group_bbls.rental = false); it keeps its group_id and carries a reason. "
+                    "reason_code is the primary reason, by PRECEDENCE."),
     Table("masked_addresses", "planned", ("address_id",), (
         _c("address_id"), _c("method"), _c("normalizer_version"), _c("degree", "int"),
         _c("degree_unit"), _c("threshold", "int"), _c("decision", enum=("masked",))),
@@ -226,4 +275,11 @@ MANIFEST_REQUIRED = (
     "schema_version", "run_id", "snapshot_id", "effective_date", "bor_revision", "nlr_revision",
     "source_tree_hash", "dependency_lock_digest", "threshold", "parameters", "artifacts",
     "stage_vocabulary_version", "reason_vocabulary_version", "output_checksums",
+    "pluto_snapshot_id", "source_tables", "deed_selection_rule", "normalizer_versions",
 )
+
+# Each entry of manifest["source_tables"] (table name -> object). The KG compares these with its
+# own load and refuses a mismatch. snapshot_id takes the form the KG defines (KG tech-stack, open
+# decision); the manifest repeats it exactly. The fingerprint method is fixed in W1.
+SOURCE_TABLE_FIELDS = ("row_count", "fingerprint", "fingerprint_method")
+DEED_RULE_FIELDS = ("rule", "version")

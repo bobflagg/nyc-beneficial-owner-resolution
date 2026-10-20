@@ -11,6 +11,42 @@
   "parameters": {
     "splink_threshold": 0.999
   },
+  "pluto_snapshot_id": "fixture-pluto",
+  "source_tables": {
+    "hpd_contacts": {
+      "row_count": 0,
+      "fingerprint": "fixture",
+      "fingerprint_method": "fixture"
+    },
+    "hpd_registrations": {
+      "row_count": 0,
+      "fingerprint": "fixture",
+      "fingerprint_method": "fixture"
+    },
+    "wow_landlords": {
+      "row_count": 0,
+      "fingerprint": "fixture",
+      "fingerprint_method": "fixture"
+    },
+    "real_property_master": {
+      "row_count": 0,
+      "fingerprint": "fixture",
+      "fingerprint_method": "fixture"
+    },
+    "pluto_latest": {
+      "row_count": 0,
+      "fingerprint": "fixture",
+      "fingerprint_method": "fixture"
+    }
+  },
+  "deed_selection_rule": {
+    "rule": "doctype ILIKE '%DEED%'",
+    "version": "fixture"
+  },
+  "normalizer_versions": {
+    "business_address": "fixture",
+    "owner_name": "fixture"
+  },
   "artifacts": {
     "group_witness": "representative",
     "observations": "complete",
@@ -19,20 +55,20 @@
   "stage_vocabulary_version": "0.1.0",
   "reason_vocabulary_version": "0.1.0",
   "output_checksums": {
-    "bbl_status.csv": "4cdf1752a2386bd1f316da9b70803ab2cdc90290a1ef3b8d5bb7fe84c7b3c6ce",
-    "decision_events.csv": "92806deea312d5b6bbca52c8133194056e116ef2d87475e677ea9d7ca196a230",
-    "decision_support.csv": "754a3f6ef14ed0f9b964b562663bb5862f2c1e1c7c6149bfec85d14b7c72c32c",
-    "group_bbls.csv": "f6d1add80353b8611ffcf3d251737d82126f372692aae55cf4c69353058b07cd",
-    "group_members.csv": "efea6e62c72ceb54cceb928de907edd6a44428208c38884ce31f8ce6b6357743",
-    "group_witness.csv": "3042d41fa575553ef62aea7147c0b6f8996e545174acac5683ac9db5a4327a56",
-    "groups.csv": "87a45e9990a325ce59271f6555ac1fd22ec6748d2b8af6bf01512ee1eb98fef1",
-    "identity_clusters.csv": "2050a1cf723968f9a81e9dce6adce8eba65f403321e0016a5275ee174b7d69bf",
-    "identity_observations.csv": "298711f062a93d4e96192579bb0a934b80a69c552a4060950282336ae316d20f",
+    "bbl_status.csv": "6aa2c0de6f8761e287d6a19f0cecafa4fe5e9e25c182744f8c1e5d13a155d3e0",
+    "decision_events.csv": "65aa41afd9cd15e49e0f6c04a0d05e88292528dd8524179a618aaf74fd609b12",
+    "decision_support.csv": "7b70f26b510d3024b8032db9b9f0165e101df40227f2a24c13ac79ab10870241",
+    "group_bbls.csv": "fc2e39eb67b76abc034c69b2de39d893a2bd834075a30c48e57f89b2bd1123bc",
+    "group_members.csv": "533ce328be230dcd6272093a91e9bc10ede9832f5bf3f4977a599fb84665f318",
+    "group_witness.csv": "b03992e6e31de004f10ffdb253747bd87e0664bc6efb54789ed5c10f35690da5",
+    "groups.csv": "75ba4d700b885e2e18cb3e333250aed7893c9b2fd60067781e5d6c0f0783035d",
+    "identity_clusters.csv": "9198e58f9d07bc2af198462fba9371977d3df8ec2dc581550c6309e7e67f8d75",
+    "identity_observations.csv": "e84bbe375509e8410c7f6d48ec6421e3f12985a761d311265885b1dca4b1b592",
     "method_metrics.csv": "a8233efd982f34ea3ee2336e9eaef5cae971b542be44c4fadfdaf113ccd374b7",
-    "node_cluster.csv": "4dfb27fa67cb43616357c06f8433f4bebdebd46f625f77c817eeef9b44dad40c",
-    "node_identity_matches.csv": "7235acdc67fc9ece034040a1e2326ca146ec1d6988705973c7252fa1ab065cb4",
-    "node_observations.csv": "b1b43f70eeb5e3a626476007f50773ae46de3bd516aa62671ee0ac6aff8873c3",
-    "observations.csv": "96da9da9857c400edc2d398b04756c39078b64dd2375f019332cba9360682f29"
+    "node_cluster.csv": "650a24682f1fdebb478282add8b0380302e1d8cfeef2f7e0c436394396d9f994",
+    "node_identity_matches.csv": "a4d8192d9ad9140a0c49bd76a234c49dc63216245bf87f88c26c67801c9585f6",
+    "node_observations.csv": "82eda5c36c6f031c4026aebbc209d6436738e5c3921f20e7e208b29e538bc3a5",
+    "observations.csv": "b80a94ac5cc815f4a390240322d5f291be71fa18c33ec18278601b924ab2ebaa"
   },
   "note": "Synthetic fixture for the release contract. Not real data."
 }
