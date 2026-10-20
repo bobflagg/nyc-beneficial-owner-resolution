@@ -2,7 +2,7 @@
 
 Status: draft for final review, 2026-10-20. Supersedes the W0–W10 table in `review-request-kg-handoff.md`. v2 was revised after the first review (`kg-handoff-review.md`); v2.1 after the second (`kg-handoff-plan-v2-review.md`). The author has now read KG design notes 0002–0006.
 
-This plan authorizes nothing by itself. P0 is implemented (branch `p0-shared-identity-context`). The W0 measurements are done (`w0-findings.md`) but the mapping tables are not built. The W5 spike has not been run.
+This plan authorizes nothing by itself. P0 is implemented (branch `p0-shared-identity-context`). The W0 measurements are done (`w0-findings.md`) and the mapping tables are built in `bor.lineage` (branch `w0-mapping-tables`), not yet wired into `export()`. The W5 spike has not been run.
 
 ## 1. Problem
 
@@ -115,7 +115,7 @@ A frozen release is valid only when the KG loads the matching source snapshot. A
 
 - W2 reaches into nlr: a new nlr release and a new pin (currently v0.1.0). Approved in scope; version chosen after a compatibility assessment.
 - bor's copy of the nlr pipeline (`_resolve`, `_stratified_train`) has not been diffed line by line against `owner_index`; the parity check in W2 is what establishes that removing it changes nothing. The F12 exclusion is the one known difference.
-- nlr extraction drops the contact id, but `hpd_contacts.registrationcontactid` exists; it is not unique (1,028 repeated pairs), so the observation key includes a content hash (W0). Splink runs on person contacts only, so corporate links come from the registered-LLC and deed stages.
+- nlr extraction drops the contact id, but `hpd_contacts.registrationcontactid` exists; it is not unique (1,028 repeated pairs), so the observation id carries a rank `k` over differing contents (W0; no hash is exported). Splink runs on person contacts only, so corporate links come from the registered-LLC and deed stages.
 - Pre-split graph size is unmeasured; storage format and the complete/representative declaration follow from it.
 - `_collapse` sums parallel and possibly mutual entries. Exports will reproduce it as-is; whether that double-counts is an audit question for a separate change.
 - W0 measured: each BBL is in exactly one node, so it is in at most one group per layer. 751 nodes (0.63%) straddle several clusters and 639 of those are tied; the tie rule is arbitrary and must be flagged in the release.
