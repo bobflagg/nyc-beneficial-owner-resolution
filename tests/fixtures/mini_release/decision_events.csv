@@ -1,0 +1,4 @@
+decision_id,layer,stage,subject_type,subject_id,counterpart_type,counterpart_id,outcome,reason_code,rule,rule_version,score,threshold,cluster_id,detail
+d1,identity,identity.splink_base,identity,ident-a,identity,ident-b,accepted,,splink-model,fixture-0,0.9995,0.999,K1,
+d2,identity,identity.splink_feedback,base_cluster,bc-1,base_cluster,bc-2,accepted,,shared-company-feedback,fixture-0,,,K1,shared private company; degree cap passed
+d3,identity,identity.splink_base,identity,ident-d,identity,ident-c,rejected,no_linkage,splink-model,fixture-0,0.62,0.999,,scored below threshold

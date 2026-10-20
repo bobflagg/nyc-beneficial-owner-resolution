@@ -1,0 +1,5 @@
+layer,bbl,status,group_id,reason_code,top_level_reason
+owner_portfolio,3000010001,in_group,OG-1,,
+owner_portfolio,3000010002,in_group,OG-1,,
+owner_portfolio,3000010003,in_group,OG-1,,
+owner_portfolio,3000010004,not_in_group,,no_linkage,no_qualifying_linkage

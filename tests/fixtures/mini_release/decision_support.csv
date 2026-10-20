@@ -1,0 +1,7 @@
+decision_id,support_type,support_id,role
+d1,observation,101:10105:0,endpoint_a
+d1,observation,102:10205:0,endpoint_b
+d2,observation,101:10103:0,bridging_company
+d2,observation,103:10303:0,bridging_company
+d3,observation,104:10405:0,endpoint_a
+d3,observation,103:10305:0,endpoint_b

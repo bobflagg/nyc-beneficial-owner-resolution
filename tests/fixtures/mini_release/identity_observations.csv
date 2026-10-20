@@ -1,0 +1,5 @@
+identity_id,bbl,observation_id,tied_registration
+ident-a,3000010001,101:10105:0,False
+ident-b,3000010002,102:10205:0,False
+ident-c,3000010003,103:10305:0,False
+ident-d,3000010004,104:10405:0,False

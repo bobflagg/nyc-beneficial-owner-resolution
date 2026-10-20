@@ -1,0 +1,5 @@
+node_id,cluster_id,n_clusters,tied
+1,K1,1,False
+2,K1,1,False
+3,K1,1,False
+4,K2,1,False

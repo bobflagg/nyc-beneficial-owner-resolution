@@ -1,0 +1,407 @@
+"""Validate a release directory (or in-memory tables) against :mod:`bor.release_schema`.
+
+    uv run python -m bor.release_validate ./release
+
+Checks, in order: columns, types, nullability, enums, keys, foreign keys, then the cross-table
+invariants the contract promises (witness trees, reason consistency, node/cluster agreement, ...).
+Tables that are absent are skipped; a table whose foreign-key parent is absent is an error.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import sys
+from dataclasses import dataclass
+
+import pandas as pd
+
+from bor.release_schema import (ARTIFACT_KINDS, MANIFEST_REQUIRED, REASON_CODES, SCHEMA_VERSION,
+                                TABLES, Table)
+
+
+@dataclass(frozen=True)
+class Violation:
+    table: str
+    check: str
+    message: str
+    count: int = 1
+    severity: str = "error"
+
+    def __str__(self) -> str:
+        return f"[{self.severity}] {self.table}: {self.check}: {self.message} ({self.count})"
+
+
+_TRUE = {"true", "1", "t", "yes"}
+_FALSE = {"false", "0", "f", "no"}
+
+
+# ---- reading -------------------------------------------------------------------------------------
+
+def read_release(path: str) -> tuple[dict[str, pd.DataFrame], dict | None]:
+    """Read every known ``<table>.csv`` in ``path`` as strings (so ids keep leading zeros), and
+    ``manifest.json`` if present."""
+    tables = {}
+    for name in TABLES:
+        f = os.path.join(path, f"{name}.csv")
+        if os.path.exists(f):
+            tables[name] = pd.read_csv(f, dtype=str, keep_default_na=False, na_values=[""])
+    mf = os.path.join(path, "manifest.json")
+    manifest = json.load(open(mf)) if os.path.exists(mf) else None
+    return tables, manifest
+
+
+# ---- per-table checks ----------------------------------------------------------------------------
+
+def _coerce(df: pd.DataFrame, t: Table) -> tuple[pd.DataFrame, list[Violation]]:
+    out, bad = df.copy(), []
+    for c in t.columns:
+        if c.name not in out.columns:
+            continue
+        col = out[c.name]
+        if c.type in ("int", "float"):
+            num = pd.to_numeric(col, errors="coerce")
+            invalid = int((col.notna() & num.isna()).sum())
+            if c.type == "int":
+                frac = int((num.notna() & (num != num.round())).sum())
+                invalid += frac
+                num = num.round().astype("Int64")
+            if invalid:
+                bad.append(Violation(t.name, "type", f"{c.name}: {invalid} values are not {c.type}", invalid))
+            out[c.name] = num
+        elif c.type == "bool":
+            if col.dtype == bool or str(col.dtype) == "boolean":
+                continue
+            low = col.astype("string").str.lower()
+            mapped = low.map(lambda v: True if v in _TRUE else (False if v in _FALSE else pd.NA))
+            invalid = int((col.notna() & mapped.isna()).sum())
+            if invalid:
+                bad.append(Violation(t.name, "type", f"{c.name}: {invalid} values are not boolean", invalid))
+            out[c.name] = mapped.astype("boolean")
+    return out, bad
+
+
+def _check_table(df: pd.DataFrame, t: Table) -> tuple[pd.DataFrame, list[Violation]]:
+    v: list[Violation] = []
+    names = [c.name for c in t.columns]
+    missing = [c.name for c in t.columns if c.name not in df.columns and not c.optional]
+    extra = [c for c in df.columns if c not in names]
+    if missing:
+        v.append(Violation(t.name, "columns", f"missing columns {missing}", len(missing)))
+        return df, v
+    if extra:
+        v.append(Violation(t.name, "columns", f"unknown columns {extra}", len(extra), "warning"))
+    df, bad = _coerce(df, t)
+    v += bad
+    for c in t.columns:
+        if c.name not in df.columns:
+            continue
+        col = df[c.name]
+        if not c.nullable:
+            n = int(col.isna().sum())
+            if n:
+                v.append(Violation(t.name, "null", f"{c.name} must not be null", n))
+        if c.enum is not None:
+            n = int((col.notna() & ~col.isin(c.enum)).sum())
+            if n:
+                v.append(Violation(t.name, "enum", f"{c.name} outside {list(c.enum)[:6]}...", n))
+    dup = int(df.duplicated(list(t.key)).sum())
+    if dup:
+        v.append(Violation(t.name, "key", f"{dup} duplicate rows on key {list(t.key)}", dup))
+    return df, v
+
+
+def _check_fks(tables: dict[str, pd.DataFrame]) -> list[Violation]:
+    v = []
+    for name, df in tables.items():
+        for fk in TABLES[name].fks:
+            if fk.table not in tables:
+                v.append(Violation(name, "fk_parent_missing", f"{list(fk.cols)} -> {fk.table} (absent)"))
+                continue
+            if any(c not in df.columns for c in fk.cols):
+                continue
+            child = df[list(fk.cols)].dropna().drop_duplicates()
+            parent = tables[fk.table][list(fk.ref_cols)].drop_duplicates()
+            parent.columns = list(fk.cols)
+            m = child.merge(parent, on=list(fk.cols), how="left", indicator=True)
+            n = int((m["_merge"] == "left_only").sum())
+            if n:
+                v.append(Violation(name, "fk", f"{n} {list(fk.cols)} values not in {fk.table}.{list(fk.ref_cols)}", n))
+    return v
+
+
+# ---- cross-table invariants ----------------------------------------------------------------------
+
+def _missing_from(values: pd.Series, target: pd.Series) -> int:
+    return int((~values.dropna().isin(set(target.dropna()))).sum())
+
+
+def _inv_node_observations(T):
+    df = T.get("node_observations")
+    if df is None:
+        return []
+    v = []
+    amb = df["ambiguous"].fillna(False).astype(bool)
+    n = int((amb & (df["selected_observation_id"].notna() | (df["n_candidates"] <= 1))).sum())
+    if n:
+        v.append(Violation("node_observations", "ambiguous", "ambiguous rows must have >1 candidate and no selection", n))
+    n = int((~amb & (df["n_candidates"] == 1) & df["selected_observation_id"].isna()).sum())
+    if n:
+        v.append(Violation("node_observations", "selected", "a unique candidate must be selected", n))
+    n = int(((df["n_candidates"] == 0) & df["selected_observation_id"].notna()).sum())
+    if n:
+        v.append(Violation("node_observations", "selected", "no candidates but a selection", n))
+    alt = T.get("node_observation_alternatives")
+    if alt is not None:
+        keyed = df[amb][["node_id", "bbl", "n_candidates"]]
+        cnt = alt.groupby(["node_id", "bbl"]).size().rename("n_alt").reset_index()
+        m = keyed.merge(cnt, on=["node_id", "bbl"], how="left")
+        n = int((m["n_alt"].fillna(0) != m["n_candidates"]).sum())
+        if n:
+            v.append(Violation("node_observation_alternatives", "alternatives",
+                               "ambiguous rows need one alternative per candidate", n))
+        n = int((~alt.set_index(["node_id", "bbl"]).index.isin(keyed.set_index(["node_id", "bbl"]).index)).sum())
+        if n:
+            v.append(Violation("node_observation_alternatives", "alternatives", "alternatives for unambiguous rows", n))
+    return v
+
+
+def _inv_node_cluster(T):
+    nc = T.get("node_cluster")
+    if nc is None:
+        return []
+    v = []
+    n = int(((nc["n_clusters"] == 1) & nc["tied"].fillna(False).astype(bool)).sum())
+    if n:
+        v.append(Violation("node_cluster", "tied", "a node in one cluster cannot be tied", n))
+    alt = T.get("node_cluster_alternatives")
+    if alt is not None:
+        sel = alt[alt["selected"].fillna(False).astype(bool)]
+        n = int((sel.groupby("node_id").size() != 1).sum())
+        if n:
+            v.append(Violation("node_cluster_alternatives", "selected", "exactly one selected cluster per node", n))
+        m = sel.merge(nc[["node_id", "cluster_id"]], on=["node_id", "cluster_id"], how="left", indicator=True)
+        n = int((m["_merge"] == "left_only").sum())
+        if n:
+            v.append(Violation("node_cluster_alternatives", "selected", "selected cluster differs from node_cluster", n))
+        per = alt.groupby("node_id").size().rename("n_alt").reset_index()
+        m = nc[nc["n_clusters"] > 1][["node_id", "n_clusters"]].merge(per, on="node_id", how="left")
+        n = int((m["n_alt"].fillna(0) != m["n_clusters"]).sum())
+        if n:
+            v.append(Violation("node_cluster_alternatives", "alternatives", "straddling nodes need one row per cluster", n))
+    return v
+
+
+def _inv_identity_clusters(T):
+    ic = T.get("identity_clusters")
+    if ic is None or "base_cluster_id" not in ic.columns:
+        return []
+    g = ic.dropna(subset=["base_cluster_id"]).groupby("base_cluster_id")["cluster_id"].nunique()
+    n = int((g > 1).sum())
+    return [Violation("identity_clusters", "base_cluster", "a base cluster belongs to one final cluster", n)] if n else []
+
+
+_SUBJECT_TARGETS = {
+    "identity": ("identity_clusters", "identity_id"), "base_cluster": ("identity_clusters", "base_cluster_id"),
+    "cluster": ("identity_clusters", "cluster_id"), "node": ("node_observations", "node_id"),
+    "bbl": ("node_observations", "bbl"), "group": ("groups", "group_id"),
+    "address": ("masked_addresses", "address_id"), "component": ("network_membership", "component_id"),
+}
+
+
+def _inv_decision_events(T):
+    de = T.get("decision_events")
+    if de is None:
+        return []
+    v = []
+    n = int((de["counterpart_type"].isna() != de["counterpart_id"].isna()).sum())
+    if n:
+        v.append(Violation("decision_events", "counterpart", "counterpart type and id go together", n))
+    acc = de["outcome"] == "accepted"
+    n = int((acc & de["reason_code"].notna()).sum() + (~acc & de["reason_code"].isna()).sum())
+    if n:
+        v.append(Violation("decision_events", "reason", "accepted events carry no reason; every other outcome has one", n))
+    for side in ("subject", "counterpart"):
+        for typ, (tbl, col) in _SUBJECT_TARGETS.items():
+            if tbl not in T or col not in T[tbl].columns:
+                continue
+            ids = de.loc[de[f"{side}_type"] == typ, f"{side}_id"]
+            m = _missing_from(ids.astype(str), T[tbl][col].astype(str))
+            if m:
+                v.append(Violation("decision_events", "reference", f"{side} {typ} not in {tbl}.{col}", m))
+    if "identity_clusters" in T:
+        m = _missing_from(de["cluster_id"], T["identity_clusters"]["cluster_id"])
+        if m:
+            v.append(Violation("decision_events", "reference", "cluster_id not in identity_clusters", m))
+    sup = T.get("decision_support")
+    if sup is not None:
+        for typ, (tbl, col) in {"observation": ("observations", "observation_id"),
+                                "bbl": ("node_observations", "bbl")}.items():
+            if tbl in T:
+                m = _missing_from(sup.loc[sup["support_type"] == typ, "support_id"], T[tbl][col])
+                if m:
+                    v.append(Violation("decision_support", "reference", f"{typ} support not in {tbl}.{col}", m))
+    return v
+
+
+def _inv_groups(T):
+    g, gm, gb = T.get("groups"), T.get("group_members"), T.get("group_bbls")
+    v = []
+    if g is not None and gb is not None:
+        rental = gb[gb["rental"].fillna(False).astype(bool)].groupby(["layer", "group_id"]).size().rename("r")
+        total = gb.groupby(["layer", "group_id"]).size().rename("t")
+        m = g.set_index(["layer", "group_id"]).join(rental).join(total)
+        n = int(((m["r"].fillna(0) != m["building_count"]) | (m["t"].fillna(0) != m["total_building_count"])).sum())
+        if n:
+            v.append(Violation("groups", "counts", "building counts disagree with group_bbls", n))
+    keys = [("groups", g), ("group_members", gm), ("group_witness", T.get("group_witness"))]
+    seen = pd.concat([d["assertion_key"] for _, d in keys if d is not None], ignore_index=True) \
+        if any(d is not None for _, d in keys) else pd.Series(dtype=str)
+    n = int(seen.duplicated().sum())
+    if n:
+        v.append(Violation("groups", "assertion_key", "assertion keys must be unique across the release", n))
+    return v
+
+
+def _inv_witness(T):
+    w, gm = T.get("group_witness"), T.get("group_members")
+    if w is None or gm is None:
+        return []
+    v = []
+    members = gm.groupby(["layer", "group_id"])["node_id"].apply(set).to_dict()
+    cycles = disconnected = outside = 0
+    for key, edges in w.sort_values("step").groupby(["layer", "group_id"]):
+        mem = members.get(key, set())
+        parent = {n: n for n in mem}
+
+        def find(x):
+            while parent.setdefault(x, x) != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        for a, b in zip(edges["node_a"], edges["node_b"]):
+            if a not in mem or b not in mem:
+                outside += 1
+                continue
+            ra, rb = find(a), find(b)
+            if ra == rb:
+                cycles += 1
+            else:
+                parent[ra] = rb
+        if mem and len({find(x) for x in mem}) != 1:
+            disconnected += 1
+    for count, msg in ((outside, "witness edge endpoint is not a member of the group"),
+                       (cycles, "witness edge closes a cycle (must be a spanning tree)"),
+                       (disconnected, "witness edges do not connect the group")):
+        if count:
+            v.append(Violation("group_witness", "tree", msg, count))
+    missing = set(members) - {k for k, _ in w.groupby(["layer", "group_id"])}
+    multi = {k for k, m in members.items() if len(m) > 1}
+    n = len(missing & multi)
+    if n:
+        v.append(Violation("group_witness", "tree", "groups with several members and no witness", n))
+    return v
+
+
+def _inv_bbl_status(T):
+    s = T.get("bbl_status")
+    if s is None:
+        return []
+    v = []
+    ing = s["status"] == "in_group"
+    n = int((ing & (s["group_id"].isna() | s["reason_code"].notna())).sum())
+    if n:
+        v.append(Violation("bbl_status", "status", "in_group rows need a group and no reason", n))
+    n = int((~ing & (s["reason_code"].isna() | s["group_id"].notna())).sum())
+    if n:
+        v.append(Violation("bbl_status", "status", "not_in_group rows need a reason and no group", n))
+    top = s["reason_code"].map(lambda c: REASON_CODES[c][0] if c in REASON_CODES else pd.NA)
+    n = int((s["reason_code"].notna() & (top != s["top_level_reason"])).sum())
+    if n:
+        v.append(Violation("bbl_status", "reason", "top_level_reason disagrees with reason_code", n))
+    return v
+
+
+def _inv_metrics(T):
+    m = T.get("method_metrics")
+    if m is None:
+        return []
+    v = []
+    n = int((m["precision"].isna() & m["note"].isna()).sum())
+    if n:
+        v.append(Violation("method_metrics", "null", "an unevaluated metric needs a note", n))
+    p = m.dropna(subset=["precision"])
+    n = int(((p["precision"] < 0) | (p["precision"] > 1)).sum())
+    n += int(((p["ci_lower"] > p["precision"]) | (p["ci_upper"] < p["precision"])).sum())
+    if n:
+        v.append(Violation("method_metrics", "interval", "precision must lie in [0,1] and inside its interval", n))
+    return v
+
+
+_INVARIANTS = (_inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
+               _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
+
+
+# ---- manifest ------------------------------------------------------------------------------------
+
+def check_manifest(manifest: dict | None, path: str | None = None) -> list[Violation]:
+    if manifest is None:
+        return [Violation("manifest", "missing", "manifest.json is required")]
+    v = [Violation("manifest", "field", f"missing {k}") for k in MANIFEST_REQUIRED if k not in manifest]
+    if manifest.get("schema_version") not in (None, SCHEMA_VERSION):
+        v.append(Violation("manifest", "schema_version", f"{manifest['schema_version']} != {SCHEMA_VERSION}"))
+    for name, kind in (manifest.get("artifacts") or {}).items():
+        if name not in TABLES:
+            v.append(Violation("manifest", "artifacts", f"unknown artifact {name}"))
+        elif kind not in ARTIFACT_KINDS:
+            v.append(Violation("manifest", "artifacts", f"{name}: {kind} not in {list(ARTIFACT_KINDS)}"))
+    if path:
+        for fname, digest in (manifest.get("output_checksums") or {}).items():
+            f = os.path.join(path, fname)
+            if not os.path.exists(f):
+                v.append(Violation("manifest", "checksum", f"{fname} listed but missing"))
+            elif hashlib.sha256(open(f, "rb").read()).hexdigest() != digest:
+                v.append(Violation("manifest", "checksum", f"{fname} does not match its checksum"))
+    return v
+
+
+# ---- entry points --------------------------------------------------------------------------------
+
+def validate_release(tables: dict[str, pd.DataFrame], manifest: dict | None = None, *,
+                     require: tuple[str, ...] = (), path: str | None = None,
+                     check_manifest_too: bool = True) -> list[Violation]:
+    """Return every violation found (an empty list means the release satisfies the contract)."""
+    v: list[Violation] = []
+    if check_manifest_too:
+        v += check_manifest(manifest, path)
+    for name in require:
+        if name not in tables:
+            v.append(Violation(name, "missing", "required table is absent"))
+    typed: dict[str, pd.DataFrame] = {}
+    for name, df in tables.items():
+        if name not in TABLES:
+            v.append(Violation(name, "unknown_table", "not in the contract", severity="warning"))
+            continue
+        typed[name], bad = _check_table(df, TABLES[name])
+        v += bad
+    v += _check_fks(typed)
+    if not any(x.severity == "error" and x.check in ("columns", "type") for x in v):
+        for inv in _INVARIANTS:
+            v += inv(typed)
+    return v
+
+
+def main() -> None:  # pragma: no cover
+    path = sys.argv[1]
+    tables, manifest = read_release(path)
+    found = validate_release(tables, manifest, path=path)
+    for x in found:
+        print(x)
+    errors = [x for x in found if x.severity == "error"]
+    print(f"{len(tables)} tables, {len(errors)} errors, {len(found) - len(errors)} warnings")
+    sys.exit(1 if errors else 0)
+
+
+if __name__ == "__main__":
+    main()

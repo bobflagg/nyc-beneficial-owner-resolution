@@ -1,0 +1,38 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "mini-0001",
+  "snapshot_id": "fixture-2026-10-20",
+  "effective_date": "2026-10-20",
+  "bor_revision": "fixture",
+  "nlr_revision": "fixture",
+  "source_tree_hash": "fixture",
+  "dependency_lock_digest": "fixture",
+  "threshold": 0.999,
+  "parameters": {
+    "splink_threshold": 0.999
+  },
+  "artifacts": {
+    "group_witness": "representative",
+    "observations": "complete",
+    "decision_events": "complete"
+  },
+  "stage_vocabulary_version": "0.1.0",
+  "reason_vocabulary_version": "0.1.0",
+  "output_checksums": {
+    "bbl_status.csv": "4cdf1752a2386bd1f316da9b70803ab2cdc90290a1ef3b8d5bb7fe84c7b3c6ce",
+    "decision_events.csv": "92806deea312d5b6bbca52c8133194056e116ef2d87475e677ea9d7ca196a230",
+    "decision_support.csv": "754a3f6ef14ed0f9b964b562663bb5862f2c1e1c7c6149bfec85d14b7c72c32c",
+    "group_bbls.csv": "f6d1add80353b8611ffcf3d251737d82126f372692aae55cf4c69353058b07cd",
+    "group_members.csv": "efea6e62c72ceb54cceb928de907edd6a44428208c38884ce31f8ce6b6357743",
+    "group_witness.csv": "3042d41fa575553ef62aea7147c0b6f8996e545174acac5683ac9db5a4327a56",
+    "groups.csv": "87a45e9990a325ce59271f6555ac1fd22ec6748d2b8af6bf01512ee1eb98fef1",
+    "identity_clusters.csv": "2050a1cf723968f9a81e9dce6adce8eba65f403321e0016a5275ee174b7d69bf",
+    "identity_observations.csv": "298711f062a93d4e96192579bb0a934b80a69c552a4060950282336ae316d20f",
+    "method_metrics.csv": "a8233efd982f34ea3ee2336e9eaef5cae971b542be44c4fadfdaf113ccd374b7",
+    "node_cluster.csv": "4dfb27fa67cb43616357c06f8433f4bebdebd46f625f77c817eeef9b44dad40c",
+    "node_identity_matches.csv": "7235acdc67fc9ece034040a1e2326ca146ec1d6988705973c7252fa1ab065cb4",
+    "node_observations.csv": "b1b43f70eeb5e3a626476007f50773ae46de3bd516aa62671ee0ac6aff8873c3",
+    "observations.csv": "96da9da9857c400edc2d398b04756c39078b64dd2375f019332cba9360682f29"
+  },
+  "note": "Synthetic fixture for the release contract. Not real data."
+}

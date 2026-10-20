@@ -1,0 +1,3 @@
+stage,metric,unit,population,n,numerator,denominator,precision,ci_lower,ci_upper,confidence_level,interval_method,estimator,strata_ref,eval_artifact,eval_version,adjudication_status,provisional,note
+identity.splink_base,precision,pair,,,,,,,,,,,,,,none,True,fixture: unevaluated
+identity.splink_feedback,precision,pair,,,,,,,,,,,,,,none,True,fixture: unevaluated
