@@ -34,7 +34,7 @@ St) on one 2015 deed (2015120200784001, $1.2M) and in 2019 re-deeded each into i
 43-58 -> BRIDGEWOOD DEVELOPMENT LLC (head officer Brian Lin), 43-60 -> HONG LI GROUP LLC (head officer
 Xianglian Wang). They register to different people at different addresses, so WoW files them under two
 UNRELATED portfolios (wow.wow_portfolios orig_id 14133 vs 55695); the shared deed + nominal recovery is
-the SOLE link that reunites them (owner group OG-15928, CONNECTED_BY_DEED only). block-3498's assemblage,
+the SOLE link that reunites them (owner group OP-15928, CONNECTED_BY_DEED only). block-3498's assemblage,
 sold off in real ($1.1M) arms-length deals to distinct buyers, stays split, as it should.
 
 RECALL CAVEAT — the nominal gate is deliberately precision-first, and its recall cost is real, not

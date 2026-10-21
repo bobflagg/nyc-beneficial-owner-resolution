@@ -6,7 +6,7 @@ candidate `CONNECTED_BY_DEED` owner group is a **genuine deed veil-pierce** — 
 the owner across distinct portfolios and only the shared deed reunites them (the AXL case) — versus a
 **WoW over-lump**, where WoW already groups most of the buildings via a shared aggregator/back-office
 address, so the deed "recovers" nothing WoW hadn't already merged (Citadel, and the soft-aggregator
-bridge cases OG-10150 / OG-33260).
+bridge cases OP-10150 / OP-33260).
 
 ## The failure this hardens (see specs/deed-gate-review.md §6)
 
@@ -15,7 +15,7 @@ aggregator lump* — where "aggregator" was a **hard cutoff: a WoW portfolio wit
 landlords**. That cliff is too loose. A 121-building / 16-landlord portfolio is plainly an over-lump,
 but 16 < 25, so the hard cutoff called it "not an aggregator" and passed the candidate. Verified
 2026-09-19: all five bridge linked-successor candidates wrongly PASSED, the tell being the two with
-scale — OG-10150 (35 of 37 buildings already in one 121/16 WoW portfolio) and OG-33260 (5 of 10 in one
+scale — OP-10150 (35 of 37 buildings already in one 121/16 WoW portfolio) and OP-33260 (5 of 10 in one
 102/11 portfolio).
 
 ## The two complementary checks (either failing → the candidate is NOT a clean veil-pierce)
@@ -79,7 +79,7 @@ AGG_LANDLORD_HARD = _hard_default()     # 25
 SOFT_MIN_BUILDINGS = 20
 SOFT_MIN_LANDLORDS = 4
 # Dominant-share: a portfolio holding at least this fraction of the candidate's member buildings is the
-# dominant home of the group. Inclusive of 1/2 so an even split into one big + scattered small (OG-33260,
+# dominant home of the group. Inclusive of 1/2 so an even split into one big + scattered small (OP-33260,
 # 5 of 10) counts as dominant.
 DOMINANT_SHARE = 0.5
 
@@ -196,7 +196,7 @@ def wow_gate(placements: list[Placement], n_members: int, *,
 def legacy_hard_gate(placements: list[Placement], *, hard: int = AGG_LANDLORD_HARD) -> GateResult:
     """The *old* gate, for regression comparison only: members must span ≥2 distinct WoW portfolios,
     none with strictly more than `hard` landlords. Retained to demonstrate what the hardening fixed —
-    it wrongly PASSES the soft-aggregator bridge cases (OG-10150, OG-33260)."""
+    it wrongly PASSES the soft-aggregator bridge cases (OP-10150, OP-33260)."""
     distinct = len(placements)
     reasons: list[str] = []
     if distinct < 2:

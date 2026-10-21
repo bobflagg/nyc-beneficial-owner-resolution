@@ -276,6 +276,12 @@ def _inv_groups(T):
         n = int(((m["r"].fillna(0) != m["lot_count"]) | (m["t"].fillna(0) != m["total_lot_count"])).sum())
         if n:
             v.append(Violation("groups", "counts", "lot counts disagree with group_bbls", n))
+    if g is not None:
+        want = g["layer"].map({"owner_portfolio": "OP-", "operational_network": "ON-"})
+        n = int((~pd.Series([str(i).startswith(p) for i, p in zip(g["group_id"], want)], index=g.index)).sum())
+        if n:
+            v.append(Violation("groups", "group_id_prefix",
+                               "group ids start OP- in owner_portfolio and ON- in operational_network", n))
     keys = [("groups", g), ("group_members", gm), ("group_witness", T.get("group_witness"))]
     seen = pd.concat([d["assertion_key"] for _, d in keys if d is not None], ignore_index=True) \
         if any(d is not None for _, d in keys) else pd.Series(dtype=str)

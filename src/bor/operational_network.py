@@ -157,7 +157,7 @@ class OperationalNetwork:
     """One operational-network portfolio. ``split`` records how it was cut out: ``wcc`` (a whole
     connected component that fit under the cap — exact) or ``louvain`` (a sub-community of an
     oversized component — approximate, GDS-Louvain not byte-reproducible)."""
-    portfolio_id: str          # PF-<min nodeid> — deterministic given the partition
+    portfolio_id: str          # ON-<min nodeid> — deterministic given the partition
     members: list[int]         # lwc nodeids
     bbls: list[str]            # union of members' bbls
     split: str                 # "wcc" | "louvain"
@@ -211,7 +211,7 @@ def resolve_operational_networks(conn, *, threshold: float = DEFAULT_THRESHOLD,
     for kind, ids in finals:
         bbls = sorted({b for n in ids for b in node_bbls.get(n, [])})
         out.append(OperationalNetwork(
-            portfolio_id=f"PF-{min(ids)}", members=sorted(ids), bbls=bbls, split=kind))
+            portfolio_id=f"ON-{min(ids)}", members=sorted(ids), bbls=bbls, split=kind))
     return sorted(out, key=lambda p: p.portfolio_id)
 
 

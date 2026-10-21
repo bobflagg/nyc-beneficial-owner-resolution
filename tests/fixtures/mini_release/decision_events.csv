@@ -5,6 +5,6 @@ d3,identity,identity.splink_base,identity,I0000004,identity,I0000003,rejected,fi
 d4,identity,identity.splink_base,identity,I0000003,identity,I0000005,accepted,,splink_model,fixture-0,0.9997,0.999,C0000001,
 d5,owner_portfolio,owner_portfolio.footprint,bbl,3000010005,,,excluded,coop_condo_excluded,coop_condo_contact_rule,fixture-0,,,,co-op lot in a surviving group
 d6,identity,identity.splink_base,identity,I0000006,identity,I0000007,accepted,,splink_model,fixture-0,0.9993,0.999,C0000003,
-d7,owner_portfolio,owner_portfolio.footprint,group,OG-6,,,dropped,coop_condo_dominated,group_footprint_rule,fixture-0,,,,rental lots are fewer than half the footprint
+d7,owner_portfolio,owner_portfolio.footprint,group,OP-6,,,dropped,coop_condo_dominated,group_footprint_rule,fixture-0,,,,rental lots are fewer than half the footprint
 d8,owner_portfolio,owner_portfolio.footprint,bbl,3000010006,,,excluded,coop_condo_dominated,group_footprint_rule,fixture-0,,,,
 d9,owner_portfolio,owner_portfolio.footprint,bbl,3000010007,,,excluded,coop_condo_dominated,group_footprint_rule,fixture-0,,,,

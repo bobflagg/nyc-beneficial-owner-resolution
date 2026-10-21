@@ -97,10 +97,10 @@ def test_coop_lot_in_a_group_and_a_dropped_group_have_different_codes_and_rules(
     ev = t["decision_events"].set_index("decision_id")
     lot, dropped = s.loc["3000010005"], s.loc["3000010006"]
     assert (lot["status"], lot["reason_code"]) == ("excluded_from_footprint", "coop_condo_excluded")
-    assert lot["group_id"] == "OG-1"                              # still a member of the published group
+    assert lot["group_id"] == "OP-1"                              # still a member of the published group
     assert (dropped["status"], dropped["reason_code"]) == ("not_in_group", "coop_condo_dominated")
     assert ev.loc["d5", "rule"] == "coop_condo_contact_rule" and ev.loc["d7", "rule"] == "group_footprint_rule"
-    assert ev.loc["d7", "outcome"] == "dropped" and "OG-6" not in set(t["groups"]["group_id"])
+    assert ev.loc["d7", "outcome"] == "dropped" and "OP-6" not in set(t["groups"]["group_id"])
     g = t["group_bbls"].set_index("bbl")
     assert g.loc["3000010005", "rental"] == "False"
 
@@ -140,7 +140,7 @@ def test_witness_cycle_and_disconnect():
     t, _ = _load()
     extra = t["group_witness"].iloc[[0]].copy()
     extra["step"], extra["node_a"], extra["node_b"] = 4, 1, 3
-    extra["assertion_key"] = "mini-0001/owner_portfolio/OG-1/w4"
+    extra["assertion_key"] = "mini-0001/owner_portfolio/OP-1/w4"
     cyc = dict(t)
     cyc["group_witness"] = pd.concat([t["group_witness"], extra], ignore_index=True)
     assert ("group_witness", "tree") in _checks(cyc)
@@ -189,7 +189,7 @@ def test_group_counts_must_match_bbls():
 def test_node_in_two_groups_is_a_key_violation():
     t, _ = _load()
     dup = t["group_members"].iloc[[0]].copy()
-    dup["group_id"] = "OG-9"
+    dup["group_id"] = "OP-9"
     t["group_members"] = pd.concat([t["group_members"], dup], ignore_index=True)
     assert ("group_members", "key") in _checks(t)
 
@@ -280,7 +280,7 @@ def test_footprint_status_must_match_non_rental_lots():
 
 def test_a_dropped_group_must_not_be_published_and_a_published_one_must_not_be_dropped():
     t, _ = _load()
-    t["decision_events"].loc[t["decision_events"]["decision_id"] == "d7", "subject_id"] = "OG-1"
+    t["decision_events"].loc[t["decision_events"]["decision_id"] == "d7", "subject_id"] = "OP-1"
     assert ("decision_events", "reference") in _checks(t)
     t, _ = _load()
     t["decision_events"].loc[t["decision_events"]["decision_id"] == "d7", "outcome"] = "excluded"
@@ -315,3 +315,12 @@ def test_manifest_must_fingerprint_sources_and_name_the_deed_rule():
 def test_counting_unit_is_lots():
     cols = {c.name for c in TABLES["groups"].columns}
     assert {"lot_count", "total_lot_count"} <= cols and not {"building_count", "total_building_count"} & cols
+
+
+def test_group_id_prefix_must_match_the_layer():
+    t, _ = _load()
+    assert set(t["groups"]["group_id"].str[:3]) == {"OP-"}
+    t["groups"].loc[0, "group_id"] = "ON-1"
+    t["group_members"]["group_id"] = "ON-1"
+    t["group_bbls"]["group_id"] = "ON-1"
+    assert ("groups", "group_id_prefix") in _checks(t)

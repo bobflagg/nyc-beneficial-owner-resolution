@@ -207,7 +207,7 @@ if __name__ == "__main__":
     ap.add_argument("--annotations")
     ap.add_argument("--out", default="eval_out")
     ap.add_argument("--gate", action="store_true", help="WoW veil-pierce gate over deed-only owner groups")
-    ap.add_argument("--owner-group", dest="owner_groups", action="append", default=[], metavar="OG-ID")
+    ap.add_argument("--owner-group", dest="owner_groups", action="append", default=[], metavar="OP-ID")
     a = ap.parse_args()
 
     if a.gate:

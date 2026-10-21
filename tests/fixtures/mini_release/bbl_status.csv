@@ -1,8 +1,8 @@
 layer,bbl,status,group_id,reason_code,top_level_reason
-owner_portfolio,3000010001,in_group,OG-1,,
-owner_portfolio,3000010002,in_group,OG-1,,
-owner_portfolio,3000010003,in_group,OG-1,,
+owner_portfolio,3000010001,in_group,OP-1,,
+owner_portfolio,3000010002,in_group,OP-1,,
+owner_portfolio,3000010003,in_group,OP-1,,
 owner_portfolio,3000010004,not_in_group,,first_name_veto,below_eligibility_rule
-owner_portfolio,3000010005,excluded_from_footprint,OG-1,coop_condo_excluded,excluded_by_policy
+owner_portfolio,3000010005,excluded_from_footprint,OP-1,coop_condo_excluded,excluded_by_policy
 owner_portfolio,3000010006,not_in_group,,coop_condo_dominated,excluded_by_policy
 owner_portfolio,3000010007,not_in_group,,coop_condo_dominated,excluded_by_policy

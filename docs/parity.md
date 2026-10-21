@@ -68,5 +68,5 @@ Parity vs the live KG's multi-member Portfolios:
 So all ≤300-BBL portfolios — the WCC majority — reproduce exactly; the ~10 differing portfolios
 (~111 nodes) are entirely within the Louvain-split oversized tail (a few dozen large operators),
 which is expected and inherent to Louvain, not a defect of the off-graph port. Portfolio ids
-(`PF-<min nodeid>` in BOR, `PF-<run_id>-<n>` in the KG) are not comparable across builds — compare
+(`ON-<min nodeid>` in BOR, `PF-<run_id>-<n>` in the WatchlineNYC graph) are not comparable across builds — compare
 by member set / BBL overlap, as above.

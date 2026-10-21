@@ -22,5 +22,11 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Depends on [`nlr`](https://github.com/bobflagg/nyc-landlord-resolution) `v0.1.0` for record
   linkage; `splink` pinned to `4.0.16`.
 
+### Changed
+- **Group id prefixes:** Owner Portfolio groups are `OP-<min nodeid>` (was `OG-`) and Operational
+  Network groups are `ON-<min nodeid>` (was `PF-`). A clean break: nothing had been released with the
+  old prefixes, and ids were never stable across builds. The `owner_group_id` and `portfolio_id`
+  column names are unchanged.
+
 ### Notes
 - Not yet released. Cut a versioned, DOI'd release per [`docs/release.md`](docs/release.md).

@@ -1,5 +1,5 @@
 layer,group_id,bbl,rental
-owner_portfolio,OG-1,3000010001,True
-owner_portfolio,OG-1,3000010002,True
-owner_portfolio,OG-1,3000010003,True
-owner_portfolio,OG-1,3000010005,False
+owner_portfolio,OP-1,3000010001,True
+owner_portfolio,OP-1,3000010002,True
+owner_portfolio,OP-1,3000010003,True
+owner_portfolio,OP-1,3000010005,False

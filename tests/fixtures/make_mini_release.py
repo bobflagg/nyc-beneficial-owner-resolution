@@ -2,7 +2,7 @@
 
     uv run python tests/fixtures/make_mini_release.py
 
-Seven lots. Lots 1, 2, 3 and 5 form group OG-1: 1-2 by a scored base decision, 2-3 by a
+Seven lots. Lots 1, 2, 3 and 5 form group OP-1: 1-2 by a scored base decision, 2-3 by a
 feedback merge (1 and 3 were never compared), 3-5 by a base decision, and lot 5 is a co-op left
 out of the rental footprint. Lot 4 is blocked from lot 3's identity by the first-name veto. Lots 6
 and 7 link, but the group is dropped as co-op/condo dominated.
@@ -21,7 +21,7 @@ C = {"abce": "C0000001", "d": "C0000002", "fg": "C0000003"}
 BC = {"ab": "BC0000001", "ce": "BC0000002", "d": "BC0000003", "fg": "BC0000004"}
 OBS = [f"10{n}:10{n}05:0" for n in range(1, 8)]  # the person contact behind each lot
 CORP = ["101:10103:0", "103:10303:0"]            # one private company on lots 1 and 3
-OG1 = f"{R}/owner_portfolio/OG-1"
+OG1 = f"{R}/owner_portfolio/OP-1"
 
 
 def w(name, header, rows):
@@ -54,7 +54,7 @@ w("decision_events", EV, [
     ["d4", "identity", "identity.splink_base", "identity", I[2], "identity", I[4], "accepted", "", "splink_model", "fixture-0", 0.9997, 0.999, C["abce"], ""],
     ["d5", "owner_portfolio", "owner_portfolio.footprint", "bbl", B[4], "", "", "excluded", "coop_condo_excluded", "coop_condo_contact_rule", "fixture-0", "", "", "", "co-op lot in a surviving group"],
     ["d6", "identity", "identity.splink_base", "identity", I[5], "identity", I[6], "accepted", "", "splink_model", "fixture-0", 0.9993, 0.999, C["fg"], ""],
-    ["d7", "owner_portfolio", "owner_portfolio.footprint", "group", "OG-6", "", "", "dropped", "coop_condo_dominated", "group_footprint_rule", "fixture-0", "", "", "", "rental lots are fewer than half the footprint"],
+    ["d7", "owner_portfolio", "owner_portfolio.footprint", "group", "OP-6", "", "", "dropped", "coop_condo_dominated", "group_footprint_rule", "fixture-0", "", "", "", "rental lots are fewer than half the footprint"],
     ["d8", "owner_portfolio", "owner_portfolio.footprint", "bbl", B[5], "", "", "excluded", "coop_condo_dominated", "group_footprint_rule", "fixture-0", "", "", "", ""],
     ["d9", "owner_portfolio", "owner_portfolio.footprint", "bbl", B[6], "", "", "excluded", "coop_condo_dominated", "group_footprint_rule", "fixture-0", "", "", "", ""],
 ])
@@ -67,20 +67,20 @@ w("decision_support", ["decision_id", "support_type", "support_id", "role"], [
     ["d5", "bbl", B[4], "excluded_lot"],
 ])
 w("groups", ["layer", "group_id", "assertion_key", "composition", "split", "lot_count", "total_lot_count"],
-  [["owner_portfolio", "OG-1", OG1, "identity", "", 3, 4]])
+  [["owner_portfolio", "OP-1", OG1, "identity", "", 3, 4]])
 w("group_members", ["layer", "group_id", "node_id", "assertion_key"],
-  [["owner_portfolio", "OG-1", n, f"{OG1}/n{n}"] for n in (1, 2, 3, 5)])
+  [["owner_portfolio", "OP-1", n, f"{OG1}/n{n}"] for n in (1, 2, 3, 5)])
 w("group_bbls", ["layer", "group_id", "bbl", "rental"],
-  [["owner_portfolio", "OG-1", B[n - 1], "False" if n == 5 else "True"] for n in (1, 2, 3, 5)])
+  [["owner_portfolio", "OP-1", B[n - 1], "False" if n == 5 else "True"] for n in (1, 2, 3, 5)])
 w("group_witness", ["layer", "group_id", "step", "node_a", "node_b", "stage", "basis_type", "basis_id", "assertion_key"], [
-    ["owner_portfolio", "OG-1", 1, 1, 2, "identity.splink_base", "identity_cluster", C["abce"], f"{OG1}/w1"],
-    ["owner_portfolio", "OG-1", 2, 2, 3, "identity.splink_feedback", "identity_cluster", C["abce"], f"{OG1}/w2"],
-    ["owner_portfolio", "OG-1", 3, 3, 5, "identity.splink_base", "identity_cluster", C["abce"], f"{OG1}/w3"]])
+    ["owner_portfolio", "OP-1", 1, 1, 2, "identity.splink_base", "identity_cluster", C["abce"], f"{OG1}/w1"],
+    ["owner_portfolio", "OP-1", 2, 2, 3, "identity.splink_feedback", "identity_cluster", C["abce"], f"{OG1}/w2"],
+    ["owner_portfolio", "OP-1", 3, 3, 5, "identity.splink_base", "identity_cluster", C["abce"], f"{OG1}/w3"]])
 w("bbl_status", ["layer", "bbl", "status", "group_id", "reason_code", "top_level_reason"], [
-    ["owner_portfolio", B[0], "in_group", "OG-1", "", ""], ["owner_portfolio", B[1], "in_group", "OG-1", "", ""],
-    ["owner_portfolio", B[2], "in_group", "OG-1", "", ""],
+    ["owner_portfolio", B[0], "in_group", "OP-1", "", ""], ["owner_portfolio", B[1], "in_group", "OP-1", "", ""],
+    ["owner_portfolio", B[2], "in_group", "OP-1", "", ""],
     ["owner_portfolio", B[3], "not_in_group", "", "first_name_veto", "below_eligibility_rule"],
-    ["owner_portfolio", B[4], "excluded_from_footprint", "OG-1", "coop_condo_excluded", "excluded_by_policy"],
+    ["owner_portfolio", B[4], "excluded_from_footprint", "OP-1", "coop_condo_excluded", "excluded_by_policy"],
     ["owner_portfolio", B[5], "not_in_group", "", "coop_condo_dominated", "excluded_by_policy"],
     ["owner_portfolio", B[6], "not_in_group", "", "coop_condo_dominated", "excluded_by_policy"]])
 w("method_metrics", ["stage", "metric", "unit", "population", "n", "numerator", "denominator", "precision", "ci_lower",

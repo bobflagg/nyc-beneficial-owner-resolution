@@ -25,7 +25,7 @@ def test_clique_rows_star_above_threshold():
 
 def test_union_groups_min_root_label():
     g = _union_groups([(3, 1), (1, 2), (10, 11)])
-    assert g == {1: "OG-1", 2: "OG-1", 3: "OG-1", 10: "OG-10", 11: "OG-10"}
+    assert g == {1: "OP-1", 2: "OP-1", 3: "OP-1", 10: "OP-10", 11: "OP-10"}
 
 
 def test_union_groups_drops_below_min_size():
@@ -33,16 +33,16 @@ def test_union_groups_drops_below_min_size():
 
 
 def test_composition_identity():
-    assert classify_composition([(1, 2), (2, 3)], []) == {"OG-1": "identity"}
+    assert classify_composition([(1, 2), (2, 3)], []) == {"OP-1": "identity"}
 
 
 def test_composition_deed_only():
-    assert classify_composition([], [(5, 6)]) == {"OG-5": "deed_only"}
+    assert classify_composition([], [(5, 6)]) == {"OP-5": "deed_only"}
 
 
 def test_composition_deed_bridged():
     # two identity entities {1,2} and {3,4}, fused into one group by a deed edge 2-3
-    assert classify_composition([(1, 2), (3, 4)], [(2, 3)]) == {"OG-1": "deed_bridged"}
+    assert classify_composition([(1, 2), (3, 4)], [(2, 3)]) == {"OP-1": "deed_bridged"}
 
 
 # --- operational-network helpers ---------------------------------------------------------------

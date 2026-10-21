@@ -8,7 +8,7 @@ co-op/condo exclusion.
 
 WatchlineNYC computes this over Neo4j (union-find on materialized edges). BOR computes the
 *same* partition off-graph: it runs the four edge builders in memory and union-finds their pairs,
-then applies the identical rules — ``min_size=2``, ``OG-<min nodeid>`` roots, RENTAL-only
+then applies the identical rules — ``min_size=2``, ``OP-<min nodeid>`` roots, RENTAL-only
 building_count, and dropping groups that are >50% co-op/condo. The union-find, composition, and
 drop logic are ported verbatim from ``portfolio/owner_groups.py`` so BOR's partition matches the
 live graph (parity is the acceptance test).
@@ -50,7 +50,7 @@ _LWC_SQL = "SELECT nodeid, name, bbls::text[] AS bbls FROM landlords_with_connec
 # --- pure union-find + composition (verbatim from portfolio/owner_groups.py) --------------------
 
 def _union_groups(pairs, *, min_size: int = 2) -> dict[int, str]:
-    """Union-find over ``pairs`` (nodeid pairs). Returns ``{nodeid: 'OG-<root>'}`` for components
+    """Union-find over ``pairs`` (nodeid pairs). Returns ``{nodeid: 'OP-<root>'}`` for components
     of >= ``min_size`` members; root = MIN nodeid, so ids are deterministic given the edge set."""
     parent: dict[int, int] = {}
 
@@ -78,7 +78,7 @@ def _union_groups(pairs, *, min_size: int = 2) -> dict[int, str]:
     out: dict[int, str] = {}
     for root, members in comp.items():
         if len(members) >= min_size:
-            gid = f"OG-{root}"
+            gid = f"OP-{root}"
             for m in members:
                 out[m] = gid
     return out
@@ -121,7 +121,7 @@ def classify_composition(identity_pairs, deed_pairs, *, min_size: int = 2) -> di
     for root, ms in members.items():
         if len(ms) < min_size:
             continue
-        gid = f"OG-{root}"
+        gid = f"OP-{root}"
         entities = {id_root[n] for n in ms if n in id_root and id_root[n] in id_multinode}
         out[gid] = ("deed_bridged" if len(entities) >= 2
                     else "identity" if len(entities) == 1
@@ -136,7 +136,7 @@ class OwnerGroup:
     """A beneficial owner group. ``bbls`` are the attributed (rental) buildings; ``total_bbls``
     the full footprint. ``stable_key`` re-keys the group off the per-build nodeid onto the min
     (name, bbls-derived) member identity, for cross-build-stable, person-free references."""
-    owner_group_id: str            # OG-<min nodeid> — deterministic within a build
+    owner_group_id: str            # OP-<min nodeid> — deterministic within a build
     members: list[int]             # lwc nodeids
     bbls: list[str]                # rental bbls (attributed footprint)
     total_bbls: list[str]          # all bbls (full footprint)
@@ -179,7 +179,7 @@ def resolve_owner_groups(conn, *, threshold: float = DEFAULT_THRESHOLD,
     pairs (CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED), maps components to buildings via lwc, applies
     the co-op/condo exclusion, and returns the surviving groups. KG-free."""
     id_pairs, deed_pairs = _identity_and_deed_pairs(conn, threshold=threshold, include_deed=include_deed)
-    assign = _union_groups(id_pairs + deed_pairs, min_size=min_size)   # {nodeid: OG-id}
+    assign = _union_groups(id_pairs + deed_pairs, min_size=min_size)   # {nodeid: OP-id}
     if not assign:
         return []
     comp = classify_composition(id_pairs, deed_pairs, min_size=min_size)
