@@ -221,7 +221,7 @@ _TABLES = [
         _c("composition", nullable=True, enum=("identity", "deed_only", "deed_bridged")),
         _c("split", nullable=True, enum=("wcc", "louvain")),
         _c("lot_count", "int"), _c("total_lot_count", "int")),
-        description="Owner Portfolio groups (OP-<n>) and Operational Network groups (ON-<n>), n = the "
+        description="Owner Portfolios (OP-<n>) and Operational Networks (ON-<n>), n = the "
                     "minimum node id (run-local). Counting unit: tax lots "
                     "(BBLs), not buildings. lot_count is the rental footprint, total_lot_count includes "
                     "co-op/condo lots."),

@@ -163,7 +163,7 @@ def score(key_path: str, ann_path: str, out_dir: Path) -> dict:
 
 
 def gate_mode(out_dir: Path, *, og_ids: list[str] | None = None) -> dict:
-    """The WoW veil-pierce gate over candidate deed Owner Portfolio groups (off-graph): which are genuine WoW
+    """The WoW veil-pierce gate over candidate deed Owner Portfolios (off-graph): which are genuine WoW
     false-splits the deed uniquely recovers (PASS) vs over-lumps WoW already groups on a shared
     aggregator address (FAIL)? Default population = deed-only groups (composition == 'deed_only')."""
     import warnings; warnings.filterwarnings("ignore")
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     ap.add_argument("--key")
     ap.add_argument("--annotations")
     ap.add_argument("--out", default="eval_out")
-    ap.add_argument("--gate", action="store_true", help="WoW veil-pierce gate over deed-only Owner Portfolio groups")
+    ap.add_argument("--gate", action="store_true", help="WoW veil-pierce gate over deed-only Owner Portfolios")
     ap.add_argument("--owner-portfolio", dest="owner_portfolios", action="append", default=[], metavar="OP-ID")
     a = ap.parse_args()
 

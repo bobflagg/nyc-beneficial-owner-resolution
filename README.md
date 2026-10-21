@@ -50,8 +50,8 @@ only.
 Ownership is resolved from **ownership signals only**: who a deed conveys to, and which
 registration identities are genuinely the same person. A shared business address — the signal
 WoW's portfolios are built on — can point to a shared operator, but says little about who *owns*
-the buildings, so it never joins an Owner Portfolio group. Two buildings join the same **beneficial owner
-group** when a shared conveyance deed (`CONNECTED_BY_DEED`) or a resolved shared owner identity
+the buildings, so it never joins an Owner Portfolio. Two buildings join the same **Owner Portfolio**
+when a shared conveyance deed (`CONNECTED_BY_DEED`) or a resolved shared owner identity
 (`CONNECTED_BY_SPLINK`, from `nlr`) ties them — a registered-agent office they happen to share
 never does. The operational view isn't discarded: it stays as its own aggregator-masked layer
 (below), where a shared operator's office is exactly the right evidence.
@@ -70,7 +70,7 @@ weight behind a link:
 
 | Layer | Question | Signals |
 |---|---|---|
-| **Owner Portfolio group** | Who *owns* it? | `CONNECTED_BY_SPLINK` ∪ `CONNECTED_BY_DEED` |
+| **Owner Portfolio** | Who *owns* it? | `CONNECTED_BY_SPLINK` ∪ `CONNECTED_BY_DEED` |
 | **Deed veil-pierce** | co-owned by conveyance? | ACRIS multi-parcel deed + linked-successor guard |
 | **Operational network** | What does it *operate through*? | name / address / splink, aggregator-masked (WCC + Louvain) |
 | **Management** | Who *runs* it? | `MANAGED_BY` (disclosed agent) |
@@ -93,7 +93,7 @@ Lakewood, NJ — an address that hosts 31 buildings and ten distinct owner-signe
 recurring managing agent or registered agent behind it: a shared mailbox, not a shared operator. The
 portfolio accurately records the co-location; read as an ownership claim, it would attribute all 27
 buildings to one party. The ownership layer resolves from identity and deed signals instead of the
-shared address and separates them into **five Owner Portfolio groups** of 7, 7, 4, 4 and 3 buildings. Two
+shared address and separates them into **five Owner Portfolios** of 7, 7, 4, 4 and 3 buildings. Two
 single-building registrations stay unmerged — one of them a one-letter misspelling of another
 owner's surname, which name-anchored blocking deliberately won't link (the documented recall cost of
 precision-first matching). It is the design rule in one picture: same address, different owners.
@@ -129,11 +129,11 @@ evaluates the precision of the links bor asserts, with no head-to-head tally aga
 
 First, a **divergence** measure: where, and in which direction, the Owner Portfolio partition differs
 from WoW's portfolios. Some divergence is expected by design — portfolios tie buildings that register together,
-Owner Portfolio groups answer *who owns*. This is divergence, *not* accuracy, but it sizes the difference:
+Owner Portfolios answer *who owns*. This is divergence, *not* accuracy, but it sizes the difference:
 
 ```bash
 uv run python -m bor.eval.divergence
-# → 760 owners cross WoW portfolios; 616 WoW portfolios span >1 Owner Portfolio group
+# → 760 owners cross WoW portfolios; 616 WoW portfolios span >1 Owner Portfolio
 ```
 
 WoW's own graph explains part of that difference. In the per-portfolio graphs WoW ships, a link
@@ -193,7 +193,7 @@ result = gate_bbls(conn, member_bbls)       # GateResult(passed, reasons, ...)
 The full adjudication protocol (the INDETERMINATE class, a circularity control, and a data-vintage
 control) and the packaged case studies (Croman, Escobar, Miller, Levitov, AXL, Citadel) ship with
 the first release. Everything above is computed **off-graph from Postgres** and
-reproduces the live knowledge graph's partition (Owner Portfolio groups 100% of nodes; operational network
+reproduces the live knowledge graph's partition (Owner Portfolios 100% of nodes; operational network
 99.9%, the tail being Louvain — [`docs/parity.md`](docs/parity.md)).
 
 ## Install
@@ -242,7 +242,7 @@ with pg_conn() as conn:
 
 ```
 nlr  (record linkage / false-split resolution)         ── standalone, gold-validated
-  └── nyc-beneficial-owner-resolution  (this repo)      ── + deed, Owner Portfolio groups, benchmark  [KG-free]
+  └── nyc-beneficial-owner-resolution  (this repo)      ── + deed, Owner Portfolios, benchmark  [KG-free]
         └── WatchlineNYC  (the deployed product)        ── materializes the export into Neo4j; UI + agent
 ```
 

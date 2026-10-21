@@ -1,4 +1,4 @@
-"""bor/owner_portfolios.py — the Owner Portfolio group, computed off-graph.
+"""bor/owner_portfolios.py — the Owner Portfolio, computed off-graph.
 
 The owner-identity partition: *who is the apparent same owner across differently-named LLCs*,
 distinct from the operational network (shared-office clustering) and from management. It is the
@@ -34,7 +34,7 @@ OWNER_PORTFOLIO_METHOD = "splink-identity+curated+llc"
 
 # Co-op/condo classification (forked from portfolio/coop_condo.py, verbatim): a building is
 # co-op/condo when >50% of its owner-role HPD contacts are described CO-OP/CONDO. Such buildings
-# are owned by shareholders, not a landlord; Owner Portfolio groups exclude them and drop groups they dominate.
+# are owned by shareholders, not a landlord; Owner Portfolios exclude them and drop groups they dominate.
 _COOP_CONDO_SQL = """
     SELECT g.bbl AS bbl
     FROM hpd_contacts c
@@ -105,7 +105,7 @@ def _roots(pairs) -> dict[int, int]:
 
 
 def classify_composition(identity_pairs, deed_pairs, *, min_size: int = 2) -> dict[str, str]:
-    """Per Owner Portfolio group: ``identity`` (one resolved entity), ``deed_only`` (exists purely via deed
+    """Per Owner Portfolio: ``identity`` (one resolved entity), ``deed_only`` (exists purely via deed
     edges — the intended veil-pierce), or ``deed_bridged`` (a deed fuses >=2 identity entities —
     the higher-bar case). Returns ``{owner_portfolio_id: composition}``."""
     id_root = _roots(identity_pairs)
@@ -133,7 +133,7 @@ def classify_composition(identity_pairs, deed_pairs, *, min_size: int = 2) -> di
 
 @dataclass
 class OwnerPortfolio:
-    """A Owner Portfolio group. ``bbls`` are the attributed (rental) buildings; ``total_bbls``
+    """An Owner Portfolio. ``bbls`` are the attributed (rental) buildings; ``total_bbls``
     the full footprint. ``stable_key`` re-keys the group off the per-build nodeid onto the min
     (name, bbls-derived) member identity, for cross-build-stable, person-free references."""
     owner_portfolio_id: str            # OP-<min nodeid> — deterministic within a build
@@ -179,7 +179,7 @@ def _identity_and_deed_pairs(conn, *, threshold: float, include_deed: bool, as_o
 def resolve_owner_portfolios(conn, *, threshold: float = DEFAULT_THRESHOLD,
                          include_deed: bool = True, min_size: int = 2, as_of=None,
                          node_cluster_frame=None, deed_edge_frame=None) -> list[OwnerPortfolio]:
-    """Resolve Owner Portfolio groups off-graph. Runs the four edge builders, union-finds their
+    """Resolve Owner Portfolios off-graph. Runs the four edge builders, union-finds their
     pairs (CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED), maps components to buildings via lwc, applies
     the co-op/condo exclusion, and returns the surviving groups. KG-free.
     ``as_of`` is the deed cut-off date (default today); a release records it. ``node_cluster_frame``

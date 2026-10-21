@@ -27,17 +27,17 @@ legal determination of ownership. Keyed on BBL (public parcel id) and opaque gro
 
 ## Files
 
-- `owner_portfolios.csv` — one row per Owner Portfolio group.
+- `owner_portfolios.csv` — one row per Owner Portfolio.
   `owner_portfolio_id` (opaque), `composition` (identity | deed_only | deed_bridged),
   `building_count` (rental tax lots, i.e. BBLs, attributed), `total_building_count` (full footprint, in lots){name_col}.
 - `owner_portfolio_bbls.csv` — `bbl`, `owner_portfolio_id`. The building→Owner Portfolio map (rental).
-- `operational_networks.csv` — one row per Operational Network group.
+- `operational_networks.csv` — one row per Operational Network.
   `operational_network_id` (opaque), `building_count` (lots), `split` (wcc = exact | louvain = oversized-tail split).
 - `operational_network_bbls.csv` — `bbl`, `operational_network_id`. The building→operational-network map.
 
 Group ids are stable within a build, not across builds (they key off a per-build surrogate); join
 on the ids within this release, and treat membership as the durable content. See docs/parity.md for
-reproducibility (Owner Portfolio groups reproduce the graph exactly; the operational-network Louvain tail is
+reproducibility (Owner Portfolios reproduce the graph exactly; the operational-network Louvain tail is
 approximate).
 """
 

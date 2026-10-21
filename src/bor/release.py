@@ -51,7 +51,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     manifest = mf.build_manifest(
         conn, snapshot_id=snapshot_id, pluto_snapshot_id=pluto_snapshot_id, as_of=as_of, run_id=run_id,
         resolution_params=res.params, artifacts={name: "complete" for name in tables},
-        diagnostics={"partial": "lineage, identity layer, deed evidence and Owner Portfolio groups with their "
+        diagnostics={"partial": "lineage, identity layer, deed evidence and Owner Portfolios with their "
                                 "witness paths; the Operational Network and the per-lot absence summaries "
                                 "are added by later work packages",
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
@@ -65,7 +65,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
 def add_deed_layer(conn, tables: dict, as_of: date | None) -> tuple[dict, dict, object]:
     """Run the deed layer with decision capture and add its evidence and decisions to ``tables``
     (the deed events join the identity events in ``decision_events``). Also returns the deed edges,
-    so the Owner Portfolio groups reuse this run."""
+    so the Owner Portfolios reuse this run."""
     import pandas as pd
 
     import bor
@@ -86,7 +86,7 @@ def add_deed_layer(conn, tables: dict, as_of: date | None) -> tuple[dict, dict, 
 
 def add_owner_portfolio_layer(conn, tables: dict, deed_edge_frame, as_of: date | None, run_id: str
                               ) -> tuple[dict, dict]:
-    """Owner Portfolio groups, lots and witness paths, built from the identity resolution and the deed
+    """Owner Portfolios, lots and witness paths, built from the identity resolution and the deed
     edges already in ``tables`` (one Splink fit and one deed run per release)."""
     import bor
     from bor import curated_owners, group_tables

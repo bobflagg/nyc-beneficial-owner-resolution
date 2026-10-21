@@ -88,7 +88,7 @@ One addition beyond the review: Splink's *cluster* ids are also derived from the
 | `decision_support` | Decision → the exact observations or source records that support it |
 | `identity_node_map` | Identity cluster → node: selected assignment, alternatives and tie rule (distinguished), so a node attached to several identities does not imply every observation supports every edge |
 | `evidence_items` / `evidence_members` | Multi-member assertions: deed bundles (per parcel role: still held vs transferred onward, original and latest document ids, gate values), plus references to identity decisions |
-| `groups`, `group_members` | Owner Portfolio groups with `assertion_key`; a node is in at most one group per layer, and W0 measured that each BBL is in exactly one node, so each BBL is in at most one group per layer; the validator checks it |
+| `groups`, `group_members` | Owner Portfolios with `assertion_key`; a node is in at most one group per layer, and W0 measured that each BBL is in exactly one node, so each BBL is in at most one group per layer; the validator checks it |
 | `group_witness` | Per group: step, actual endpoint pair, evidence or decision reference, deterministic selection order |
 | `network_edges` | Accepted pre-split graph with name, address and identity weight contributions, reproducing the actual `_collapse` input. Complete or representative per the manifest declaration |
 | `network_membership`, `split_attempts` | Node → original component → final community; recursive split and unsuccessful attempts |

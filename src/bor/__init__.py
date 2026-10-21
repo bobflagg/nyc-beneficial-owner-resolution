@@ -4,7 +4,7 @@ Reliability-typed beneficial-ownership resolution over NYC public records.
 
 Builds on the standalone record-linkage engine ``nlr`` (false-split resolution) and adds:
   * the name-free deed veil-pierce (ACRIS co-conveyance + linked-successor guard),
-  * Owner Portfolio groups (connected components over CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED,
+  * Owner Portfolios (connected components over CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED,
     computed off-graph — no Neo4j),
   * reliability typing (directly-sourced vs. inferred),
   * a paired evaluation protocol against JustFix's Who Owns What.

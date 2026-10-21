@@ -5,7 +5,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 ## [Unreleased]
 
 ### Added
-- **Owner Portfolio layer** (`bor.owner_portfolios`) — Owner Portfolio groups off-graph (union-find over
+- **Owner Portfolio layer** (`bor.owner_portfolios`) — Owner Portfolios off-graph (union-find over
   `CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED`, co-op/condo exclusion). Reproduces the live KG's
   partition exactly.
 - **Deed veil-pierce** (`bor.deed_edges`) — name-free ACRIS co-conveyance edges with the
@@ -23,7 +23,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   linkage; `splink` pinned to `4.0.16`.
 
 ### Changed
-- **Group id prefixes:** Owner Portfolio groups are `OP-<min nodeid>` (was `OG-`) and Operational
+- **Group id prefixes:** Owner Portfolios are `OP-<min nodeid>` (was `OG-`) and Operational
   Network groups are `ON-<min nodeid>` (was `PF-`). A clean break: nothing had been released with the
   old prefixes, and ids were never stable across builds. The `owner_portfolio_id` and `operational_network_id`
   column names are unchanged.

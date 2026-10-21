@@ -1,10 +1,10 @@
-# W4 design: Owner Portfolio groups and witness paths
+# W4 design: Owner Portfolios and witness paths
 
 Status: design, 2026-10-21; implemented on branch `w4-groups-witness` as described. Covers W4 of `kg-handoff-plan-v2.md` for the **Owner Portfolio** layer. The Operational Network's groups and witness come with its edges in W5.
 
 ## Goal
 
-Give the KG, for every Owner Portfolio group, the members, the lots, and a **representative path**: a set of node-to-node steps, each citing the evidence that joined the two nodes, that shows why the group is one group. A consumer can then answer "why are these two buildings grouped?" by following the path between their nodes and reading each step's stage.
+Give the KG, for every Owner Portfolio, the members, the lots, and a **representative path**: a set of node-to-node steps, each citing the evidence that joined the two nodes, that shows why the group is one group. A consumer can then answer "why are these two buildings grouped?" by following the path between their nodes and reading each step's stage.
 
 ## What joins nodes (and what each step cites)
 
@@ -46,5 +46,5 @@ Per group, take the sets that touch it and connect their nodes with a union-find
 ## How it is checked
 
 - The partition is computed by the existing code; the witness is built independently from the sets. A test requires that, for every group, the witness is a spanning tree over exactly that group's members, so any disagreement between the two is a failure rather than a silent drift.
-- The release now reuses the one captured identity resolution for the Owner Portfolio groups (previously the groups refit Splink on their own). This is the substance of P0, done by passing the captured node-to-cluster assignment and the deed edges in, rather than through a separate run context.
+- The release now reuses the one captured identity resolution for the Owner Portfolios (previously the groups refit Splink on their own). This is the substance of P0, done by passing the captured node-to-cluster assignment and the deed edges in, rather than through a separate run context.
 - Validator: every witness basis resolves (`identity_cluster` to `identity_clusters`, `evidence_item` to `evidence_items`, `link_set` to `link_sets`), the stage matches its basis type, and the existing tree, count and assertion-key checks apply.

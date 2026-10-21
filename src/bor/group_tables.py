@@ -1,4 +1,4 @@
-"""Owner Portfolio groups, lots and witness paths for the release (W4; docs/w4-design.md).
+"""Owner Portfolios, lots and witness paths for the release (W4; docs/w4-design.md).
 
 The group partition comes from :mod:`bor.owner_portfolios`. This module explains it: for each group
 it builds a **representative path**, a spanning tree over the group's nodes in which every step cites

@@ -34,7 +34,7 @@ St) on one 2015 deed (2015120200784001, $1.2M) and in 2019 re-deeded each into i
 43-58 -> BRIDGEWOOD DEVELOPMENT LLC (head officer Brian Lin), 43-60 -> HONG LI GROUP LLC (head officer
 Xianglian Wang). They register to different people at different addresses, so WoW files them under two
 UNRELATED portfolios (wow.wow_portfolios orig_id 14133 vs 55695); the shared deed + nominal recovery is
-the SOLE link that reunites them (Owner Portfolio group OP-15928, CONNECTED_BY_DEED only). block-3498's assemblage,
+the SOLE link that reunites them (Owner Portfolio OP-15928, CONNECTED_BY_DEED only). block-3498's assemblage,
 sold off in real ($1.1M) arms-length deals to distinct buyers, stays split, as it should.
 
 RECALL CAVEAT — the nominal gate is deliberately precision-first, and its recall cost is real, not
@@ -42,7 +42,7 @@ hypothetical: a same-owner restructuring recorded at a market-scale price (a tra
 basis) is dropped right alongside true arms-length sales, because price alone cannot tell them apart
 (the §3 "restructuring vs. sale" check that needs human adjudication). The showcase 41 Haight bulk buy
 is exactly this: nine of ten townhouses were re-deeded at ~$1.6-2.8M, so the gate declines the whole
-set and NO Haight building is now in an Owner Portfolio group — a defensible precision call, but a recall miss
+set and NO Haight building is now in an Owner Portfolio — a defensible precision call, but a recall miss
 worth naming (see specs/case-haight.md and the measured impact + a candidate shared-principal
 refinement in specs/deed-gate-review.md).
 
@@ -116,7 +116,7 @@ _INST_RE = re.compile("|".join(_INST) + "|BANK|FANNIE|FREDDIE|AUTHORITY|CHURCH|F
 #
 # WHY — the institutional over-merge failure. _HELD_PUBLIC_KW is deliberately narrow (housing-program
 # names), so it misses institutional conveyances: a single government->university land transfer, read as
-# shared private ownership, fuses two unrelated operators into one giant Owner Portfolio group. Verified vs ACRIS
+# shared private ownership, fuses two unrelated operators into one giant Owner Portfolio. Verified vs ACRIS
 # (2026-09-18): joint held deed 2022011101555001 (2021, $3M, 16 parcels) conveyed NEW YORK STATE URBAN
 # DEVELOPMENT CORPORATION -> TRUSTEES OF COLUMBIA UNIVERSITY (Columbia's Manhattanville campus
 # expansion); one Genevieve Outlaw building (~64-building Harlem cluster) and one Malcolm Punter building

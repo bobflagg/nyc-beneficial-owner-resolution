@@ -1,7 +1,7 @@
 [project]
 name = "nyc-beneficial-owner-resolution"
 version = "0.1.0.dev0"
-description = "Reliability-typed beneficial-ownership resolution over NYC public records: false-split resolution (record linkage), a name-free deed veil-pierce, and Owner Portfolio groups — with a paired benchmark against Who Owns What."
+description = "Reliability-typed beneficial-ownership resolution over NYC public records: false-split resolution (record linkage), a name-free deed veil-pierce, and Owner Portfolios — with a paired benchmark against Who Owns What."
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
@@ -24,7 +24,7 @@ dependencies = [
     # run-to-run (~0.05% of nodes). Pinning removes the larger cross-version drift.
     "splink==4.0.16",
     "pandas>=2.0",
-    "networkx>=3.0",       # off-graph connected components for Owner Portfolio groups (no Neo4j)
+    "networkx>=3.0",       # off-graph connected components for Owner Portfolios (no Neo4j)
     "igraph>=0.11",        # weighted Louvain for the operational-network oversized-component tail
     "psycopg2-binary>=2.9.12",
     "python-dotenv>=1.0",

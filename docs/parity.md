@@ -1,12 +1,12 @@
 # Parity & reproducibility
 
-BOR resolves Owner Portfolio groups **off-graph** (no Neo4j). This records how the off-graph
+BOR resolves Owner Portfolios **off-graph** (no Neo4j). This records how the off-graph
 partition was validated against WatchlineNYC's live knowledge-graph partition, and what level of
 reproducibility to expect.
 
 ## Method
 
-The live KG builds Owner Portfolio groups as connected components of `CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED`
+The live KG builds Owner Portfolios as connected components of `CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED`
 edges materialized in Neo4j. BOR builds the *same* edges from Postgres (forked verbatim from the
 pipeline) and runs the identical union-find in memory, then compares the two node→group partitions.
 Both are keyed on the `landlords_with_connections` (lwc) `nodeid`, which is stable within a single
@@ -47,7 +47,7 @@ as such rather than as exact integers reproducible to the unit.
 
 The operational network (`bor.operational_network`) is WCC(+Louvain) over name ∪ address ∪ splink
 edges, mirroring WatchlineNYC's `:Portfolio`. It has a different reproducibility profile than the
-Owner Portfolio groups, because it uses **two** clustering steps:
+Owner Portfolios, because it uses **two** clustering steps:
 
 - **WCC** (connected components) — deterministic, reproduces exactly.
 - **Louvain** — splits only components whose BBL-sum exceeds `MAX_SIZE = 300`. WatchlineNYC runs

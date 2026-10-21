@@ -2,13 +2,13 @@
 
 How much, and in which direction, the Owner Portfolio partition differs from WoW's
 registration-clustering partition, over the buildings BOTH systems group (multi-building WoW
-portfolios ∩ multi-member Owner Portfolio groups). A DIVERGENCE measure, not accuracy — there is no ground
+portfolios ∩ multi-member Owner Portfolios). A DIVERGENCE measure, not accuracy — there is no ground
 truth; adjudication decides who is right.
 
-Two directions (a WoW portfolio is an operational network; an Owner Portfolio group is an ownership claim):
-  * owners crossing portfolios — an Owner Portfolio group spans >=2 WoW portfolios: BOR *unifies* what WoW
+Two directions (a WoW portfolio is an operational network; an Owner Portfolio is an ownership claim):
+  * owners crossing portfolios — an Owner Portfolio spans >=2 WoW portfolios: BOR *unifies* what WoW
     split (noise in the operational signal; one owner's differently-named LLCs reunited).
-  * portfolios hiding >1 owner — a WoW portfolio spans >=2 Owner Portfolio groups: the portfolio is an
+  * portfolios hiding >1 owner — a WoW portfolio spans >=2 Owner Portfolios: the portfolio is an
     operational network (typically tied by a shared registration office) that spans several
     distinct owners, which BOR keeps apart. Not an error in the portfolio — a different question.
 
@@ -69,13 +69,13 @@ def divergence(conn, *, groups=None) -> dict:
 
 def print_divergence(d: dict) -> None:
     print(f"WoW multi-building portfolios:        {d['wow_portfolios']:>6}  ({d['wow_bbls']} bbls)")
-    print(f"Owner Portfolio groups (multi):      {d['owner_portfolios']:>6}  ({d['owner_portfolio_bbls']} bbls)")
+    print(f"Owner Portfolios (multi):      {d['owner_portfolios']:>6}  ({d['owner_portfolio_bbls']} bbls)")
     print(f"shared universe (grouped in BOTH):    {d['shared_universe']:>6}  buildings")
     print()
     print("  (divergence, not accuracy — how far apart / which way the two groupings differ, not who is right)")
-    print(f"owners CROSSING WoW portfolios:  {d['owners_crossing_portfolios']:>5} Owner Portfolio groups span >=2 WoW portfolios  ({d['owners_crossing_bldgs']} bldgs)")
-    print(f"portfolios HIDING >1 owner:      {d['portfolios_hiding_multiple_owners']:>5} WoW portfolios span >=2 Owner Portfolio groups  ({d['portfolios_hiding_bldgs']} bldgs)")
-    print(f"agree (1:1 on the rest):         {d['agree']:>5} Owner Portfolio groups map to a single WoW portfolio")
+    print(f"owners CROSSING WoW portfolios:  {d['owners_crossing_portfolios']:>5} Owner Portfolios span >=2 WoW portfolios  ({d['owners_crossing_bldgs']} bldgs)")
+    print(f"portfolios HIDING >1 owner:      {d['portfolios_hiding_multiple_owners']:>5} WoW portfolios span >=2 Owner Portfolios  ({d['portfolios_hiding_bldgs']} bldgs)")
+    print(f"agree (1:1 on the rest):         {d['agree']:>5} Owner Portfolios map to a single WoW portfolio")
 
 
 if __name__ == "__main__":

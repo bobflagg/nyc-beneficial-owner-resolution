@@ -1,4 +1,4 @@
-"""Owner Portfolio groups and witness paths: link sets, the spanning tree and the tables (no database)."""
+"""Owner Portfolios and witness paths: link sets, the spanning tree and the tables (no database)."""
 from types import SimpleNamespace
 
 import pandas as pd
