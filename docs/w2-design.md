@@ -112,6 +112,10 @@ The nlr half is implemented on branch `capture-decisions` (commit `6a9b1a1`, v0.
 
 One thing section 3 got wrong. The throwaway replica kept every corporation, but `feedback_merge` keeps only corporations that have a degree record at or below the cap, and the degree query only counts a corporation that appears on a row with a named person. 72,850 of 107,386 corporations (68%) have no degree record and never take part. The real feedback pass has 1,197 accepted pairs, 371 rejected as not rare, 175 for first-name conflict, and 284 left out of the pass: 70 over the cap and 214 with no degree record. The totals match the replica (2,027); only the split differs. The trace reports the last group as `degree_unknown`, and the contract gains the reason code `shared_company_degree_unknown` under `below_eligibility_rule`. nlr's behaviour is unchanged; whether the exclusion is intended is a separate question.
 
+## 7b. Status of the bor half (2026-10-21)
+
+Implemented on bor branch `w2-identity-evidence`, developed against the local nlr worktree (the pin in `pyproject.toml` still says v0.1.0 and moves when nlr 0.2.0 is released; until then `uv run --with-editable <nlr checkout> ...` is needed). `bor.splink_bridge.resolve` is a thin wrapper over `nlr.resolve_entities` with the F12 exclusion, and bor's copy of the pipeline is gone. `bor.identity_events` builds `decision_events`, `decision_support`, `identity_clusters` (with `base_cluster_id`) and `identity_observations` from the trace; `bor.lineage.build_mapping` takes the captured `Resolution`. On the reference dump the event counts match the trace, the whole table set validates against the contract, every identity-BBL pair is traceable to an HPD contact, and the Croman scenario of section 6 holds. Also fixed: `bor.db.pg_conn` now loads bor's own `.env`, because nlr looks for it next to its own install.
+
 ## 8. Order of work
 
 1. Baseline saved (done in scratch; kept for step 5).

@@ -26,13 +26,14 @@ No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS do
 
 | Group | Tables | Status |
 |---|---|---|
-| Lineage | `observations`, `node_observations`, `node_observation_alternatives`, `identity_clusters`, `identity_observations`, `node_identity_matches`, `node_cluster`, `node_cluster_alternatives` | implemented, except that `identity_clusters.base_cluster_id` (the pre-feedback cluster) waits on W2 |
-| Decisions and evidence | `decision_events`, `decision_support`, `evidence_items`, `evidence_members` | planned (W2, W3, W6a) |
+| Lineage | `observations`, `node_observations`, `node_observation_alternatives`, `identity_clusters` (with `base_cluster_id`), `identity_observations`, `node_identity_matches`, `node_cluster`, `node_cluster_alternatives` | implemented |
+| Decisions and evidence | `decision_events`, `decision_support` | implemented for the identity layer (`bor.identity_events`, W2); deed, group and network decisions are planned (W3, W5, W6a) |
+| | `evidence_items`, `evidence_members` | planned (W3) |
 | Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness` | planned (W4) |
 | Operational network | `network_edges`, `network_membership`, `split_attempts` | planned (W5) |
 | Absence, masking, metrics | `bbl_status`, `masked_addresses`, `masked_address_nodes`, `method_metrics` | planned (W6b, W7) |
 
-The worked example below uses base clusters, which the real tables cannot produce until W2. Columns, types, enums, keys and foreign keys are in `release_schema.py`; the table descriptions there are the reference.
+The worked example below is a synthetic fixture, but every table it uses for the identity layer is now produced from the real dump. Columns, types, enums, keys and foreign keys are in `release_schema.py`; the table descriptions there are the reference.
 
 ## Decisions: one event model
 
@@ -43,7 +44,8 @@ The worked example below uses base clusters, which the real tables cannot produc
 - **Two co-op/condo rules exist** and are named separately: the owner-group rule uses HPD `contactdescription`; the deed code uses PLUTO building classes. **Two address masks exist** with the same threshold and different keys: the network address-edge mask and the Splink address-evidence mask.
 - **Scores belong only to decisions that were scored.** A base pair carries `score` and `threshold`. A feedback merge joins two pre-feedback *base clusters*, so it has no pair score. Nothing is ever scored for a pair that was never compared.
 - **Rejected candidates.** By default the release records pairs **blocked by a gate** (a veto, a mask, a hub cap, a guard), which are the exclusions Q19 asks about. Pairs merely below the threshold are not recorded (`pair_below_threshold` exists for a release that opts in; the volume is unmeasured).
-- **`decision_support`** links a decision to the source records it rests on: HPD observations, BBLs, documents. This is what lets a consumer reach contacts without joining on names.
+- **`decision_support`** links a decision to the source records it rests on: HPD observations, BBLs, documents. This is what lets a consumer reach contacts without joining on names. Events between identities cite their contacts through `identity_observations`, so `decision_support` carries rows only where the contacts are not any identity's own: for a shared-company merge, the contacts that carry the company (role `shared_company`), on either cluster's buildings.
+- **Identity-layer provenance.** `rule_version` is the version of the code that made the decision (`nlr-<version>`, or `bor-<version>` for the curated list). An identity a curated list removed (`curated_exclusion`) is in no cluster, so it is known by `identity_observations` alone, and an `identity` subject may resolve against either table. `detail` is a small JSON object (for example `name_rarity`, `addr_degree`, `n_shared_corporations`); no corporation names are exported.
 - **Absence of an event means the rule did not run.** An unexamined candidate is never recorded as rejected.
 - **Dropped groups** are never in `groups`. Their `group` event has outcome `dropped`; a published group never does. The lots of a dropped group get their own events.
 

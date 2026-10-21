@@ -232,13 +232,13 @@ def test_parent_table_missing_is_an_error():
 
 def test_lineage_output_satisfies_the_contract(pg, resolved):
     from bor.lineage import build_mapping
-    full, clusters = resolved
-    tables, _ = build_mapping(pg, full, clusters)
+    tables, _ = build_mapping(pg, resolved)
     assert {n for n in tables} <= {n for n, t in TABLES.items() if t.status == "implemented"}
     assert _errors(tables) == []
     # ids are opaque: no md5 of a name and address leaves the release
     assert tables["identity_clusters"]["identity_id"].str.fullmatch(r"I\d{7}").all()
     assert tables["identity_clusters"]["cluster_id"].str.fullmatch(r"C\d{7}").all()
+    assert tables["identity_clusters"]["base_cluster_id"].str.fullmatch(r"BC\d{7}").all()
     assert tables["observations"]["pair_variants"].max() >= 2          # repeated contact ids are flagged
 
 

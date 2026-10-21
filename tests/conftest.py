@@ -21,8 +21,8 @@ def pg():
 
 @pytest.fixture(scope="session")
 def resolved(pg):
-    from bor.splink_bridge import DEFAULT_THRESHOLD, _resolve
-    return _resolve(pg, DEFAULT_THRESHOLD)
+    from bor.splink_bridge import DEFAULT_THRESHOLD, resolve
+    return resolve(pg, DEFAULT_THRESHOLD, capture=True)
 
 
 @pytest.fixture(scope="session")

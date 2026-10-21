@@ -205,7 +205,14 @@ def _inv_node_cluster(T):
 
 def _inv_identity_clusters(T):
     ic = T.get("identity_clusters")
-    if ic is None or "base_cluster_id" not in ic.columns:
+    if ic is None:
+        return []
+    io = T.get("identity_observations")
+    if io is not None:
+        n = int((~ic["identity_id"].isin(set(io["identity_id"]))).sum())
+        if n:
+            return [Violation("identity_clusters", "observations", "every clustered identity needs observations", n)]
+    if "base_cluster_id" not in ic.columns:
         return []
     g = ic.dropna(subset=["base_cluster_id"]).groupby("base_cluster_id")["cluster_id"].nunique()
     n = int((g > 1).sum())
@@ -233,9 +240,18 @@ def _inv_decision_events(T):
     if n:
         v.append(Violation("decision_events", "reason", "accepted events carry no reason; every other outcome has one", n))
     for side in ("subject", "counterpart"):
+        ids = de.loc[de[f"{side}_type"] == "identity", f"{side}_id"].astype(str)
+        known = set()
+        for tbl in ("identity_clusters", "identity_observations"):
+            if tbl in T:
+                known |= set(T[tbl]["identity_id"].astype(str))
+        if known and len(ids) and int((~ids.isin(known)).sum()):
+            v.append(Violation("decision_events", "reference",
+                               f"{side} identity in neither identity_clusters nor identity_observations",
+                               int((~ids.isin(known)).sum())))
         for typ, (tbl, col) in _SUBJECT_TARGETS.items():
-            if typ == "group":
-                continue                      # checked below: dropped groups are not published
+            if typ in ("group", "identity"):
+                continue                      # group: checked below (dropped groups are not published)
             if tbl not in T or col not in T[tbl].columns:
                 continue
             ids = de.loc[de[f"{side}_type"] == typ, f"{side}_id"]

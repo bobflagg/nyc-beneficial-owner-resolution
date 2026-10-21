@@ -23,14 +23,12 @@ Splink reads ``wow.hpd_contacts`` and the join reads ``wow.landlords_with_connec
 """
 from __future__ import annotations
 
-import hashlib
 import re
-from collections import Counter
 from itertools import combinations
 
 import pandas as pd
 
-from nlr import splink_source as ss
+from nlr import Resolution, resolve_entities
 from bor import aggregator_officer_audit as aoa
 from bor._edges import SPLINK_WEIGHT, STAR_ABOVE   # uniform edge weight + star threshold (shared kernel)
 
@@ -40,62 +38,32 @@ from bor._edges import SPLINK_WEIGHT, STAR_ABOVE   # uniform edge weight + star 
 # multi-parcel-deed check (~83% co-ownership agreement, population-wide). See notes below.
 DEFAULT_THRESHOLD = 0.999
 
-# A thin singleton base mixed into the training slice (~1% of single-occurrence names) so u/λ
-# stay calibrated to the population rather than the dense same-name groups alone.
-_BASE_HASH_PCT = 1
 _norm = lambda s: re.sub(r"\s+", " ", s).strip().upper() if isinstance(s, str) else s
-_gkey = lambda ln, fi: int(hashlib.md5(f"{ln}|{fi}".encode()).hexdigest()[:8], 16)
 
 
-def _stratified_train(full: pd.DataFrame) -> pd.DataFrame:
-    """PRINCIPLED training slice (replaces the old gold-anchored TARGET+NBR+OFFICE slice).
+def resolve(conn, threshold: float = DEFAULT_THRESHOLD, *, capture: bool = False) -> Resolution:
+    """The full-population nlr resolution, with the F12 exclusion.
 
-    Every identity that sits in a multi-member ``(last_name, first_initial)`` group -- i.e.
-    every record with a potential same-name peer, across ALL operators -- plus a thin
-    singleton base for u/λ calibration. Deterministic, representative, and NON-circular: it
-    never hand-picks the operators the resolution is showcased/benchmarked on.
+    One pipeline, in nlr (:func:`nlr.resolve_entities`): name-anchored blocking plus the first-name
+    and common-name vetoes, trained on a stratified slice, then a corp-co-owner feedback pass that
+    bridges same-owner offices sharing a private corp (Croman via Centennial, Rashad via The
+    Andrews Organization). bor adds one thing: it drops curated mortgage-servicer / REO signers
+    (out-of-state officers whose buildings are servicer-owned: Fannie Mae, Selene, Shellpoint,
+    Reverse Mortgage Solutions; e.g. ERIC MOORE) from the resolution input, so their buildings
+    resolve by owner-of-record (registered-llc / deed), NOT by the shared signer name. nlr applies
+    the exclusion before clustering AND the feedback loop, so it is feedback-proof (a clusterer-only
+    veto is not: feedback_merge re-merges past it). See aggregator_officer_audit (curated
+    allowlist gated by the servicer-corp rule) / phase-2 findings F12.
 
-    Validated (2026-08): two disjoint halves of these groups resolve the full population to
-    identity-level same-owner-pair Jaccard 0.986 (vs 0.52 for the old gold-anchored slice),
-    with gold precision 0.996 @ threshold 0.999 and ~83% ACRIS multi-parcel co-ownership
-    agreement (population-wide, non-gold). This is what makes the KG's portfolios reproducible
-    rather than an artifact of which operators were sampled."""
-    key = list(zip(full["last_name"].fillna(""), full["first_initial"].fillna("")))
-    gsize = Counter(key)
-    keep = [(gsize[k] >= 2) or (_gkey(*k) % 100 < _BASE_HASH_PCT) for k in key]
-    return full[pd.Series(keep, index=full.index)].reset_index(drop=True)
+    ``capture=True`` also records the decisions behind the clusters (``Resolution.trace``)."""
+    return resolve_entities(conn, threshold=threshold, capture=capture,
+                            exclude_names=aoa.excluded_officer_names(conn))
 
 
 def _resolve(conn, threshold: float):
-    """Full-population Splink resolution -> (records, clusters). Name-anchored blocking plus
-    the first-name and common-name vetoes (see splink_source.cluster_gated), trained on the
-    principled stratified slice (:func:`_stratified_train`), then a corp-co-owner feedback
-    pass that bridges same-owner offices sharing a private corp (Croman via Centennial, Rashad
-    via The Andrews Organization) — the cross-office consolidation name/address can't reach.
-    Guarded by corp-degree cap + name-rarity + first-name veto; validated precision-safe
-    against the owner-level gold (P 1.0, 0 cross-surname) for a ~+30pt recall lift."""
-    full = ss.extract(conn, "TRUE")
-    full = full[full.contact_kind == "person"].drop_duplicates("unique_id").reset_index(drop=True)
-    # F12 — drop CURATED mortgage-servicer / REO signers (out-of-state officers whose buildings are
-    # servicer-owned — Fannie Mae / Selene / Shellpoint / Reverse Mortgage Solutions; e.g. ERIC MOORE) from
-    # the resolution input, so their buildings resolve by owner-of-record (registered-llc / deed), NOT by the
-    # shared signer name. Done at extract-level, before clustering AND the feedback loop, so the exclusion is
-    # feedback-proof (a clusterer-only veto is not — feedback_merge re-merges past it). See
-    # aggregator_officer_audit (curated allowlist gated by the servicer-corp rule) / phase-2 findings F12.
-    inst = aoa.excluded_officer_names(conn)
-    if inst:
-        okey = ((full["first_name"].fillna("").str.strip().str.upper()) + " " +
-                (full["last_name"].fillna("").str.strip().str.upper())).str.strip()
-        full = full[~okey.isin(inst)].reset_index(drop=True)
-    train = _stratified_train(full)
-    degs = ss.address_degrees(conn)
-    nf = ss.name_freq(conn)
-    linker, preds = ss.fit_predict_full(train, full, addr_degrees=degs)
-    clusters = ss.cluster_gated(preds, full, threshold, name_freq=nf)
-    corp_df = ss.corp_owners_for(conn)      # (bbl, corp) over all buildings
-    corp_deg = ss.corp_degrees(conn)        # corp -> distinct-landlord degree (aggregator cap)
-    clusters = ss.feedback_merge(full, clusters, corp_df, corp_deg, name_freq=nf)
-    return full, clusters
+    """``(identities, clusters)`` of :func:`resolve`; the shape the edge builders consume."""
+    res = resolve(conn, threshold)
+    return res.identities, res.clusters
 
 
 def node_cluster_votes(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> pd.DataFrame:

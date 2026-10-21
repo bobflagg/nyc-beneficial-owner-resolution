@@ -3,8 +3,9 @@ the reference dump (skipped without PG* env; see conftest)."""
 import numpy as np
 import pandas as pd
 
+from bor.identity_events import cluster_ids
 from bor.lineage import (DIGEST_SQL, build_mapping, node_cluster_tables, node_observation_tables,
-                         observation_id, opaque_id_maps)
+                         observation_id)
 from bor.splink_bridge import select_cluster
 
 
@@ -22,11 +23,9 @@ def test_digest_is_positional_and_treats_null_like_empty():
 # --- opaque ids ---------------------------------------------------------------------------------
 
 def test_cluster_ids_depend_on_the_partition_not_on_splinks_label():
-    full = pd.DataFrame({"unique_id": ["u1", "u2", "u3", "u4"]})
     run_a = pd.DataFrame({"unique_id": ["u1", "u2", "u3", "u4"], "cluster_id": ["u2", "u2", "u4", "u4"]})
     run_b = pd.DataFrame({"unique_id": ["u1", "u2", "u3", "u4"], "cluster_id": ["u1", "u1", "u3", "u3"]})
-    (ia, ca), (ib, cb) = opaque_id_maps(full, run_a), opaque_id_maps(full, run_b)
-    assert ia == ib == {"u1": "I0000001", "u2": "I0000002", "u3": "I0000003", "u4": "I0000004"}
+    ca, cb = cluster_ids(run_a, "C"), cluster_ids(run_b, "C")
     assert [ca[c] for c in ("u2", "u4")] == [cb[c] for c in ("u1", "u3")] == ["C0000001", "C0000002"]
 
 
@@ -103,8 +102,7 @@ def test_select_cluster_matches_the_original_mode_rule():
 # --- regression against the reference dump ----------------------------------------------------
 
 def test_mapping_against_reference_dump(pg, resolved):
-    full, clusters = resolved
-    tables, rep = build_mapping(pg, full, clusters)
+    tables, rep = build_mapping(pg, resolved)
 
     # exact, from the data: one wow_landlords row per BBL, one node per BBL
     assert rep["node_bbl_rows"] == 171_347

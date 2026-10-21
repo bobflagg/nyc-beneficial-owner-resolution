@@ -159,8 +159,9 @@ _TABLES = [
         description="nlr identity -> final cluster (and, from W2, its pre-feedback base cluster)."),
     Table("identity_observations", "implemented", ("identity_id", "bbl", "observation_id"), (
         _c("identity_id"), _c("bbl"), _c("observation_id"), _c("tied_registration", "bool")),
-        fks=(_fk("identity_id", "identity_clusters"), _fk("observation_id", "observations")),
-        description="Which HPD contacts, per BBL, an nlr identity aggregates."),
+        fks=(_fk("observation_id", "observations"),),
+        description="Which HPD contacts, per BBL, an identity aggregates: the contacts nlr used. "
+                    "Also covers identities a curated list removed, which are in no cluster."),
     Table("node_identity_matches", "implemented", ("node_id", "identity_id", "bbl"), (
         _c("node_id", "int"), _c("identity_id"), _c("bbl")),
         fks=(_fk(("node_id", "bbl"), "node_observations"), _fk("identity_id", "identity_clusters")),
@@ -175,7 +176,7 @@ _TABLES = [
         description="Every cluster a straddling node matched, with votes and the selected one."),
 
     # ---- decisions and evidence (planned, W2/W3/W6a) --------------------------------------------
-    Table("decision_events", "planned", ("decision_id",), (
+    Table("decision_events", "implemented", ("decision_id",), (
         _c("decision_id"), _c("layer", enum=DECISION_LAYERS), _c("stage", enum=STAGES),
         _c("subject_type", enum=SUBJECT_TYPES), _c("subject_id"),
         _c("counterpart_type", nullable=True, enum=SUBJECT_TYPES), _c("counterpart_id", nullable=True),
@@ -184,8 +185,9 @@ _TABLES = [
         _c("threshold", "float", nullable=True), _c("cluster_id", nullable=True),
         _c("detail", nullable=True)),
         description="One row per decision at the grain where a rule ran: accepted links and "
-                    "policy outcomes alike. Absence of an event means the rule did not run."),
-    Table("decision_support", "planned", ("decision_id", "support_type", "support_id", "role"), (
+                    "policy outcomes alike. Absence of an event means the rule did not run. Identity-layer "
+                    "rows are implemented (bor.identity_events); deed, group and network rows are planned."),
+    Table("decision_support", "implemented", ("decision_id", "support_type", "support_id", "role"), (
         _c("decision_id"), _c("support_type", enum=("observation", "bbl", "document")),
         _c("support_id"), _c("role")),
         fks=(_fk("decision_id", "decision_events"),),

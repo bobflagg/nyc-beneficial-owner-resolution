@@ -17,12 +17,14 @@ Tables (no names; HPD ids and BBLs only):
 * ``node_cluster_alternatives`` — the clusters of nodes that straddle several.
 * ``identity_clusters``       — final cluster of each identity.
 * ``observations``            — every observation referenced above.
+* ``decision_events`` / ``decision_support`` — the identity-layer decisions (:mod:`bor.identity_events`).
 
 **Opaque ids.** nlr's identity id (and the cluster ids Splink derives from it) is an md5 of a
 person's name and address. The release uses run-local opaque ids instead (``I0000001`` for
-identities, ``C0000001`` for clusters), numbered by the identity (or, for a cluster, its smallest
-member), so the same partition always gets the same ids and W2 can reproduce them with :func:`opaque_id_maps`.
-The KG derives its own identity key from the observations (KG notes 0006 and 0007).
+identities, ``C0000001`` for clusters, ``BC0000001`` for base clusters), numbered by the identity
+(or, for a cluster, its smallest member), so the same partition always gets the same ids; see
+:mod:`bor.identity_events`. The KG derives its own identity key from the observations (KG notes
+0006 and 0007).
 
 **Observation id** ``"{registrationid}:{registrationcontactid}:{k}"``. HPD's contact id is not
 unique (1,028 repeated pairs, 616 with differing content), so ``k`` is the 0-based rank of the
@@ -31,10 +33,9 @@ is 0 for the 99.9% of pairs that are unique. The digest is :data:`DIGEST_SQL`; i
 number, never exported, and is not normative: consumers join on (registration, contact id) and
 treat a pair with ``pair_variants > 1`` as ambiguous, attaching evidence to every row of the pair.
 
-**Identity side is temporary.** nlr's extraction drops contact ids, so ``identity_observations``
-re-derives them with SQL that mirrors nlr's ``EXTRACT_SQL``. Every (identity, bbl) in the
-resolved frame must be found; :func:`build_mapping` reports any that are not. W2 replaces this by
-capturing the lineage inside nlr.
+**Identity side.** ``identity_observations`` comes from the ``sources`` nlr records for each identity
+(``resolve(..., capture=True)``): the contacts the extraction actually used, including for BBLs
+where several registrations tied. The decision tables are built by :mod:`bor.identity_events`.
 """
 from __future__ import annotations
 
@@ -97,39 +98,23 @@ LEFT JOIN (SELECT nodeid, bbl, min(prec) AS p FROM cand GROUP BY 1, 2) b
 WHERE c.prec IS NOT DISTINCT FROM b.p
 """
 
-# nlr's most-recent-registration rule, keeping every registration tied for first (nlr's own
-# DISTINCT ON picks one of them arbitrarily), and nlr's identity formula over the contact.
-_IDENTITY_OBS_SQL = f"""
-WITH {_CONTACT_OBS},
-ranked AS (
-  SELECT btrim(r.bbl) AS bbl, r.registrationid,
+# Every (registration, contact id, k): how a source contact maps to observation ids.
+_CONTACT_KEYS_SQL = f"""
+WITH {_CONTACT_OBS}
+SELECT registrationid, registrationcontactid, k FROM contact_obs
+"""
+
+# BBLs where more than one registration is tied for most recent under nlr's ordering (its pick
+# among them is arbitrary; nlr records the one it used, but a reader may want to know).
+_TIED_SQL = """
+SELECT bbl FROM (
+  SELECT btrim(r.bbl) AS bbl,
          dense_rank() OVER (PARTITION BY btrim(r.bbl)
                             ORDER BY r.registrationenddate DESC NULLS LAST,
                                      r.lastregistrationdate DESC NULLS LAST) AS rk
-  FROM hpd_registrations r WHERE r.bbl IS NOT NULL
-),
-top AS (SELECT bbl, registrationid, count(*) OVER (PARTITION BY bbl) AS n_tied FROM ranked WHERE rk = 1),
-n AS (
-  SELECT t.bbl, t.n_tied, o.registrationid, o.registrationcontactid, o.k,
-    NULLIF(upper(btrim(o.firstname)),'') AS fn, NULLIF(upper(btrim(o.lastname)),'') AS ln,
-    NULLIF(upper(btrim(o.corporationname)),'') AS corp,
-    NULLIF(upper(btrim(o.businesshousenumber)),'') AS bh, NULLIF(upper(btrim(o.businessstreetname)),'') AS bs,
-    NULLIF(upper(btrim(o.businessapartment)),'') AS ba, NULLIF(upper(btrim(o.businesscity)),'') AS bc,
-    NULLIF(upper(btrim(o.businessstate)),'') AS bst, NULLIF(btrim(o.businesszip),'') AS bz
-  FROM top t
-  JOIN contact_obs o ON o.registrationid = t.registrationid
-  WHERE o.type IN ({_ROLES_SQL})
-    AND (o.firstname IS NOT NULL OR o.lastname IS NOT NULL OR o.corporationname IS NOT NULL)
-    AND (o.businesshousenumber IS NOT NULL OR o.businessstreetname IS NOT NULL)
-    AND length(concat(o.businesshousenumber, o.businessstreetname)) > 2
-)
-SELECT bbl, n_tied, registrationid, registrationcontactid, k,
-  md5((CASE WHEN fn IS NOT NULL OR ln IS NOT NULL THEN 'person' ELSE 'org' END) || '|' ||
-      coalesce(coalesce(NULLIF(trim(concat_ws(' ', fn, ln)),''), corp), '') || '|' ||
-      concat_ws('|', bh, bs, ba, bz, bc, bst)) AS unique_id
-FROM n
+  FROM hpd_registrations r WHERE r.bbl IS NOT NULL) t
+WHERE rk = 1 GROUP BY bbl HAVING count(*) > 1
 """
-
 
 # Contact ids that repeat with differing content, over every contact type.
 _PAIR_VARIANTS_SQL = f"""
@@ -139,19 +124,6 @@ FROM (SELECT DISTINCT registrationid, registrationcontactid, type, firstname, mi
              businessstate, businesszip FROM hpd_contacts) d
 GROUP BY 1, 2 HAVING count(*) > 1
 """
-
-
-def opaque_id_maps(full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dict, dict]:
-    """``(identity_map, cluster_map)``: nlr ids -> run-local opaque ids.
-
-    Identities are numbered in sorted order of ``unique_id``. Clusters are numbered by their
-    smallest member identity, **not** by Splink's cluster label: the label is a union-find root
-    that differs from run to run even when the partition is identical, so numbering by label would
-    give the same partition different ids."""
-    ident = {u: f"I{i:07d}" for i, u in enumerate(sorted(set(full["unique_id"])), 1)}
-    smallest = clusters.assign(_cid=clusters["cluster_id"].astype(str)).groupby("_cid")["unique_id"].min()
-    clus = {c: f"C{i:07d}" for i, c in enumerate(smallest.sort_values().index, 1)}
-    return ident, clus
 
 
 def observation_id(registrationid, registrationcontactid, k) -> str:
@@ -205,31 +177,43 @@ def node_cluster_tables(votes: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame
             alt.rename(columns={"nodeid": "node_id"}).reset_index(drop=True))
 
 
-def build_mapping(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dict, dict]:
-    """Build the mapping tables for one resolution (``full``, ``clusters`` from
-    ``splink_bridge._resolve``). Returns ``(tables, report)``."""
+def build_mapping(conn, res) -> tuple[dict, dict]:
+    """Build the lineage and identity-layer tables for one resolution, an nlr ``Resolution`` from
+    ``bor.splink_bridge.resolve(..., capture=True)``. Returns ``(tables, report)``."""
+    if res.trace is None:
+        raise ValueError("build_mapping needs a Resolution captured with capture=True")
+    import bor
+    from bor import identity_events as ie
+
+    full, clusters = res.identities, res.clusters
     cand = pd.read_sql(_NODE_OBS_SQL, conn)
     node_obs, node_alt = node_observation_tables(cand)
 
-    iobs = _with_obs_id(pd.read_sql(_IDENTITY_OBS_SQL, conn))
-    want = full[["unique_id", "bbls"]].explode("bbls").rename(columns={"bbls": "bbl"}).dropna()
-    ident_obs = want.merge(iobs[["unique_id", "bbl", "observation_id", "n_tied"]],
-                           on=["unique_id", "bbl"], how="left", indicator=True)
-    not_found = int((ident_obs["_merge"] == "left_only").sum())
-    ident_obs = (ident_obs[ident_obs["_merge"] == "both"].drop(columns="_merge")
-                 .rename(columns={"unique_id": "identity_id"}))
-    ident_obs["tied_registration"] = ident_obs.pop("n_tied") > 1
-    ident_obs = ident_obs.drop_duplicates(["identity_id", "bbl", "observation_id"]).reset_index(drop=True)
+    keys = pd.read_sql(_CONTACT_KEYS_SQL, conn)
+    tied = set(pd.read_sql(_TIED_SQL, conn)["bbl"])
+    imap = ie.identity_ids(full, res.excluded)
+    cmap = ie.cluster_ids(clusters, "C")
+    bmap = ie.cluster_ids(res.base_clusters, "BC")
+    ident_obs = ie.identity_observations(full, res.excluded, imap, keys, tied)
+    ident_cl = ie.identity_clusters(clusters, res.base_clusters, imap, cmap, bmap)
+    events, support = ie.decision_tables(
+        res.trace, res.excluded, clusters, res.base_clusters, res.params["threshold"], imap, cmap, bmap,
+        keys, ie.nlr_rule_version(), f"bor-{bor.__version__}")
+
+    want = full[["unique_id", "bbls"]].explode("bbls").dropna()
+    want_keys = set(zip(want["unique_id"].map(imap), want["bbls"]))
+    not_found = len(want_keys - set(zip(ident_obs["identity_id"], ident_obs["bbl"])))
 
     votes = node_cluster_votes(conn, full, clusters)
     node_cl, node_cl_alt = node_cluster_tables(votes)
+    node_cl["cluster_id"] = node_cl["cluster_id"].map(cmap)
+    node_cl_alt["cluster_id"] = node_cl_alt["cluster_id"].map(cmap)
     matches = (votes[["nodeid", "unique_id", "bbl"]].drop_duplicates()
                .rename(columns={"nodeid": "node_id", "unique_id": "identity_id"}).reset_index(drop=True))
-    ident_cl = clusters[["unique_id", "cluster_id"]].rename(columns={"unique_id": "identity_id"}).copy()
-    ident_cl["cluster_id"] = ident_cl["cluster_id"].astype(str)
+    matches["identity_id"] = matches["identity_id"].map(imap)
 
     ids = pd.concat([node_obs["selected_observation_id"].dropna(), node_alt["observation_id"],
-                     ident_obs["observation_id"]]).drop_duplicates()
+                     ident_obs["observation_id"], support["support_id"]]).drop_duplicates()
     observations = pd.DataFrame({"observation_id": ids.to_numpy()})
     parts = observations["observation_id"].str.split(":", expand=True).astype(int)
     observations["registration_id"], observations["registration_contact_id"], observations["k"] = (
@@ -255,19 +239,18 @@ def build_mapping(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dic
         "nodes_straddling_2plus_clusters": int((node_cl["n_clusters"] >= 2).sum()),
         "straddling_nodes_tied": int(((node_cl["n_clusters"] >= 2) & node_cl["tied"]).sum()),
         "identities": int(full["unique_id"].nunique()),
-        "identity_bbl_pairs": len(want),
+        "identities_excluded": int(len(res.excluded)),
+        "identity_bbl_pairs": len(want_keys),
         "identity_bbl_pairs_without_observation": not_found,
-        "identity_bbl_pairs_on_tied_registration": int(ident_obs.loc[ident_obs["tied_registration"],
-                                                                     ["identity_id", "bbl"]].drop_duplicates().shape[0]),
-        "identities_without_node": int(len(set(full["unique_id"]) - set(matches["identity_id"]))),
+        "identity_bbl_pairs_on_tied_registration": int(
+            ident_obs.loc[ident_obs["tied_registration"], ["identity_id", "bbl"]].drop_duplicates().shape[0]),
+        "identities_without_node": int(len(set(full["unique_id"].map(imap)) - set(matches["identity_id"]))),
+        "decision_events": len(events),
+        "decision_events_by_outcome": {f"{st}/{oc}": int(n) for (st, oc), n in
+                                       events.groupby(["stage", "outcome"]).size().items()},
+        "decision_support": len(support),
         "observations": len(observations),
     }
-    imap, cmap = opaque_id_maps(full, clusters)
-    ident_obs["identity_id"] = ident_obs["identity_id"].map(imap)
-    matches["identity_id"] = matches["identity_id"].map(imap)
-    ident_cl["identity_id"] = ident_cl["identity_id"].map(imap)
-    for df in (ident_cl, node_cl, node_cl_alt):
-        df["cluster_id"] = df["cluster_id"].map(cmap)
     tables = {
         "observations": observations,
         "node_observations": node_obs,
@@ -277,6 +260,8 @@ def build_mapping(conn, full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dic
         "node_cluster": node_cl,
         "node_cluster_alternatives": node_cl_alt,
         "identity_clusters": ident_cl,
+        "decision_events": events,
+        "decision_support": support,
     }
     return tables, report
 
@@ -293,7 +278,7 @@ def main() -> None:  # pragma: no cover - needs the database and a Splink fit (~
     import argparse
 
     from bor.db import pg_conn
-    from bor.splink_bridge import DEFAULT_THRESHOLD, _resolve
+    from bor.splink_bridge import DEFAULT_THRESHOLD, resolve
 
     ap = argparse.ArgumentParser(description="Build the node/identity -> HPD contact mapping tables.")
     ap.add_argument("out_dir")
@@ -301,8 +286,8 @@ def main() -> None:  # pragma: no cover - needs the database and a Splink fit (~
     args = ap.parse_args()
     conn = pg_conn()
     try:
-        full, clusters = _resolve(conn, args.threshold)
-        tables, report = build_mapping(conn, full, clusters)
+        res = resolve(conn, args.threshold, capture=True)
+        tables, report = build_mapping(conn, res)
     finally:
         conn.close()
     write_mapping(tables, report, args.out_dir)
