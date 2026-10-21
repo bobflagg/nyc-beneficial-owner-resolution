@@ -75,7 +75,7 @@ A detailed `reason_code` maps to one of five top-level reasons, listed in **prec
 | `outside_source_coverage` | `no_registration` |
 | `outside_method_input` | `no_owner_contact`, `not_latest_registration`, `unmatched_node` |
 | `excluded_by_policy` | `coop_condo_excluded` (a building), `coop_condo_dominated` (a whole group), `institutional_screen`, `deed_hub_capped`, `aggregator_address_masked`, `address_evidence_masked`, `curated_exclusion` |
-| `below_eligibility_rule` | `deed_parcels_out_of_range`, `deed_not_latest`, `successor_not_shell`, `successor_transfer_not_nominal`, `first_name_veto`, `common_name_veto`, `shared_company_name_not_rare`, `shared_company_first_name_conflict`, `shared_company_degree_cap`, `group_below_min_size` |
+| `below_eligibility_rule` | `deed_parcels_out_of_range`, `deed_not_latest`, `successor_not_shell`, `successor_transfer_not_nominal`, `first_name_veto`, `common_name_veto`, `shared_company_name_not_rare`, `shared_company_first_name_conflict`, `shared_company_degree_cap`, `shared_company_degree_unknown`, `group_below_min_size` |
 | `no_qualifying_linkage` | `no_linkage`, `pair_below_threshold` |
 
 `outside_method_input` is the KG's proposed fifth reason (KG note 0007, awaiting acceptance): the source holds the record but the method did not use it. **No user-facing sentence should call those codes "source coverage".** All of these describe what the pipeline decided; none establishes that no real relationship exists, and comparisons beyond the candidates bor evaluated (for example Q7, Q22) are the KG's to make.

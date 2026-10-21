@@ -88,6 +88,8 @@ REASON_CODES = {
                                            "Shared-company pass: first names are not compatible."),
     "shared_company_degree_cap": ("below_eligibility_rule",
                                   "Shared-company pass: too many contacts under the company."),
+    "shared_company_degree_unknown": ("below_eligibility_rule",
+                                      "Shared-company pass: the company has no degree record, so the pass leaves it out."),
     "group_below_min_size": ("below_eligibility_rule", "Component smaller than the minimum group size."),
     # no qualifying linkage
     "no_linkage": ("no_qualifying_linkage", "No accepted edge connected the node to another."),
