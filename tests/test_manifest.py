@@ -138,3 +138,14 @@ def test_a_real_release_directory_is_valid_and_checksummed(pg, resolved, tmp_pat
     assert set(m["source_tables"]) == set(mf.SOURCE_TABLES)
     assert m["effective_date"] == "2026-10-21" and isinstance(m["diagnostics"]["latest_deed_ties"], int)
     assert set(m["output_checksums"]) == {f"{n}.csv" for n in m["artifacts"]}
+
+
+def test_the_latest_deed_has_a_deterministic_tie_break():
+    """Among deeds on a parcel's latest date the later-recorded (higher document id) wins, in every
+    query that picks a parcel's latest deed."""
+    d = date(2026, 10, 21)
+    key = "m.documentid DESC"
+    assert key in de._LATEST_ORDER
+    assert de._LATEST_ORDER in de._deed_sql(25, d)
+    assert de._LATEST_ORDER in de._LATEST_SQL.replace("__LATEST_ORDER__", de._LATEST_ORDER)
+    assert "__LATEST_ORDER__" in de._LATEST_SQL

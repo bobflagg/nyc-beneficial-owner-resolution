@@ -6,9 +6,10 @@ All counts are checked with a tolerance. Splink-dependent counts jitter ~0.05% r
 latest-deed tiebreaks and data vintage move a handful of edges (observed 941 and 935).
 """
 
-# Deed layer (no Splink, but near- not bit-deterministic — see above).
-DEED_EDGES = 941
-DEED_NODES = 1542
+# Deed layer (no Splink). Deterministic since the latest-deed tie-break (document id); before it, two
+# runs differed by ~19 edges (942 vs 937). The tolerance stays for data-vintage drift in the dump.
+DEED_EDGES = 947
+DEED_NODES = 1551
 
 # Owner groups (Splink-dependent → tolerant).
 OWNER_GROUPS = 6522

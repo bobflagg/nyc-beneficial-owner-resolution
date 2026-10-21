@@ -205,6 +205,15 @@ def _norm(name: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", (name or "").upper())
 
 
+# Which deed is a parcel's "latest": the one with the latest date, and among deeds on that date the
+# highest document id (ACRIS ids begin with the recording date, so this is the later-recorded one).
+# Without the second key, DISTINCT ON picked arbitrarily among tied deeds (23,163 BBLs on the
+# reference dump), so two executions of the same query could disagree and the held-since and
+# linked-successor paths could disagree with each other about the same parcel. Measured on the
+# reference dump: two runs of the old code differed by 19 deed edges (942 vs 937); with the key they
+# are identical (947), and the change itself moves 9-22 edges, the size of the old run-to-run noise.
+_LATEST_ORDER = "COALESCE(m.docdate, m.recordedfiled) DESC NULLS LAST, m.documentid DESC"
+
 # The document-type filter every deed query applies; recorded in the release manifest. It admits
 # every ACRIS "DEED..." subtype, including DEED COR (an index correction) and DEED, TS (timeshare).
 DEED_DOCTYPE_RULE = "doctype ILIKE '%DEED%'"
@@ -231,7 +240,7 @@ def _deed_sql(max_parcels: int, as_of: date | None = None) -> str:
             JOIN real_property_legals l ON l.documentid = m.documentid
             WHERE m.doctype ILIKE '%%DEED%%'
               AND COALESCE(m.docdate, m.recordedfiled) <= {_as_of_sql(as_of)}
-            ORDER BY btrim(l.bbl), COALESCE(m.docdate, m.recordedfiled) DESC NULLS LAST
+            ORDER BY btrim(l.bbl), {_LATEST_ORDER}
         ),
         {_COOP_CTE}
         SELECT lt.doc AS doc, array_agg(DISTINCT lt.bbl) AS bbls
@@ -286,7 +295,7 @@ _LATEST_SQL = """
         JOIN real_property_legals l ON l.documentid = m.documentid
         WHERE m.doctype ILIKE '%%DEED%%' AND COALESCE(m.docdate, m.recordedfiled) <= __AS_OF__
           AND btrim(l.bbl) = ANY(%s)
-        ORDER BY btrim(l.bbl), COALESCE(m.docdate, m.recordedfiled) DESC NULLS LAST
+        ORDER BY btrim(l.bbl), __LATEST_ORDER__
     ),
     parties AS (
         SELECT documentid,
@@ -357,7 +366,8 @@ def _restructured_groups(conn, max_parcels: int, successor_max: int,
         return {}
     allb = sorted({b for bbls in joint["bbls"] for b in bbls})
     cur = conn.cursor()
-    cur.execute(_LATEST_SQL.replace("__AS_OF__", _as_of_sql(as_of)), (allb,))
+    cur.execute(_LATEST_SQL.replace("__AS_OF__", _as_of_sql(as_of)).replace("__LATEST_ORDER__", _LATEST_ORDER),
+                (allb,))
     latest = {bbl: (doc, {_norm(x) for x in (grs or [])}, _norm(gee), amt)
               for bbl, doc, grs, gee, amt in cur.fetchall()}
     keys = sorted({v[2] for v in latest.values() if v[2]})
