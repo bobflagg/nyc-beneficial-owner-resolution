@@ -25,7 +25,7 @@ DECISION_LAYERS = ("identity",) + LAYERS
 STAGES = (
     "identity.splink_base", "identity.splink_feedback", "identity.curated", "identity.registered_llc",
     "deed.held_since", "deed.linked_successor", "deed.group",
-    "network.name", "network.address",
+    "network.identity", "network.name", "network.address",
     "owner_portfolio.group_size", "owner_portfolio.footprint",
 )
 
@@ -220,10 +220,11 @@ _TABLES = [
         _c("layer", enum=LAYERS), _c("group_id"), _c("assertion_key"),
         _c("composition", nullable=True, enum=("identity", "deed_only", "deed_bridged")),
         _c("split", nullable=True, enum=("wcc", "louvain")),
-        _c("lot_count", "int"), _c("total_lot_count", "int")),
+        _c("lot_count", "int"), _c("total_lot_count", "int"), _c("witness_pieces", "int")),
         description="Owner Portfolios (OP-<n>) and Operational Networks (ON-<n>), n = the "
-                    "minimum node id (run-local). Counting unit: tax lots "
-                    "(BBLs), not buildings. lot_count is the rental footprint, total_lot_count includes "
+                    "minimum node id (run-local). witness_pieces is the number of connected pieces the "
+                    "group's path leaves: 1 (a spanning tree) unless its own edges cannot connect it. "
+                    "Counting unit: tax lots (BBLs), not buildings. lot_count is the rental footprint, total_lot_count includes "
                     "co-op/condo lots."),
     Table("group_members", "implemented", ("layer", "node_id"), (
         _c("layer", enum=LAYERS), _c("group_id"), _c("node_id", "int"), _c("assertion_key")),
@@ -243,19 +244,24 @@ _TABLES = [
                     "Each step cites the set that joined its two nodes (basis)."),
 
     # ---- operational network (planned, W5) ------------------------------------------------------
-    Table("network_edges", "planned", ("edge_id",), (
+    Table("network_edges", "implemented", ("edge_id",), (
         _c("edge_id"), _c("component_id"), _c("node_a", "int"), _c("node_b", "int"),
         _c("name_weight", "float"), _c("address_weight", "float"), _c("identity_weight", "float"),
-        _c("weight", "float")),
-        description="Accepted pre-split graph; weight is the exact Louvain input."),
-    Table("network_membership", "planned", ("node_id",), (
+        _c("weight", "float"), _c("crosses_networks", "bool")),
+        description="The complete accepted graph before any split, one row per node pair (node_a < "
+                    "node_b). weight is the exact input to Louvain: the sum of every contribution, "
+                    "which is name_weight + address_weight + identity_weight. crosses_networks marks "
+                    "an edge whose ends ended up in different Operational Networks, i.e. the boundary."),
+    Table("network_membership", "implemented", ("node_id",), (
         _c("node_id", "int"), _c("component_id"), _c("community_id", nullable=True),
         _c("operational_network_id")),
-        description="Node -> original WCC -> final community."),
-    Table("split_attempts", "planned", ("split_id",), (
+        description="Node -> original weakly connected component -> final Operational Network. "
+                    "community_id is the final Louvain community when the component was split, else null."),
+    Table("split_attempts", "implemented", ("split_id",), (
         _c("split_id"), _c("component_id"), _c("parent_community_id", nullable=True),
-        _c("level", "int"), _c("outcome", enum=("split", "no_split"))),
-        description="Recursive Louvain splits, including unsuccessful ones."),
+        _c("level", "int"), _c("outcome", enum=("split", "no_split")), _c("communities", "int")),
+        description="Every Louvain call on a component or community over the size cap, including "
+                    "those that found no useful split (the piece is then kept whole)."),
 
     # ---- absence, masking, metrics (planned, W6b/W7) --------------------------------------------
     Table("bbl_status", "planned", ("layer", "bbl"), (
@@ -267,11 +273,11 @@ _TABLES = [
                     "excluded_from_footprint: in a published group but left out of its rental footprint "
                     "(group_bbls.rental = false); it keeps its group_id and carries a reason. "
                     "reason_code is the primary reason, by PRECEDENCE."),
-    Table("masked_addresses", "planned", ("address_id",), (
+    Table("masked_addresses", "implemented", ("address_id",), (
         _c("address_id"), _c("method"), _c("normalizer_version"), _c("degree", "int"),
         _c("degree_unit"), _c("threshold", "int"), _c("decision", enum=("masked",))),
         description="Aggregator addresses masked from the network layer."),
-    Table("masked_address_nodes", "planned", ("address_id", "node_id"), (
+    Table("masked_address_nodes", "implemented", ("address_id", "node_id"), (
         _c("address_id"), _c("node_id", "int")),
         fks=(_fk("address_id", "masked_addresses"),),
         description="Crosswalk from a masked address to the nodes (and so HPD observations) using it."),

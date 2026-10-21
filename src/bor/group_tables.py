@@ -22,7 +22,8 @@ LAYER = "owner_portfolio"
 # evidence only where the earlier ones leave the group unconnected.
 TIER_BASE, TIER_CURATED, TIER_LLC, TIER_DEED_HELD, TIER_FEEDBACK, TIER_DEED_GUARD = range(6)
 
-GROUP_COLUMNS = ["layer", "group_id", "assertion_key", "composition", "split", "lot_count", "total_lot_count"]
+GROUP_COLUMNS = ["layer", "group_id", "assertion_key", "composition", "split", "lot_count", "total_lot_count",
+                 "witness_pieces"]
 MEMBER_COLUMNS = ["layer", "group_id", "node_id", "assertion_key"]
 BBL_COLUMNS = ["layer", "group_id", "bbl", "rental"]
 WITNESS_COLUMNS = ["layer", "group_id", "step", "node_a", "node_b", "stage", "basis_type", "basis_id",
@@ -205,7 +206,7 @@ def owner_portfolio_tables(portfolios, link_sets: list[LinkSet], run_id: str) ->
     groups, members, bbls, witness = [], [], [], []
     for p in sorted(portfolios, key=lambda p: p.owner_portfolio_id):
         gid = p.owner_portfolio_id
-        groups.append((LAYER, gid, key(gid), p.composition, None, len(p.bbls), len(p.total_bbls)))
+        groups.append((LAYER, gid, key(gid), p.composition, None, len(p.bbls), len(p.total_bbls), 1))
         members += [(LAYER, gid, int(n), key(gid, f"/n{n}")) for n in sorted(p.members)]
         rental = set(p.bbls)
         bbls += [(LAYER, gid, b, b in rental) for b in sorted(p.total_bbls)]

@@ -23,6 +23,7 @@ Off-graph: everything is Postgres (the name/address edges are already materializ
 """
 from __future__ import annotations
 
+import random
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -36,6 +37,7 @@ NAME_WEIGHT_MULTIPLIER = 1.5
 ADDRESS_WEIGHT_MULTIPLIER = 1.0
 MAX_ADDR_DEGREE = 25       # a normalized business address on more distinct landlords is an aggregator
 MAX_SIZE = 300             # max buildings (BBLs) per portfolio before Louvain splitting
+LOUVAIN_SEED = 42          # seeds igraph's RNG before every Louvain call, so a rerun cuts the same networks
 
 # Address normalizer, forked verbatim from aggregator_audit._norm (strip a trailing ", CITY NY",
 # uppercase, collapse whitespace) so the aggregator mask groups the same addresses the KG masks.
@@ -65,30 +67,45 @@ def _aggregator_nodes(conn) -> set[int]:
         return {r[0] for r in cur if _norm_bizaddr(r[1]) in aggregators}
 
 
-def _name_address_edges(conn, agg_nodes: set[int]) -> list[tuple[int, int, float]]:
+def aggregator_addresses(conn) -> dict[str, list[int]]:
+    """Each masked address -> its lwc nodeids (same rule as :func:`_aggregator_nodes`). The address
+    string is only a grouping key; releases export an opaque id and the nodes, not the address."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT nodeid, bizaddr FROM landlords_with_connections WHERE bizaddr IS NOT NULL")
+        by: dict[str, list[int]] = defaultdict(list)
+        for nodeid, bizaddr in cur:
+            by[_norm_bizaddr(bizaddr)].append(int(nodeid))
+    return {a: sorted(ns) for a, ns in by.items() if a and len(ns) > MAX_ADDR_DEGREE}
+
+
+def _name_address_edges(conn, agg_nodes: set[int], kinds: bool = False) -> list[tuple]:
     """Parse the precomputed NAME and ADDRESS edges from lwc's JSON columns (mirrors
     pipeline._edge_batches): weight the name/address links, and drop address edges where either
-    endpoint is an aggregator node."""
-    edges: list[tuple[int, int, float]] = []
+    endpoint is an aggregator node. With ``kinds`` each edge is ``(a, b, weight, "name"|"address")``."""
+    edges: list[tuple] = []
     with conn.cursor(name="opnet_edges") as cur:
         cur.itersize = 5000
         cur.execute(_LWC_EDGE_SQL)
         for nodeid, nmi, bmi in cur:
             for m in (nmi or []):
-                edges.append((nodeid, m["nodeid"], float(m["weight"]) * NAME_WEIGHT_MULTIPLIER))
+                edges.append((nodeid, m["nodeid"], float(m["weight"]) * NAME_WEIGHT_MULTIPLIER)
+                             + (("name",) if kinds else ()))
             if nodeid in agg_nodes:
                 continue                                     # aggregator src: skip all its address edges
             for m in (bmi or []):
                 if m["nodeid"] in agg_nodes:
                     continue                                 # aggregator dst: skip too
-                edges.append((nodeid, m["nodeid"], float(m["weight"]) * ADDRESS_WEIGHT_MULTIPLIER))
+                edges.append((nodeid, m["nodeid"], float(m["weight"]) * ADDRESS_WEIGHT_MULTIPLIER)
+                             + (("address",) if kinds else ()))
     return edges
 
 
-def _splink_edges(conn, *, threshold: float) -> list[tuple[int, int, float]]:
-    """Resolved-owner edges (model ∪ curated ∪ registered-LLC) as weighted nodeid pairs."""
+def _splink_edges(conn, *, threshold: float, node_cluster_frame=None) -> list[tuple[int, int, float]]:
+    """Resolved-owner edges (model ∪ curated ∪ registered-LLC) as weighted nodeid pairs.
+    ``node_cluster_frame`` reuses a resolution already in hand (see ``splink_bridge.splink_edges``)."""
     out: list[tuple[int, int, float]] = []
-    for f in (splink_edges(conn, threshold=threshold), curated_edges(conn), llc_edges(conn)):
+    for f in (splink_edges(conn, threshold=threshold, node_cluster_frame=node_cluster_frame),
+              curated_edges(conn), llc_edges(conn)):
         for s, d, w in zip(f["src"], f["dst"], f["weight"]):
             out.append((int(s), int(d), float(w)))
     return out
@@ -130,8 +147,14 @@ def _components(pairs) -> list[list[int]]:
     return list(comp.values())
 
 
-def _louvain_communities(node_ids: list[int], wedges: dict[tuple[int, int], float]) -> list[list[int]]:
-    """One weighted Louvain pass over the induced subgraph, via igraph.community_multilevel."""
+def _louvain_communities(node_ids: list[int], wedges: dict[tuple[int, int], float],
+                         seed: int = LOUVAIN_SEED) -> list[list[int]]:
+    """One weighted Louvain pass over the induced subgraph, via igraph.community_multilevel.
+
+    Louvain visits nodes in a random order, and igraph draws it from a global RNG that python-igraph
+    ties to the interpreter's ``random`` module, so an unseeded run differs from the last. Seed a
+    private RNG before the call (and restore the default after) and build the graph from sorted
+    edges, so the result is a function of the graph and the seed alone."""
     try:
         import igraph
     except ImportError as e:  # pragma: no cover
@@ -141,11 +164,15 @@ def _louvain_communities(node_ids: list[int], wedges: dict[tuple[int, int], floa
     idx = {n: i for i, n in enumerate(nid)}
     members = set(node_ids)
     ig_edges, weights = [], []
-    for (a, b), wt in wedges.items():
+    for (a, b), wt in sorted(wedges.items()):                 # a fixed edge order, whatever order the DB returned
         if a in members and b in members:
             ig_edges.append((idx[a], idx[b])); weights.append(wt)
     g = igraph.Graph(n=len(nid), edges=ig_edges)
-    part = g.community_multilevel(weights=weights or None)
+    igraph.set_random_number_generator(random.Random(seed))
+    try:
+        part = g.community_multilevel(weights=weights or None)
+    finally:
+        igraph.set_random_number_generator(random)           # python-igraph's default
     comms: dict[int, list[int]] = defaultdict(list)
     for i, c in enumerate(part.membership):
         comms[c].append(nid[i])
@@ -167,12 +194,21 @@ class OperationalNetwork:
         return len(self.bbls)
 
 
-def resolve_operational_networks(conn, *, threshold: float = DEFAULT_THRESHOLD,
-                                 max_size: int = MAX_SIZE) -> list[OperationalNetwork]:
+def resolve_operational_networks(conn, *, threshold: float = DEFAULT_THRESHOLD, max_size: int = MAX_SIZE,
+                                 node_cluster_frame=None, trace: dict | None = None,
+                                 seed: int = LOUVAIN_SEED) -> list[OperationalNetwork]:
     """Resolve the operational-network layer off-graph. WCC over name ∪ address ∪ splink, then
-    weighted Louvain on components whose BBL-sum exceeds ``max_size``. KG-free."""
+    weighted Louvain on components whose BBL-sum exceeds ``max_size``. KG-free.
+
+    ``node_cluster_frame`` (``[nodeid, cluster_id]``) reuses a resolution already in hand. ``trace``
+    (a dict) receives, without changing the result: ``entries`` (every edge contribution as
+    ``(a, b, weight, kind)``, kind name, address or identity), ``components`` (each weakly connected
+    component's nodes), ``attempts`` (each Louvain call: component, parent, level, outcome, number of
+    communities) and ``bbl_counts``. Louvain is seeded (``seed``), so the same graph gives the same
+    networks every time."""
     agg = _aggregator_nodes(conn)
-    edges = _name_address_edges(conn, agg) + _splink_edges(conn, threshold=threshold)
+    identity = _splink_edges(conn, threshold=threshold, node_cluster_frame=node_cluster_frame)
+    edges = _name_address_edges(conn, agg) + identity
     wedges = _collapse(edges)
     pairs = list(wedges)
 
@@ -183,20 +219,33 @@ def resolve_operational_networks(conn, *, threshold: float = DEFAULT_THRESHOLD,
     def size(ids) -> int:
         return sum(bbl_counts.get(n, 0) for n in ids)
 
+    if trace is not None:
+        trace["entries"] = ([(a, b, w, k) for a, b, w, k in _name_address_edges(conn, agg, kinds=True)]
+                            + [(a, b, w, "identity") for a, b, w in identity])
+        trace["bbl_counts"] = bbl_counts
+        trace["attempts"] = []
+
     # WCC, then recursive Louvain on oversized components (mirrors algorithms.iter_portfolios/_split)
     finals: list[tuple[str, list[int]]] = []   # (split_kind, members)
 
-    def split(ids: list[int], kind: str) -> None:
+    def split(ids: list[int], kind: str, component: int, parent, level: int) -> None:
         if size(ids) <= max_size:
             finals.append((kind, ids)); return
-        comms = _louvain_communities(ids, wedges)
-        if len(comms) <= 1 or max(size(c) for c in comms) == size(ids):
-            finals.append((kind, ids)); return       # Louvain found no meaningful split — emit as-is
+        comms = _louvain_communities(ids, wedges, seed)
+        useful = not (len(comms) <= 1 or max(size(c) for c in comms) == size(ids))
+        if trace is not None:
+            trace["attempts"].append({"component": component, "parent": parent, "level": level,
+                                      "outcome": "split" if useful else "no_split", "communities": len(comms)})
+        if not useful:
+            finals.append((kind, ids)); return   # Louvain found no meaningful split — emit as-is
         for c in comms:
-            split(c, "louvain")
+            split(c, "louvain", component, (min(ids), level), level + 1)
 
-    for comp in _components(pairs):
-        split(comp, "wcc")
+    comps = _components(pairs)
+    if trace is not None:
+        trace["components"] = [sorted(c) for c in comps]
+    for comp in comps:
+        split(comp, "wcc", min(comp), None, 0)
 
     # attach bbls and mint deterministic ids
     node_bbls: dict[int, list[str]] = {}

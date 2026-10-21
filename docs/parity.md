@@ -24,7 +24,7 @@ The deed layer matches exactly (941 `CONNECTED_BY_DEED` edges — byte-identical
 
 ## The reproducibility ceiling
 
-The partition is **not byte-reproducible run-to-run**, even at a fixed splink version and identical
+The Owner Portfolio partition is **not byte-reproducible run-to-run**, even at a fixed splink version and identical
 input: two BOR runs of the same code disagree on ~8 of 15,621 nodes (~0.05%), always in tiny
 borderline groups (size 2–5). The cause is Splink's `u`-training, which samples pairs over DuckDB —
 seeded, but only approximately seed-stable under DuckDB's parallel sampling. A handful of pairs sit

@@ -309,23 +309,30 @@ def _inv_groups(T):
 
 
 def _inv_witness(T):
-    w, gm = T.get("group_witness"), T.get("group_members")
+    """A group's path is acyclic and joins its members into exactly ``groups.witness_pieces`` connected
+    pieces (1, a spanning tree, unless the group's own edges cannot connect it: a Louvain community
+    can be internally disconnected, and a step never leaves the group)."""
+    w, gm, g = T.get("group_witness"), T.get("group_members"), T.get("groups")
     if w is None or gm is None:
         return []
     v = []
     members = gm.groupby(["layer", "group_id"])["node_id"].apply(set).to_dict()
-    cycles = disconnected = outside = 0
-    for key, edges in w.sort_values("step").groupby(["layer", "group_id"]):
-        mem = members.get(key, set())
+    expected = {}
+    if g is not None and "witness_pieces" in g.columns:
+        expected = dict(zip(zip(g["layer"], g["group_id"]), g["witness_pieces"]))
+    steps = {k: e for k, e in w.sort_values("step").groupby(["layer", "group_id"])}
+    cycles = outside = wrong_pieces = 0
+    for key, mem in members.items():
         parent = {n: n for n in mem}
 
         def find(x):
-            while parent.setdefault(x, x) != x:
+            while parent[x] != x:
                 parent[x] = parent[parent[x]]
                 x = parent[x]
             return x
 
-        for a, b in zip(edges["node_a"], edges["node_b"]):
+        e = steps.get(key)
+        for a, b in (zip(e["node_a"], e["node_b"]) if e is not None else ()):
             if a not in mem or b not in mem:
                 outside += 1
                 continue
@@ -334,18 +341,14 @@ def _inv_witness(T):
                 cycles += 1
             else:
                 parent[ra] = rb
-        if mem and len({find(x) for x in mem}) != 1:
-            disconnected += 1
+        pieces = len({find(x) for x in mem})
+        if pieces != int(expected.get(key, 1)):
+            wrong_pieces += 1
     for count, msg in ((outside, "witness edge endpoint is not a member of the group"),
-                       (cycles, "witness edge closes a cycle (must be a spanning tree)"),
-                       (disconnected, "witness edges do not connect the group")):
+                       (cycles, "witness edge closes a cycle (a path is a tree or a forest)"),
+                       (wrong_pieces, "witness steps leave a different number of pieces than groups.witness_pieces")):
         if count:
             v.append(Violation("group_witness", "tree", msg, count))
-    missing = set(members) - {k for k, _ in w.groupby(["layer", "group_id"])}
-    multi = {k for k, m in members.items() if len(m) > 1}
-    n = len(missing & multi)
-    if n:
-        v.append(Violation("group_witness", "tree", "groups with several members and no witness", n))
     return v
 
 
@@ -460,7 +463,8 @@ _BASIS_TABLE = {"identity_cluster": ("identity_clusters", "cluster_id"),
 _STAGE_BASIS = {"identity.splink_base": "identity_cluster", "identity.splink_feedback": "identity_cluster",
                 "identity.curated": "link_set", "identity.registered_llc": "link_set",
                 "deed.held_since": "evidence_item", "deed.linked_successor": "evidence_item",
-                "network.name": "network_edge", "network.address": "network_edge"}
+                "network.identity": "network_edge", "network.name": "network_edge",
+                "network.address": "network_edge"}
 
 
 def _inv_witness_basis(T):
@@ -505,7 +509,68 @@ def _inv_link_sets(T):
     return v
 
 
-_INVARIANTS = (_inv_witness_basis, _inv_link_sets, _inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
+def _inv_network(T):
+    e, mem = T.get("network_edges"), T.get("network_membership")
+    v = []
+    if e is not None:
+        n = int((e["node_a"] >= e["node_b"]).sum())
+        if n:
+            v.append(Violation("network_edges", "order", "node_a must be smaller than node_b", n))
+        n = int(((e["weight"] - (e["name_weight"] + e["address_weight"] + e["identity_weight"])).abs() > 1e-6).sum())
+        if n:
+            v.append(Violation("network_edges", "weight", "weight must equal name + address + identity weight", n))
+    if e is not None and mem is not None:
+        info = mem.set_index("node_id")
+        ca, cb = e["node_a"].map(info["component_id"]), e["node_b"].map(info["component_id"])
+        n = int(((ca != cb) | (ca != e["component_id"]) | ca.isna()).sum())
+        if n:
+            v.append(Violation("network_edges", "component", "an edge lies inside one component and names it", n))
+        na, nb = e["node_a"].map(info["operational_network_id"]), e["node_b"].map(info["operational_network_id"])
+        n = int(((na != nb) != e["crosses_networks"].fillna(False).astype(bool)).sum())
+        if n:
+            v.append(Violation("network_edges", "boundary", "crosses_networks must mark exactly the edges whose "
+                                                            "ends are in different networks", n))
+        # the graph is complete enough to connect every component
+        parent = {int(x): int(x) for x in info.index}
+
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        for a_, b_ in zip(e["node_a"], e["node_b"]):
+            if int(a_) in parent and int(b_) in parent:
+                parent[find(int(a_))] = find(int(b_))
+        comp_roots = pd.DataFrame({"c": info["component_id"].to_numpy(), "r": [find(int(x)) for x in info.index]})
+        n = int((comp_roots.groupby("c")["r"].nunique() != 1).sum())
+        if n:
+            v.append(Violation("network_edges", "connected", "the edges must connect every component", n))
+    g, gm = T.get("groups"), T.get("group_members")
+    if mem is not None and gm is not None:
+        net = gm[gm["layer"] == "operational_network"].set_index("node_id")["group_id"]
+        n = int((mem.set_index("node_id")["operational_network_id"] != net.reindex(mem["node_id"]).to_numpy()).sum())
+        if n:
+            v.append(Violation("network_membership", "group", "a node's network is its group_members group", n))
+    sa = T.get("split_attempts")
+    if sa is not None and mem is not None:
+        n = int((~sa["component_id"].isin(set(mem["component_id"]))).sum())
+        if n:
+            v.append(Violation("split_attempts", "component", "a split names a component of the graph", n))
+    ma, mn, nobs = T.get("masked_addresses"), T.get("masked_address_nodes"), T.get("node_observations")
+    if ma is not None and mn is not None:
+        cnt = mn.groupby("address_id").size()
+        n = int((ma.set_index("address_id")["degree"] != cnt.reindex(ma["address_id"]).fillna(0).to_numpy()).sum())
+        if n:
+            v.append(Violation("masked_addresses", "degree", "degree must equal the number of nodes at the address", n))
+        if nobs is not None:
+            m = _missing_from(mn["node_id"], nobs["node_id"])
+            if m:
+                v.append(Violation("masked_address_nodes", "node", "a masked address names a known node", m))
+    return v
+
+
+_INVARIANTS = (_inv_network, _inv_witness_basis, _inv_link_sets, _inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
                _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
 
 

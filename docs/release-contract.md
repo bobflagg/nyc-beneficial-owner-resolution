@@ -29,9 +29,10 @@ No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS do
 | Lineage | `observations`, `node_observations`, `node_observation_alternatives`, `identity_clusters` (with `base_cluster_id`), `identity_observations`, `node_identity_matches`, `node_cluster`, `node_cluster_alternatives` | implemented |
 | Decisions and evidence | `decision_events`, `decision_support` | implemented for the identity layer (`bor.identity_events`, W2) and the deed layer (`bor.deed_events`, W3); group and network decisions are planned (W5, W6a) |
 | | `evidence_items`, `evidence_members` | implemented (`bor.deed_events`, W3) |
-| Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness`, `link_sets`, `link_set_members` | implemented for the Owner Portfolio layer (`bor.group_tables`, W4); the Operational Network's groups and path are planned (W5) |
-| Operational network | `network_edges`, `network_membership`, `split_attempts` | planned (W5) |
-| Absence, masking, metrics | `bbl_status`, `masked_addresses`, `masked_address_nodes`, `method_metrics` | planned (W6b, W7) |
+| Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness`, `link_sets`, `link_set_members` | implemented for both layers (`bor.group_tables` for Owner Portfolios, W4; `bor.network_tables` for Operational Networks, W5) |
+| Operational network | `network_edges`, `network_membership`, `split_attempts` | implemented (`bor.network_tables`, W5) |
+| Absence, masking, metrics | `masked_addresses`, `masked_address_nodes` | implemented (W5) |
+| | `bbl_status`, `method_metrics` | planned (W6b, W7) |
 
 The worked example below is a synthetic fixture, but every table it uses for the identity layer is now produced from the real dump. Columns, types, enums, keys and foreign keys are in `release_schema.py`; the table descriptions there are the reference.
 
@@ -77,6 +78,20 @@ A **link set** is a set of nodes tied by a curated owner or by one registered-LL
 The path is built by a union-find over these sets in a fixed order that prefers the least questionable evidence: base-cluster identities, curated owners, registered-LLC entities, deeds held since the joint deed, shared-company merges, and last the deeds that depend on the linked-successor guard. **A weak stage appears in a path only where the group cannot be connected without it.** On the reference dump that is 578 of 9,100 steps for the shared-company merge (492 of 6,523 groups) and 30 steps for the guard (28 groups). A step inside a cluster is `splink_base` if the two nodes share a base cluster and `splink_feedback` otherwise. The path is representative, not the unique, strongest or shortest one.
 
 A node whose lots are all co-op or condo stays a member and a path node; `group_bbls.rental = false` explains its lots.
+
+## Operational Networks and paths
+
+The Operational Network is the weakly connected components of a weighted graph of name, address and identity edges, with Louvain cutting the few components over the size cap into smaller networks. **The release carries the complete graph** (`network_edges`, declared `complete` in the manifest): about 57,000 edges, a few megabytes. One row per node pair, with `name_weight + address_weight + identity_weight = weight`, which is exactly the weight Louvain was given (a mutual name match is listed by both nodes and counted twice, as the algorithm does). That one table serves three purposes:
+
+- **A path between any two nodes**, including two in different final networks of one original component: follow the edges. `crosses_networks` marks the edges whose ends ended up in different Operational Networks, which is the boundary.
+- **The input of Louvain, reproduced exactly.**
+- **The original connectivity.** `network_membership` gives each node's component (`NC-<n>`) and final network; `split_attempts` records every Louvain call, including the ones that found no useful split.
+
+`groups`, `group_members` and `group_bbls` list the networks (`layer = operational_network`, ids `ON-<n>`; every lot is counted, since this layer has no co-op filter). `group_witness` gives a representative path inside each network over its own edges, preferring identity edges (`network.identity`), then name (`network.name`), then address (`network.address`), so a weaker kind appears only where needed.
+
+**A path is a forest where it must be.** Louvain does not guarantee a community is connected by its own edges, and a step never leaves its network. When a network is not, its path leaves more than one piece, and `groups.witness_pieces` says how many (1 for a tree, always so for an Owner Portfolio). The pieces are connected through nodes of other networks in the same component, using `network_edges` with the boundary marked. Louvain is **seeded** (`parameters.operational_network.louvain_seed`, 42): the same graph and seed give the same networks every time, so which communities are disconnected is a fixed property of the release. (Unseeded, the same graph gave a different partition on each call, and one build on the reference dump had a disconnected network that an earlier one did not.) The seed fixes one draw; it does not make that draw better than another.
+
+`masked_addresses` lists the aggregator addresses (shared by more than 25 landlords) whose address edges were masked, under opaque ids with their degree, and `masked_address_nodes` gives the nodes using each; the address text is not exported. Each has a `decision_events` row (stage `network.address`, reason `aggregator_address_masked`).
 
 ## How an explanation is assembled
 

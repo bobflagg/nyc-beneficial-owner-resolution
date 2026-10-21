@@ -42,6 +42,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     tables, report = build_mapping(conn, res)
     tables, deed_report, deed_edge_frame = add_deed_layer(conn, tables, as_of)
     tables, portfolio_report = add_owner_portfolio_layer(conn, tables, deed_edge_frame, as_of, run_id)
+    tables, network_report = add_operational_network_layer(conn, tables, run_id)
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -50,12 +51,14 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
 
     manifest = mf.build_manifest(
         conn, snapshot_id=snapshot_id, pluto_snapshot_id=pluto_snapshot_id, as_of=as_of, run_id=run_id,
-        resolution_params=res.params, artifacts={name: "complete" for name in tables},
-        diagnostics={"partial": "lineage, identity layer, deed evidence and Owner Portfolios with their "
-                                "witness paths; the Operational Network and the per-lot absence summaries "
-                                "are added by later work packages",
+        resolution_params=res.params,
+        artifacts={name: ("representative" if name == "group_witness" else "complete") for name in tables},
+        diagnostics={"partial": "lineage, identity layer, deed evidence, and both layers' groups with their "
+                                "paths; the per-lot absence summaries and the method metrics are added by "
+                                "later work packages",
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
-                     "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report})
+                     "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report,
+                     "operational_network": network_report})
     mf.write_manifest(out, manifest)
 
     loaded, written = read_release(str(out))
@@ -108,6 +111,33 @@ def add_owner_portfolio_layer(conn, tables: dict, deed_edge_frame, as_of: date |
     out["link_sets"], out["link_set_members"] = named.sets, named.members
     report.update({"curated_sets": int((named.sets["stage"] == "identity.curated").sum()),
                    "registered_llc_sets": int((named.sets["stage"] == "identity.registered_llc").sum())})
+    return out, report
+
+
+def add_operational_network_layer(conn, tables: dict, run_id: str) -> tuple[dict, dict]:
+    """The Operational Network: the complete weighted graph, its components and splits, the networks and
+    a path inside each, plus the masked aggregator addresses. Built from the same identity resolution."""
+    import pandas as pd
+
+    from bor import manifest as mf
+    from bor import network_tables, operational_network as on
+
+    nc = tables["node_cluster"].rename(columns={"node_id": "nodeid"})[["nodeid", "cluster_id"]]
+    trace: dict = {}
+    networks = on.resolve_operational_networks(conn, node_cluster_frame=nc, trace=trace)
+    new, report = network_tables.network_tables(networks, trace, run_id)
+    masked, masked_nodes, mask_events = network_tables.masked_tables(
+        on.aggregator_addresses(conn), mf.normalizer_versions()["business_address_mask"], on.MAX_ADDR_DEGREE)
+
+    out = dict(tables)
+    for name in ("groups", "group_members", "group_bbls", "group_witness"):
+        out[name] = pd.concat([tables[name], new[name]], ignore_index=True)
+    for name in ("network_edges", "network_membership", "split_attempts"):
+        out[name] = new[name]
+    out["masked_addresses"], out["masked_address_nodes"] = masked, masked_nodes
+    out["decision_events"] = pd.concat([tables["decision_events"], mask_events], ignore_index=True)
+    report["masked_addresses"] = len(masked)
+    report["nodes_at_masked_addresses"] = len(masked_nodes)
     return out, report
 
 

@@ -197,17 +197,18 @@ def test_owner_portfolio_groups_on_the_reference_dump(release_build):
     out, r = release_build
     assert [v for v in r["violations"] if v.severity == "error"] == []
     t, _ = read_release(str(out))
-    groups, members, witness = t["groups"], t["group_members"], t["group_witness"]
+    op = lambda df: df[df["layer"] == "owner_portfolio"]          # the release also holds the Operational Networks
+    groups, members, witness, lots = (op(t[n]) for n in ("groups", "group_members", "group_witness", "group_bbls"))
     assert abs(len(groups) - E.OWNER_PORTFOLIOS) <= E.TOL and abs(len(members) - E.OWNER_PORTFOLIO_NODES) <= E.TOL
     comp = groups["composition"].value_counts()
     for kind, want in E.COMPOSITION.items():
         assert abs(int(comp.get(kind, 0)) - want) <= E.TOL, (kind, comp.get(kind), want)
-    # every group's path is a tree: exactly one step fewer than its members
+    # every Owner Portfolio's path is a tree: exactly one step fewer than its members
     steps = witness.groupby("group_id").size().reindex(groups["group_id"]).fillna(0).astype(int)
     size = members.groupby("group_id").size().reindex(groups["group_id"])
-    assert (steps.to_numpy() == (size - 1).to_numpy()).all()
-    # a BBL is in at most one group, and ids carry their prefix
-    assert not t["group_bbls"].duplicated("bbl").any() and groups["group_id"].str.startswith("OP-").all()
+    assert (steps.to_numpy() == (size - 1).to_numpy()).all() and (groups["witness_pieces"].astype(int) == 1).all()
+    # a BBL is in at most one Owner Portfolio, and ids carry their prefix
+    assert not lots.duplicated("bbl").any() and groups["group_id"].str.startswith("OP-").all()
 
 
 def test_the_paths_use_every_kind_of_evidence_and_cite_it(release_build):
@@ -215,6 +216,7 @@ def test_the_paths_use_every_kind_of_evidence_and_cite_it(release_build):
     out, _ = release_build
     t, _ = read_release(str(out))
     w = t["group_witness"]
+    w = w[w["layer"] == "owner_portfolio"]
     stages = set(w["stage"])
     assert stages >= {"identity.splink_base", "identity.splink_feedback", "identity.registered_llc",
                       "deed.held_since", "deed.linked_successor"}

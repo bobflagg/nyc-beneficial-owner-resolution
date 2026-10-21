@@ -34,6 +34,9 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   legacy release files and columns are `owner_portfolios.csv`, `owner_portfolio_bbls.csv` and
   `owner_portfolio_id`. The network layer's `portfolio_id` is `operational_network_id`, so
   "portfolio" no longer means two things. Nothing had been released under the old names.
+- **Seeded Louvain.** The Operational Network's Louvain step seeds igraph's RNG before every call
+  (`LOUVAIN_SEED = 42`, recorded in the release manifest) and builds the graph from sorted edges, so
+  the same graph cuts into the same networks every time. Unseeded, the partition differed on each call.
 - **Data dictionary.** The first line of the generated `DATA.md` now lists HPD contacts, the main
   input, alongside HPD registrations.
 

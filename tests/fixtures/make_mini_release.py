@@ -66,8 +66,8 @@ w("decision_support", ["decision_id", "support_type", "support_id", "role"], [
     ["d6", "observation", OBS[5], "endpoint_a"], ["d6", "observation", OBS[6], "endpoint_b"],
     ["d5", "bbl", B[4], "excluded_lot"],
 ])
-w("groups", ["layer", "group_id", "assertion_key", "composition", "split", "lot_count", "total_lot_count"],
-  [["owner_portfolio", "OP-1", OG1, "identity", "", 3, 4]])
+w("groups", ["layer", "group_id", "assertion_key", "composition", "split", "lot_count", "total_lot_count", "witness_pieces"],
+  [["owner_portfolio", "OP-1", OG1, "identity", "", 3, 4, 1]])
 w("group_members", ["layer", "group_id", "node_id", "assertion_key"],
   [["owner_portfolio", "OP-1", n, f"{OG1}/n{n}"] for n in (1, 2, 3, 5)])
 w("group_bbls", ["layer", "group_id", "bbl", "rental"],
