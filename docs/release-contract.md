@@ -94,6 +94,10 @@ Required: `schema_version`, `run_id`, `snapshot_id`, `pluto_snapshot_id`, `effec
 - `source_tables` maps each source table bor read (HPD contacts and registrations, `wow_landlords`, the ACRIS tables, PLUTO) to `{row_count, fingerprint, fingerprint_method}`. The KG compares these with its own load and refuses a mismatch. The fingerprint method is fixed in W1.
 - `deed_selection_rule` is `{rule, version}`. bor currently selects `doctype ILIKE '%DEED%'`, which includes `DEED COR` and `DEED, TS`; the KG can check document types from the ACRIS ids in `evidence_members`.
 - `artifacts` declares each artifact `complete` or `representative`. Storage choices never silently change what a release means.
+- `effective_date` is the deed cut-off the queries used in place of `CURRENT_DATE`, so a rerun means the same thing; it is also recorded under `parameters.deed.as_of`.
+- `source_tree_hash` hashes the code files themselves (bor and nlr, whose changes are part of what produced the result), because a commit SHA and a dirty flag do not identify modified content. `code` gives each package's version, revision, dirty flag and own hash; `dependency_lock_digest` hashes `uv.lock`; `environment` records the versions actually loaded (Splink, DuckDB, pandas, Python). A tagged release is built with `--require-clean`. To build and validate one: `make build-release SNAPSHOT_ID=<id> [AS_OF=YYYY-MM-DD] [REQUIRE_CLEAN=1]` (output in `release/contract`; `make validate-release` re-checks it).
+- `source_tables[t].fingerprint` is `sum(first 60 bits of md5(row::text))` over the table, with `row_count`; the exact SQL is `bor.manifest.fingerprint_sql`, so the KG can run it on its own load. It covers the nine tables bor reads, including `landlords_with_connections`, whose node ids come from an unordered `row_number()` and so only match the same build.
+- `diagnostics` is not part of the contract proper: counts a reader may want, such as `latest_deed_ties` (BBLs whose latest deed date is shared by two or more documents, where the query's pick is arbitrary) and the mapping report.
 
 ## What the validator checks
 

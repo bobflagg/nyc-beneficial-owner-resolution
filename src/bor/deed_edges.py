@@ -66,6 +66,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
+from datetime import date
 
 import pandas as pd
 
@@ -204,7 +205,21 @@ def _norm(name: str) -> str:
     return re.sub(r"[^A-Z0-9]", "", (name or "").upper())
 
 
-def _deed_sql(max_parcels: int) -> str:
+# The document-type filter every deed query applies; recorded in the release manifest. It admits
+# every ACRIS "DEED..." subtype, including DEED COR (an index correction) and DEED, TS (timeshare).
+DEED_DOCTYPE_RULE = "doctype ILIKE '%DEED%'"
+
+
+def _as_of_sql(as_of: date | None) -> str:
+    """The cut-off date as a SQL literal. The queries used ``CURRENT_DATE``; a release pins one
+    recorded date instead (``as_of`` defaults to today), so a rerun means the same thing."""
+    as_of = as_of or date.today()
+    if not isinstance(as_of, date):
+        raise TypeError(f"as_of must be a date, got {type(as_of).__name__}")
+    return f"DATE '{as_of.isoformat()}'"
+
+
+def _deed_sql(max_parcels: int, as_of: date | None = None) -> str:
     # Held-since precision guard (branch A): exclude a shared latest deed from proving co-ownership
     # when it is a public/affordable-housing conveyance (grantor OR grantee) or a co-op/condo
     # building's deed. Mirrored in _JOINT_SQL (branch B) via the same _PUBLIC_LIKE / _COOP_CTE, so a
@@ -215,7 +230,7 @@ def _deed_sql(max_parcels: int) -> str:
             FROM real_property_master m
             JOIN real_property_legals l ON l.documentid = m.documentid
             WHERE m.doctype ILIKE '%%DEED%%'
-              AND COALESCE(m.docdate, m.recordedfiled) <= CURRENT_DATE
+              AND COALESCE(m.docdate, m.recordedfiled) <= {_as_of_sql(as_of)}
             ORDER BY btrim(l.bbl), COALESCE(m.docdate, m.recordedfiled) DESC NULLS LAST
         ),
         {_COOP_CTE}
@@ -242,7 +257,7 @@ _JOINT_SQL = f"""
         JOIN real_property_legals l ON l.documentid = m.documentid
         LEFT JOIN coop cc ON cc.bbl = btrim(l.bbl)
         WHERE m.doctype ILIKE '%%DEED%%'
-          AND COALESCE(m.docdate, m.recordedfiled) BETWEEN DATE '{RESTRUCT_MIN_DATE}' AND CURRENT_DATE
+          AND COALESCE(m.docdate, m.recordedfiled) BETWEEN DATE '{RESTRUCT_MIN_DATE}' AND {{as_of}}
         GROUP BY m.documentid
         HAVING count(DISTINCT btrim(l.bbl)) BETWEEN {MIN_PARCELS} AND {{max_parcels}}
            -- held-since guard (branch B), mirrors _deed_sql: drop deeds that are majority co-op/condo.
@@ -269,7 +284,7 @@ _LATEST_SQL = """
                m.docamount AS docamount
         FROM real_property_master m
         JOIN real_property_legals l ON l.documentid = m.documentid
-        WHERE m.doctype ILIKE '%%DEED%%' AND COALESCE(m.docdate, m.recordedfiled) <= CURRENT_DATE
+        WHERE m.doctype ILIKE '%%DEED%%' AND COALESCE(m.docdate, m.recordedfiled) <= __AS_OF__
           AND btrim(l.bbl) = ANY(%s)
         ORDER BY btrim(l.bbl), COALESCE(m.docdate, m.recordedfiled) DESC NULLS LAST
     ),
@@ -331,17 +346,18 @@ def _retained(doc: str, bbls, grantee_norm: set[str],
     return out
 
 
-def _restructured_groups(conn, max_parcels: int, successor_max: int) -> dict[str, set[str]]:
+def _restructured_groups(conn, max_parcels: int, successor_max: int,
+                         as_of: date | None = None) -> dict[str, set[str]]:
     """Joint deeds (grantee G) -> the set of their bbls still co-owned by G (held or restructured
     into single-purpose successor LLCs). Returns ``{doc: {bbls}}`` for deeds keeping >= 2."""
-    joint = pd.read_sql(_JOINT_SQL.format(max_parcels=int(max_parcels)), conn)
+    joint = pd.read_sql(_JOINT_SQL.format(max_parcels=int(max_parcels), as_of=_as_of_sql(as_of)), conn)
     joint = joint[joint["grantees"].apply(
         lambda gs: bool(gs) and not any(_INST_RE.search(x or "") for x in gs))]
     if joint.empty:
         return {}
     allb = sorted({b for bbls in joint["bbls"] for b in bbls})
     cur = conn.cursor()
-    cur.execute(_LATEST_SQL, (allb,))
+    cur.execute(_LATEST_SQL.replace("__AS_OF__", _as_of_sql(as_of)), (allb,))
     latest = {bbl: (doc, {_norm(x) for x in (grs or [])}, _norm(gee), amt)
               for bbl, doc, grs, gee, amt in cur.fetchall()}
     keys = sorted({v[2] for v in latest.values() if v[2]})
@@ -375,21 +391,42 @@ def _groups_from(deeds: pd.DataFrame, lwc: pd.DataFrame) -> dict[str, set[int]]:
     return groups
 
 
-def deed_node_groups(conn, *, max_parcels: int = MAX_PARCELS,
-                     successor_max: int = SUCCESSOR_MAX) -> dict[str, set[int]]:
+def deed_node_groups(conn, *, max_parcels: int = MAX_PARCELS, successor_max: int = SUCCESSOR_MAX,
+                     as_of: date | None = None) -> dict[str, set[int]]:
     """Map each qualifying deed to the ``landlords_with_connections`` nodeids of its co-conveyed
     buildings. Two sources, unioned per deed: (A) buildings whose LATEST deed is a shared multi-parcel
     deed (held-since; the staleness guard), and (B) the linked-successor guard — joint purchases the
     grantee later restructured into per-building single-purpose LLCs (recovers the shell-game move
     the latest-deed rule alone drops)."""
-    held = pd.read_sql(_deed_sql(max_parcels), conn)
+    held = pd.read_sql(_deed_sql(max_parcels, as_of), conn)
     combined: dict[str, set[str]] = {str(d): set(b or []) for d, b in zip(held["doc"], held["bbls"])}
-    for doc, bbls in _restructured_groups(conn, max_parcels, successor_max).items():
+    for doc, bbls in _restructured_groups(conn, max_parcels, successor_max, as_of).items():
         combined.setdefault(doc, set()).update(bbls)
     deeds = pd.DataFrame({"doc": list(combined), "bbls": [list(v) for v in combined.values()]})
     lwc = pd.read_sql(
         "SELECT nodeid, bbls::text[] AS bbls FROM landlords_with_connections", conn)
     return _groups_from(deeds, lwc)
+
+
+_LATEST_TIES_SQL = """
+    WITH d AS (
+        SELECT btrim(l.bbl) AS bbl, m.documentid AS doc, COALESCE(m.docdate, m.recordedfiled) AS dt
+        FROM real_property_master m JOIN real_property_legals l ON l.documentid = m.documentid
+        WHERE m.doctype ILIKE '%%DEED%%' AND COALESCE(m.docdate, m.recordedfiled) <= __AS_OF__
+    ), latest AS (SELECT bbl, max(dt) AS dt FROM d GROUP BY bbl)
+    SELECT count(*) FROM (
+        SELECT d.bbl FROM d JOIN latest USING (bbl) WHERE d.dt = latest.dt
+        GROUP BY d.bbl HAVING count(DISTINCT d.doc) > 1) t
+"""
+
+
+def latest_deed_ties(conn, as_of: date | None = None) -> int:
+    """BBLs whose latest deed date is shared by two or more documents. The queries pick one with
+    ``DISTINCT ON`` and no tie-break, so for these BBLs the choice is arbitrary. Reported in the
+    release manifest, not changed (a tie-break would move results and needs its own evaluation)."""
+    cur = conn.cursor()
+    cur.execute(_LATEST_TIES_SQL.replace("__AS_OF__", _as_of_sql(as_of)))
+    return int(cur.fetchone()[0])
 
 
 def _hub_nodes(groups: dict[str, set[int]], hub_cap: int) -> set[int]:
@@ -401,10 +438,11 @@ def _hub_nodes(groups: dict[str, set[int]], hub_cap: int) -> set[int]:
 
 def deed_edges(conn, *, weight: float = SPLINK_WEIGHT, star_above: int = STAR_ABOVE,
                max_parcels: int = MAX_PARCELS, hub_cap: int = DEED_HUB_CAP,
-               successor_max: int = SUCCESSOR_MAX) -> pd.DataFrame:
+               successor_max: int = SUCCESSOR_MAX, as_of: date | None = None) -> pd.DataFrame:
     """Co-conveyance cliques as ``[src, dst, weight]`` over lwc nodeids — one per multi-parcel deed
-    (star above ``star_above``), with hub nodes dropped. Empty frame when nothing qualifies."""
-    groups = deed_node_groups(conn, max_parcels=max_parcels, successor_max=successor_max)
+    (star above ``star_above``), with hub nodes dropped. Empty frame when nothing qualifies.
+    ``as_of`` is the cut-off date for deeds (default today); a release records it."""
+    groups = deed_node_groups(conn, max_parcels=max_parcels, successor_max=successor_max, as_of=as_of)
     hubs = _hub_nodes(groups, hub_cap)
     rows: list[tuple[int, int]] = []
     for ids in groups.values():

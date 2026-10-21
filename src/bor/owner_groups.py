@@ -159,7 +159,7 @@ def _coop_condo_bbls(conn) -> set[str]:
     return {str(r[0]).strip() for r in cur.fetchall()}
 
 
-def _identity_and_deed_pairs(conn, *, threshold: float, include_deed: bool):
+def _identity_and_deed_pairs(conn, *, threshold: float, include_deed: bool, as_of=None):
     """Return (identity_pairs, deed_pairs) as lists of (src, dst) nodeid tuples.
     identity = CONNECTED_BY_SPLINK (model ∪ curated ∪ registered-LLC); deed = CONNECTED_BY_DEED."""
     frames = [splink_edges(conn, threshold=threshold), curated_edges(conn), llc_edges(conn)]
@@ -167,18 +167,20 @@ def _identity_and_deed_pairs(conn, *, threshold: float, include_deed: bool):
     id_pairs = list(zip(identity["src"].astype(int), identity["dst"].astype(int)))
     deed_pairs: list[tuple[int, int]] = []
     if include_deed:
-        d = deed_edges(conn)
+        d = deed_edges(conn, as_of=as_of)
         if len(d):
             deed_pairs = list(zip(d["src"].astype(int), d["dst"].astype(int)))
     return id_pairs, deed_pairs
 
 
 def resolve_owner_groups(conn, *, threshold: float = DEFAULT_THRESHOLD,
-                         include_deed: bool = True, min_size: int = 2) -> list[OwnerGroup]:
+                         include_deed: bool = True, min_size: int = 2, as_of=None) -> list[OwnerGroup]:
     """Resolve beneficial owner groups off-graph. Runs the four edge builders, union-finds their
     pairs (CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED), maps components to buildings via lwc, applies
-    the co-op/condo exclusion, and returns the surviving groups. KG-free."""
-    id_pairs, deed_pairs = _identity_and_deed_pairs(conn, threshold=threshold, include_deed=include_deed)
+    the co-op/condo exclusion, and returns the surviving groups. KG-free.
+    ``as_of`` is the deed cut-off date (default today); a release records it."""
+    id_pairs, deed_pairs = _identity_and_deed_pairs(conn, threshold=threshold, include_deed=include_deed,
+                                                     as_of=as_of)
     assign = _union_groups(id_pairs + deed_pairs, min_size=min_size)   # {nodeid: OP-id}
     if not assign:
         return []
