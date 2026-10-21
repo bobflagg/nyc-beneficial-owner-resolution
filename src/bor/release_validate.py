@@ -224,6 +224,7 @@ _SUBJECT_TARGETS = {
     "cluster": ("identity_clusters", "cluster_id"), "node": ("node_observations", "node_id"),
     "bbl": ("node_observations", "bbl"), "group": ("groups", "group_id"),
     "address": ("masked_addresses", "address_id"), "component": ("network_membership", "component_id"),
+    "parcel": ("node_observations", "bbl"),
 }
 
 
@@ -425,7 +426,35 @@ def _inv_metrics(T):
     return v
 
 
-_INVARIANTS = (_inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
+def _inv_evidence(T):
+    items, members, nobs = T.get("evidence_items"), T.get("evidence_members"), T.get("node_observations")
+    v = []
+    if items is not None and members is not None:
+        cnt = members.groupby("evidence_id").size()
+        n = int((items.set_index("evidence_id")["parcel_count"] != cnt.reindex(items["evidence_id"]).fillna(0).to_numpy()).sum())
+        if n:
+            v.append(Violation("evidence_items", "parcel_count", "parcel_count must equal the member rows", n))
+        roles = members.groupby("evidence_id")["role"].apply(lambda r: (r == "transferred_onward").any())
+        want = roles.reindex(items["evidence_id"]).fillna(False).map({True: "deed.linked_successor", False: "deed.held_since"})
+        n = int((items["stage"].to_numpy() != want.to_numpy()).sum())
+        if n:
+            v.append(Violation("evidence_items", "stage",
+                               "a deed is linked_successor if any member was transferred onward, else held_since", n))
+        n = int((members["role"].eq("held_under_joint_deed") & members["latest_document_id"].notna()
+                 & (members["latest_document_id"] != members["original_document_id"])).sum())
+        n += int((members["role"].eq("transferred_onward") & (members["latest_document_id"] == members["original_document_id"])).sum())
+        if n:
+            v.append(Violation("evidence_members", "roles",
+                               "held members have the joint deed as latest; transferred ones a different deed", n))
+    if members is not None and nobs is not None:
+        m = members.merge(nobs[["node_id", "bbl"]], on="bbl", how="left", suffixes=("", "_obs"))
+        n = int((m["node_id_obs"].isna() | (m["node_id"] != m["node_id_obs"])).sum())
+        if n:
+            v.append(Violation("evidence_members", "node", "a member's node must be the node of its BBL", n))
+    return v
+
+
+_INVARIANTS = (_inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
                _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
 
 

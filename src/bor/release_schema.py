@@ -24,7 +24,7 @@ DECISION_LAYERS = ("identity",) + LAYERS
 # the group-level policy stages that have no link of their own.
 STAGES = (
     "identity.splink_base", "identity.splink_feedback", "identity.curated", "identity.registered_llc",
-    "deed.held_since", "deed.linked_successor",
+    "deed.held_since", "deed.linked_successor", "deed.group",
     "network.name", "network.address",
     "owner_portfolio.group_size", "owner_portfolio.footprint",
 )
@@ -35,7 +35,7 @@ RULES = (
     "splink_model", "first_name_veto", "common_name_veto", "shared_company_feedback",
     "shared_company_guard", "curated_owner_list", "registered_llc_owner_match",
     "deed_latest_rule", "deed_successor_guard", "deed_hub_cap", "deed_size_range",
-    "institutional_screen", "coop_condo_contact_rule", "coop_condo_building_class_rule",
+    "institutional_screen", "coop_condo_contact_rule", "coop_condo_deed_rule",
     "aggregator_address_mask", "splink_address_evidence_mask", "group_min_size",
     "group_footprint_rule", "name_edge", "address_edge",
 )
@@ -64,7 +64,7 @@ REASON_CODES = {
     "coop_condo_excluded": ("excluded_by_policy",
                             "Building is a co-op or condo, left out of a surviving group's rental footprint."),
     "coop_condo_dominated": ("excluded_by_policy",
-                             "Group dropped: rental buildings are fewer than half its footprint."),
+                             "Dropped: co-op/condo lots are the majority (of a group's footprint, or of a deed's parcels)."),
     "institutional_screen": ("excluded_by_policy", "Deed parties screened as institutional or public."),
     "deed_hub_capped": ("excluded_by_policy", "Node on more multi-parcel deeds than the hub cap."),
     "aggregator_address_masked": ("excluded_by_policy",
@@ -192,16 +192,18 @@ _TABLES = [
         _c("support_id"), _c("role")),
         fks=(_fk("decision_id", "decision_events"),),
         description="The source records a decision rests on."),
-    Table("evidence_items", "planned", ("evidence_id",), (
+    Table("evidence_items", "implemented", ("evidence_id",), (
         _c("evidence_id"), _c("stage", enum=("deed.held_since", "deed.linked_successor")),
         _c("document_id"), _c("parcel_count", "int"), _c("rule_version")),
         description="Multi-member assertions: a qualifying deed bundle."),
-    Table("evidence_members", "planned", ("evidence_id", "bbl"), (
+    Table("evidence_members", "implemented", ("evidence_id", "bbl"), (
         _c("evidence_id"), _c("bbl"), _c("node_id", "int"), _c("role", enum=EVIDENCE_ROLES),
         _c("original_document_id"), _c("latest_document_id", nullable=True),
-        _c("latest_amount", "float", nullable=True)),
+        _c("latest_amount", "float", nullable=True),
+        _c("excluded_reason", nullable=True, enum=tuple(REASON_CODES))),
         fks=(_fk("evidence_id", "evidence_items"),),
-        description="Per parcel: held under the joint deed, or transferred onward."),
+        description="Per parcel: held under the joint deed, or transferred onward. excluded_reason "
+                    "marks a member whose node was left out of the deed's clique (deed_hub_capped)."),
 
     # ---- groups and paths (planned, W4/W5) ------------------------------------------------------
     Table("groups", "planned", ("layer", "group_id"), (

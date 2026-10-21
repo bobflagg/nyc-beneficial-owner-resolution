@@ -38,6 +38,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
 
     res = resolution or resolve(conn, DEFAULT_THRESHOLD if threshold is None else threshold, capture=True)
     tables, report = build_mapping(conn, res)
+    tables, deed_report = add_deed_layer(conn, tables, as_of)
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -47,14 +48,35 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     manifest = mf.build_manifest(
         conn, snapshot_id=snapshot_id, pluto_snapshot_id=pluto_snapshot_id, as_of=as_of, run_id=run_id,
         resolution_params=res.params, artifacts={name: "complete" for name in tables},
-        diagnostics={"partial": "identity layer and lineage only; groups, evidence and network tables "
-                                "are added by later work packages",
+        diagnostics={"partial": "lineage, identity layer and deed evidence only; groups, witness paths and "
+                                "network tables are added by later work packages",
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
-                     "mapping": report})
+                     "mapping": report, "deed": deed_report})
     mf.write_manifest(out, manifest)
 
     loaded, written = read_release(str(out))
     return {"manifest": written, "violations": validate_release(loaded, written, path=str(out))}
+
+
+def add_deed_layer(conn, tables: dict, as_of: date | None) -> tuple[dict, dict]:
+    """Run the deed layer with decision capture and add its evidence and decisions to ``tables``
+    (the deed events join the identity events in ``decision_events``)."""
+    import pandas as pd
+
+    import bor
+    from bor import deed_edges, deed_events
+
+    trace: dict = {}
+    deed_edges.deed_edges(conn, as_of=as_of, trace=trace)
+    new, report = deed_events.deed_tables(conn, trace, f"bor-{bor.__version__}")
+    out = dict(tables)
+    out["evidence_items"], out["evidence_members"] = new["evidence_items"], new["evidence_members"]
+    out["decision_events"] = pd.concat([tables["decision_events"], new["deed_events"]], ignore_index=True)
+    out["decision_support"] = pd.concat([tables["decision_support"], new["deed_support"]], ignore_index=True)
+    ids = pd.concat([out["decision_support"].loc[out["decision_support"]["support_type"] == "observation",
+                                                "support_id"]])
+    assert set(ids) <= set(out["observations"]["observation_id"])
+    return out, report
 
 
 def main() -> None:  # pragma: no cover - needs the database

@@ -27,8 +27,8 @@ No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS do
 | Group | Tables | Status |
 |---|---|---|
 | Lineage | `observations`, `node_observations`, `node_observation_alternatives`, `identity_clusters` (with `base_cluster_id`), `identity_observations`, `node_identity_matches`, `node_cluster`, `node_cluster_alternatives` | implemented |
-| Decisions and evidence | `decision_events`, `decision_support` | implemented for the identity layer (`bor.identity_events`, W2); deed, group and network decisions are planned (W3, W5, W6a) |
-| | `evidence_items`, `evidence_members` | planned (W3) |
+| Decisions and evidence | `decision_events`, `decision_support` | implemented for the identity layer (`bor.identity_events`, W2) and the deed layer (`bor.deed_events`, W3); group and network decisions are planned (W5, W6a) |
+| | `evidence_items`, `evidence_members` | implemented (`bor.deed_events`, W3) |
 | Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness` | planned (W4) |
 | Operational network | `network_edges`, `network_membership`, `split_attempts` | planned (W5) |
 | Absence, masking, metrics | `bbl_status`, `masked_addresses`, `masked_address_nodes`, `method_metrics` | planned (W6b, W7) |
@@ -39,15 +39,28 @@ The worked example below is a synthetic fixture, but every table it uses for the
 
 `decision_events` records a decision **at the grain where a rule ran**. A subject and an optional counterpart are typed (`identity`, `base_cluster`, `cluster`, `node`, `bbl`, `address`, `deed_document`, `parcel`, `component`, `group`). An accepted link and a policy outcome are the same kind of row, distinguished by `outcome` (`accepted`, `rejected`, `masked`, `excluded`, `dropped`).
 
-- **Stage** is one of the link-creating stages (`identity.splink_base`, `identity.splink_feedback`, `identity.curated`, `identity.registered_llc`, `deed.held_since`, `deed.linked_successor`, `network.name`, `network.address`) or a group-level policy stage (`owner_portfolio.group_size`, `owner_portfolio.footprint`), so every event has a valid stage.
-- **Rule** is a controlled, extend-never-repurpose vocabulary naming what produced the decision: `splink_model`, `first_name_veto`, `common_name_veto`, `shared_company_feedback`, `shared_company_guard`, `curated_owner_list`, `registered_llc_owner_match`, `deed_latest_rule`, `deed_successor_guard`, `deed_hub_cap`, `deed_size_range`, `institutional_screen`, `coop_condo_contact_rule`, `coop_condo_building_class_rule`, `aggregator_address_mask`, `splink_address_evidence_mask`, `group_min_size`, `group_footprint_rule`, `name_edge`, `address_edge`. `rule_version` is the version of that rule's definition.
-- **Two co-op/condo rules exist** and are named separately: the owner-group rule uses HPD `contactdescription`; the deed code uses PLUTO building classes. **Two address masks exist** with the same threshold and different keys: the network address-edge mask and the Splink address-evidence mask.
+- **Stage** is one of the link-creating stages (`identity.splink_base`, `identity.splink_feedback`, `identity.curated`, `identity.registered_llc`, `deed.held_since`, `deed.linked_successor`, `deed.group` for the hub cap that spans both deed paths, `network.name`, `network.address`) or a group-level policy stage (`owner_portfolio.group_size`, `owner_portfolio.footprint`), so every event has a valid stage.
+- **Rule** is a controlled, extend-never-repurpose vocabulary naming what produced the decision: `splink_model`, `first_name_veto`, `common_name_veto`, `shared_company_feedback`, `shared_company_guard`, `curated_owner_list`, `registered_llc_owner_match`, `deed_latest_rule`, `deed_successor_guard`, `deed_hub_cap`, `deed_size_range`, `institutional_screen`, `coop_condo_contact_rule`, `coop_condo_deed_rule`, `aggregator_address_mask`, `splink_address_evidence_mask`, `group_min_size`, `group_footprint_rule`, `name_edge`, `address_edge`. `rule_version` is the version of that rule's definition.
+- **Two co-op/condo rules exist** and are named separately: the owner-group rule (`coop_condo_contact_rule`) uses the share of a building's owner-role HPD contacts described CO-OP or CONDO; the deed rule (`coop_condo_deed_rule`) treats a lot as co-op/condo if its PLUTO building class says so **or** that HPD plurality does, and drops a deed whose parcels are mostly such lots. **Two address masks exist** with the same threshold and different keys: the network address-edge mask and the Splink address-evidence mask.
 - **Scores belong only to decisions that were scored.** A base pair carries `score` and `threshold`. A feedback merge joins two pre-feedback *base clusters*, so it has no pair score. Nothing is ever scored for a pair that was never compared.
 - **Rejected candidates.** By default the release records pairs **blocked by a gate** (a veto, a mask, a hub cap, a guard), which are the exclusions Q19 asks about. Pairs merely below the threshold are not recorded (`pair_below_threshold` exists for a release that opts in; the volume is unmeasured).
 - **`decision_support`** links a decision to the source records it rests on: HPD observations, BBLs, documents. This is what lets a consumer reach contacts without joining on names. Events between identities cite their contacts through `identity_observations`, so `decision_support` carries rows only where the contacts are not any identity's own: for a shared-company merge, the contacts that carry the company (role `shared_company`), on either cluster's buildings.
 - **Identity-layer provenance.** `rule_version` is the version of the code that made the decision (`nlr-<version>`, or `bor-<version>` for the curated list). An identity a curated list removed (`curated_exclusion`) is in no cluster, so it is known by `identity_observations` alone, and an `identity` subject may resolve against either table. `detail` is a small JSON object (for example `name_rarity`, `addr_degree`, `n_shared_corporations`); no corporation names are exported.
 - **Absence of an event means the rule did not run.** An unexamined candidate is never recorded as rejected.
 - **Dropped groups** are never in `groups`. Their `group` event has outcome `dropped`; a published group never does. The lots of a dropped group get their own events.
+
+## Deed evidence
+
+Each deed that links two or more landlord nodes is an `evidence_items` row, with one `evidence_members` row per parcel (BBL, and the node that owns it):
+
+- `held_under_joint_deed`: the joint deed is still the parcel's latest deed.
+- `transferred_onward`: the grantee later conveyed the parcel into a single-purpose LLC. This is the linked-successor guard: the latest deed's grantor includes the original grantee, the successor holds at most three buildings, and the onward conveyance is nominal (at most $100), not a market sale. `latest_document_id` and `latest_amount` give that onward deed.
+
+An item is `deed.linked_successor` if any member depends on that guard, else `deed.held_since`; the per-member role is the truth either way, since a single deed can mix both. A member whose node was left out of every clique by the hub cap (more than 20 deeds) is kept and marked `excluded_reason = deed_hub_capped`.
+
+Decisions are recorded where a gate blocked a link that could have formed: a deed-level screen (parcel count, institutional party, co-op/condo majority; stage `deed.held_since` or `deed.linked_successor` for the path it blocked), a parcel the guard rejected (`deed_not_latest`, `successor_not_shell`, `successor_transfer_not_nominal`; subject `parcel`, counterpart the joint deed, with the ACRIS documents in `decision_support`), and a hub node. **A deed whose parcels all belong to one node would link nothing either way, so its gates are not events.**
+
+The queries pick a parcel's latest deed by date and then by document id (the later-recorded wins). Before that tie-break the pick was arbitrary for 23,163 BBLs and two runs of the same code differed by about 19 edges.
 
 ## How an explanation is assembled
 

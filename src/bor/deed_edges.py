@@ -207,11 +207,9 @@ def _norm(name: str) -> str:
 
 # Which deed is a parcel's "latest": the one with the latest date, and among deeds on that date the
 # highest document id (ACRIS ids begin with the recording date, so this is the later-recorded one).
-# Without the second key, DISTINCT ON picked arbitrarily among tied deeds (23,163 BBLs on the
-# reference dump), so two executions of the same query could disagree and the held-since and
-# linked-successor paths could disagree with each other about the same parcel. Measured on the
-# reference dump: two runs of the old code differed by 19 deed edges (942 vs 937); with the key they
-# are identical (947), and the change itself moves 9-22 edges, the size of the old run-to-run noise.
+# Without the second key, DISTINCT ON picked arbitrarily among tied deeds (23,163 BBLs at the time of
+# writing), so two executions of the same query could disagree and the held-since and linked-successor
+# paths could disagree with each other about the same parcel.
 _LATEST_ORDER = "COALESCE(m.docdate, m.recordedfiled) DESC NULLS LAST, m.documentid DESC"
 
 # The document-type filter every deed query applies; recorded in the release manifest. It admits
@@ -331,38 +329,138 @@ def _is_nominal(docamount, nominal_max: float = NOMINAL_MAX) -> bool:
         return False
 
 
-def _retained(doc: str, bbls, grantee_norm: set[str],
-              latest: dict, succ_size: dict, successor_max: int,
-              nominal_max: float = NOMINAL_MAX) -> list[str]:
-    """Pure: which parcels of joint deed ``doc`` (grantee set ``grantee_norm``) are still co-owned —
-    either held directly (the joint deed is their latest) or restructured by the same grantee into a
-    single-purpose LLC (latest-deed grantor == grantee AND that successor is a shell AND that onward
-    conveyance is a NOMINAL transfer, not a market-price sale). ``latest``:
-    bbl -> (latest_doc, {grantor_norm}, successor_norm, docamount). ``succ_size``: successor_norm ->
-    global count. The nominal gate is what keeps a $1.1M arms-length sale to a small buyer from being
-    re-merged as if it were a $0 re-deed into a controlled shell (block-3498 / P0133)."""
-    out: list[str] = []
+def _parcel_outcomes(doc: str, bbls, grantee_norm: set[str], latest: dict, succ_size: dict,
+                     successor_max: int, nominal_max: float = NOMINAL_MAX) -> list[tuple]:
+    """Pure: the outcome for each parcel of joint deed ``doc`` (grantee set ``grantee_norm``), as
+    ``(bbl, outcome, reason, latest_doc, latest_amount)``. ``outcome`` is ``held`` (the joint deed is
+    the parcel's latest), ``restructured`` (the grantee later restructured it into a single-purpose
+    LLC: the latest deed's grantor includes the grantee, the successor is a shell, and the onward
+    conveyance is NOMINAL, not a market-price sale) or ``rejected``, with the first failing clause as
+    ``reason``: ``deed_not_latest`` (it was conveyed on to someone else), ``successor_not_shell`` or
+    ``successor_transfer_not_nominal``. A parcel with no latest deed on record is skipped.
+
+    ``latest``: bbl -> (latest_doc, {grantor_norm}, successor_norm, docamount). ``succ_size``:
+    successor_norm -> global count. The nominal gate is what keeps a $1.1M arms-length sale to a
+    small buyer from being re-merged as if it were a $0 re-deed into a controlled shell
+    (block-3498 / P0133)."""
+    out: list[tuple] = []
     for b in bbls:
         info = latest.get(b)
         if not info:
             continue
         ldoc, lgrantors, lgrantee, ldocamount = info
         if ldoc == doc:                                                   # held since the joint deed
-            out.append(b)
-        elif (lgrantors & grantee_norm) and succ_size.get(lgrantee, 10**9) <= successor_max \
-                and _is_nominal(ldocamount, nominal_max):
-            out.append(b)                                     # restructured into a shell (nominal $)
+            out.append((b, "held", None, ldoc, ldocamount))
+        elif not (lgrantors & grantee_norm):
+            out.append((b, "rejected", "deed_not_latest", ldoc, ldocamount))
+        elif succ_size.get(lgrantee, 10**9) > successor_max:
+            out.append((b, "rejected", "successor_not_shell", ldoc, ldocamount))
+        elif not _is_nominal(ldocamount, nominal_max):
+            out.append((b, "rejected", "successor_transfer_not_nominal", ldoc, ldocamount))
+        else:
+            out.append((b, "restructured", None, ldoc, ldocamount))       # restructured (nominal $)
     return out
 
 
-def _restructured_groups(conn, max_parcels: int, successor_max: int,
-                         as_of: date | None = None) -> dict[str, set[str]]:
+def _retained(doc: str, bbls, grantee_norm: set[str],
+              latest: dict, succ_size: dict, successor_max: int,
+              nominal_max: float = NOMINAL_MAX) -> list[str]:
+    """Pure: which parcels of joint deed ``doc`` are still co-owned, held directly or restructured
+    into a single-purpose LLC (see :func:`_parcel_outcomes`, which this is built on)."""
+    return [b for b, outcome, *_ in
+            _parcel_outcomes(doc, bbls, grantee_norm, latest, succ_size, successor_max, nominal_max)
+            if outcome != "rejected"]
+
+
+# The screen a reason comes from, for the trace: the SQL gates, or (linked-successor only) the looser
+# grantee-name regex applied afterwards.
+_SCREEN_OF = {"deed_parcels_out_of_range": "parcel_count", "institutional_screen": "party_keywords",
+              "coop_condo_dominated": "coop_condo"}
+_SCREEN_COLUMNS = ["path", "doc", "reason", "screen", "n_parcels", "bbls"]
+
+
+def _screen_reasons(n_parcels: int, coop_fraction, public_party: bool, max_parcels: int) -> list[str]:
+    """Pure: which deed-level gates a candidate deed fails (empty if it passes all of them)."""
+    out = []
+    if n_parcels > max_parcels:
+        out.append("deed_parcels_out_of_range")
+    if public_party:
+        out.append("institutional_screen")
+    if coop_fraction is not None and float(coop_fraction) > 0.5:
+        out.append("coop_condo_dominated")
+    return out
+
+
+def _held_candidates_sql(as_of: date | None) -> str:
+    """Every deed that is the latest deed of two or more parcels, with the flags the held-since gates
+    test (parcel count, co-op fraction, public/institutional party) and its parcels. The same latest
+    rule and gate predicates as :func:`_deed_sql`, but nothing is filtered out. Trace only."""
+    return f"""
+        WITH latest AS (
+            SELECT DISTINCT ON (btrim(l.bbl)) btrim(l.bbl) AS bbl, m.documentid AS doc
+            FROM real_property_master m
+            JOIN real_property_legals l ON l.documentid = m.documentid
+            WHERE m.doctype ILIKE '%%DEED%%'
+              AND COALESCE(m.docdate, m.recordedfiled) <= {_as_of_sql(as_of)}
+            ORDER BY btrim(l.bbl), {_LATEST_ORDER}
+        ),
+        {_COOP_CTE},
+        cand AS (
+            SELECT lt.doc AS doc, count(DISTINCT lt.bbl) AS n, array_agg(DISTINCT lt.bbl) AS bbls,
+                   avg(CASE WHEN cc.bbl IS NOT NULL THEN 1.0 ELSE 0.0 END) AS cf
+            FROM latest lt LEFT JOIN coop cc ON cc.bbl = lt.bbl
+            GROUP BY lt.doc HAVING count(DISTINCT lt.bbl) >= {MIN_PARCELS}
+        )
+        SELECT cand.doc, cand.n, cand.bbls, cand.cf,
+               EXISTS (SELECT 1 FROM real_property_parties p WHERE p.documentid = cand.doc
+                       AND p.partytype IN (1, 2) AND ({_PUBLIC_LIKE})) AS pub
+        FROM cand
+    """
+
+
+def _joint_candidates_sql(as_of: date | None) -> str:
+    """Every deed since RESTRUCT_MIN_DATE conveying two or more parcels, with the flags
+    :data:`_JOINT_SQL` tests and its parcels. Nothing is filtered out. Trace only."""
+    return f"""
+        WITH {_COOP_CTE},
+        jd AS (
+            SELECT m.documentid AS doc, count(DISTINCT btrim(l.bbl)) AS n,
+                   array_agg(DISTINCT btrim(l.bbl)) AS bbls,
+                   count(DISTINCT btrim(l.bbl)) FILTER (WHERE cc.bbl IS NOT NULL)::numeric
+                       / count(DISTINCT btrim(l.bbl)) AS cf
+            FROM real_property_master m
+            JOIN real_property_legals l ON l.documentid = m.documentid
+            LEFT JOIN coop cc ON cc.bbl = btrim(l.bbl)
+            WHERE m.doctype ILIKE '%%DEED%%'
+              AND COALESCE(m.docdate, m.recordedfiled) BETWEEN DATE '{RESTRUCT_MIN_DATE}' AND {_as_of_sql(as_of)}
+            GROUP BY m.documentid HAVING count(DISTINCT btrim(l.bbl)) >= {MIN_PARCELS}
+        )
+        SELECT jd.doc, jd.n, jd.bbls, jd.cf,
+               EXISTS (SELECT 1 FROM real_property_parties p WHERE p.documentid = jd.doc
+                       AND p.partytype IN (1, 2) AND ({_PUBLIC_LIKE})) AS pub
+        FROM jd
+    """
+
+
+def _restructured_groups(conn, max_parcels: int, successor_max: int, as_of: date | None = None,
+                         trace: dict | None = None) -> dict[str, set[str]]:
     """Joint deeds (grantee G) -> the set of their bbls still co-owned by G (held or restructured
-    into single-purpose successor LLCs). Returns ``{doc: {bbls}}`` for deeds keeping >= 2."""
+    into single-purpose successor LLCs). Returns ``{doc: {bbls}}`` for deeds keeping >= 2.
+
+    ``trace`` (a dict) additionally receives, without changing the result: ``parcels`` (every
+    parcel of every deed that reached the per-parcel test, with its outcome and reason),
+    ``screens_joint`` (deeds the linked-successor path's deed-level gates dropped) and
+    ``joint_consistent`` (whether the candidate query reproduces :data:`_JOINT_SQL`'s deeds)."""
     joint = pd.read_sql(_JOINT_SQL.format(max_parcels=int(max_parcels), as_of=_as_of_sql(as_of)), conn)
-    joint = joint[joint["grantees"].apply(
+    screened = joint[joint["grantees"].apply(
         lambda gs: bool(gs) and not any(_INST_RE.search(x or "") for x in gs))]
+    if trace is not None:
+        _trace_joint_screens(conn, trace, joint, screened, max_parcels, as_of)
+    joint = screened
     if joint.empty:
+        if trace is not None:
+            trace["parcels"] = pd.DataFrame(columns=[
+                "doc", "bbl", "outcome", "reason", "latest_doc", "latest_amount"])
         return {}
     allb = sorted({b for bbls in joint["bbls"] for b in bbls})
     cur = conn.cursor()
@@ -374,12 +472,35 @@ def _restructured_groups(conn, max_parcels: int, successor_max: int,
     cur.execute(_SUCC_SIZE_SQL, (keys,))
     succ_size = {g: n for g, n in cur.fetchall()}
     groups: dict[str, set[str]] = {}
+    parcel_rows: list[tuple] = []
     for doc, bbls, grantees in zip(joint["doc"], joint["bbls"], joint["grantees"]):
         G = {_norm(x) for x in grantees}
-        keep = _retained(str(doc), bbls, G, latest, succ_size, successor_max)
+        outcomes = _parcel_outcomes(str(doc), bbls, G, latest, succ_size, successor_max)
+        keep = [b for b, outcome, *_ in outcomes if outcome != "rejected"]
+        if trace is not None:
+            parcel_rows += [(str(doc), *o) for o in outcomes]
         if len(keep) >= 2:
             groups[str(doc)] = set(keep)
+    if trace is not None:
+        trace["parcels"] = pd.DataFrame(parcel_rows, columns=[
+            "doc", "bbl", "outcome", "reason", "latest_doc", "latest_amount"])
     return groups
+
+
+def _trace_joint_screens(conn, trace: dict, joint, screened, max_parcels: int, as_of) -> None:
+    """Record the deed-level gates of the linked-successor path (trace only)."""
+    cand = pd.read_sql(_joint_candidates_sql(as_of), conn)
+    rows = []
+    for doc, n, bbls, cf, pub in zip(cand["doc"], cand["n"], cand["bbls"], cand["cf"], cand["pub"]):
+        for reason in _screen_reasons(int(n), cf, bool(pub), max_parcels):
+            rows.append(("linked_successor", str(doc), reason, _SCREEN_OF[reason], int(n), list(bbls)))
+    passed_sql = set(cand.loc[[not _screen_reasons(int(n), cf, bool(pub), max_parcels)
+                               for n, cf, pub in zip(cand["n"], cand["cf"], cand["pub"])], "doc"].astype(str))
+    trace["joint_consistent"] = passed_sql == set(joint["doc"].astype(str))
+    blocked = joint[~joint["doc"].isin(screened["doc"])]
+    for doc, bbls in zip(blocked["doc"], blocked["bbls"]):
+        rows.append(("linked_successor", str(doc), "institutional_screen", "grantee_regex", len(bbls), list(bbls)))
+    trace["screens_joint"] = pd.DataFrame(rows, columns=_SCREEN_COLUMNS)
 
 
 def _groups_from(deeds: pd.DataFrame, lwc: pd.DataFrame) -> dict[str, set[int]]:
@@ -402,20 +523,47 @@ def _groups_from(deeds: pd.DataFrame, lwc: pd.DataFrame) -> dict[str, set[int]]:
 
 
 def deed_node_groups(conn, *, max_parcels: int = MAX_PARCELS, successor_max: int = SUCCESSOR_MAX,
-                     as_of: date | None = None) -> dict[str, set[int]]:
+                     as_of: date | None = None, trace: dict | None = None) -> dict[str, set[int]]:
     """Map each qualifying deed to the ``landlords_with_connections`` nodeids of its co-conveyed
     buildings. Two sources, unioned per deed: (A) buildings whose LATEST deed is a shared multi-parcel
     deed (held-since; the staleness guard), and (B) the linked-successor guard — joint purchases the
     grantee later restructured into per-building single-purpose LLCs (recovers the shell-game move
-    the latest-deed rule alone drops)."""
+    the latest-deed rule alone drops).
+
+    ``trace`` (a dict) receives, before the two sources are unioned and mapped to nodes: ``held``
+    (the held-since deeds and their parcels), ``screens_held`` / ``screens_joint`` (deeds the
+    deed-level gates dropped, per path), ``parcels`` (each linked-successor parcel's outcome and
+    reason), ``bbl_nodes`` (parcel -> node) and ``groups`` (deed -> nodes, as returned). Tracing never
+    changes the result."""
     held = pd.read_sql(_deed_sql(max_parcels, as_of), conn)
     combined: dict[str, set[str]] = {str(d): set(b or []) for d, b in zip(held["doc"], held["bbls"])}
-    for doc, bbls in _restructured_groups(conn, max_parcels, successor_max, as_of).items():
+    restructured = _restructured_groups(conn, max_parcels, successor_max, as_of, trace)
+    for doc, bbls in restructured.items():
         combined.setdefault(doc, set()).update(bbls)
     deeds = pd.DataFrame({"doc": list(combined), "bbls": [list(v) for v in combined.values()]})
     lwc = pd.read_sql(
         "SELECT nodeid, bbls::text[] AS bbls FROM landlords_with_connections", conn)
-    return _groups_from(deeds, lwc)
+    groups = _groups_from(deeds, lwc)
+    if trace is not None:
+        trace["held"] = pd.DataFrame({"doc": held["doc"].astype(str),
+                                      "bbls": [sorted(b or []) for b in held["bbls"]]})
+        trace["bbl_nodes"] = {b: int(n) for n, bbls in zip(lwc["nodeid"], lwc["bbls"]) for b in (bbls or [])}
+        trace["groups"] = groups
+        _trace_held_screens(conn, trace, held, max_parcels, as_of)
+    return groups
+
+
+def _trace_held_screens(conn, trace: dict, held, max_parcels: int, as_of) -> None:
+    """Record the deed-level gates of the held-since path (trace only)."""
+    cand = pd.read_sql(_held_candidates_sql(as_of), conn)
+    rows = []
+    passed = []
+    for doc, n, bbls, cf, pub in zip(cand["doc"], cand["n"], cand["bbls"], cand["cf"], cand["pub"]):
+        reasons = _screen_reasons(int(n), cf, bool(pub), max_parcels)
+        passed.append(not reasons)
+        rows += [("held_since", str(doc), r, _SCREEN_OF[r], int(n), list(bbls)) for r in reasons]
+    trace["held_consistent"] = set(cand.loc[passed, "doc"].astype(str)) == set(held["doc"].astype(str))
+    trace["screens_held"] = pd.DataFrame(rows, columns=_SCREEN_COLUMNS)
 
 
 _LATEST_TIES_SQL = """
@@ -448,12 +596,20 @@ def _hub_nodes(groups: dict[str, set[int]], hub_cap: int) -> set[int]:
 
 def deed_edges(conn, *, weight: float = SPLINK_WEIGHT, star_above: int = STAR_ABOVE,
                max_parcels: int = MAX_PARCELS, hub_cap: int = DEED_HUB_CAP,
-               successor_max: int = SUCCESSOR_MAX, as_of: date | None = None) -> pd.DataFrame:
+               successor_max: int = SUCCESSOR_MAX, as_of: date | None = None,
+               trace: dict | None = None) -> pd.DataFrame:
     """Co-conveyance cliques as ``[src, dst, weight]`` over lwc nodeids — one per multi-parcel deed
     (star above ``star_above``), with hub nodes dropped. Empty frame when nothing qualifies.
-    ``as_of`` is the cut-off date for deeds (default today); a release records it."""
-    groups = deed_node_groups(conn, max_parcels=max_parcels, successor_max=successor_max, as_of=as_of)
+    ``as_of`` is the cut-off date for deeds (default today); a release records it. ``trace`` (a
+    dict) is filled as in :func:`deed_node_groups`, plus ``hubs`` (node -> number of deeds) and
+    ``hub_cap``; it never changes the edges."""
+    groups = deed_node_groups(conn, max_parcels=max_parcels, successor_max=successor_max, as_of=as_of,
+                              trace=trace)
     hubs = _hub_nodes(groups, hub_cap)
+    if trace is not None:
+        counts = Counter(n for ids in groups.values() for n in ids)
+        trace["hubs"] = {int(n): int(counts[n]) for n in hubs}
+        trace["hub_cap"] = hub_cap
     rows: list[tuple[int, int]] = []
     for ids in groups.values():
         rows.extend(_clique_rows(ids - hubs, star_above))
