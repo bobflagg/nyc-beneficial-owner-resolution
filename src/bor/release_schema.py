@@ -206,7 +206,17 @@ _TABLES = [
                     "marks a member whose node was left out of the deed's clique (deed_hub_capped)."),
 
     # ---- groups and paths (planned, W4/W5) ------------------------------------------------------
-    Table("groups", "planned", ("layer", "group_id"), (
+    Table("link_sets", "implemented", ("set_id",), (
+        _c("set_id"), _c("stage", enum=("identity.curated", "identity.registered_llc")),
+        _c("rule", enum=RULES), _c("rule_version"), _c("size", "int")),
+        description="Sets of nodes tied by a curated owner (CG...) or by one DOF owner-of-record entity "
+                    "(LG...). Ids are opaque; the owner label and the entity name are not exported."),
+    Table("link_set_members", "implemented", ("set_id", "node_id", "source_bbl"), (
+        _c("set_id"), _c("node_id", "int"), _c("source_bbl", nullable=True)),
+        fks=(_fk("set_id", "link_sets"),),
+        description="The nodes of a link set. For a registered-LLC set, source_bbl is the PLUTO lot the "
+                    "entity owns that puts the node in the set; null for a curated owner."),
+    Table("groups", "implemented", ("layer", "group_id"), (
         _c("layer", enum=LAYERS), _c("group_id"), _c("assertion_key"),
         _c("composition", nullable=True, enum=("identity", "deed_only", "deed_bridged")),
         _c("split", nullable=True, enum=("wcc", "louvain")),
@@ -215,21 +225,22 @@ _TABLES = [
                     "minimum node id (run-local). Counting unit: tax lots "
                     "(BBLs), not buildings. lot_count is the rental footprint, total_lot_count includes "
                     "co-op/condo lots."),
-    Table("group_members", "planned", ("layer", "node_id"), (
+    Table("group_members", "implemented", ("layer", "node_id"), (
         _c("layer", enum=LAYERS), _c("group_id"), _c("node_id", "int"), _c("assertion_key")),
         fks=(_fk(("layer", "group_id"), "groups"),),
         description="Node partition: a node is in at most one group per layer."),
-    Table("group_bbls", "planned", ("layer", "bbl"), (
+    Table("group_bbls", "implemented", ("layer", "bbl"), (
         _c("layer", enum=LAYERS), _c("group_id"), _c("bbl"), _c("rental", "bool")),
         fks=(_fk(("layer", "group_id"), "groups"),),
         description="BBL listing; rental=false marks co-op/condo lots outside the published footprint."),
-    Table("group_witness", "planned", ("layer", "group_id", "step"), (
+    Table("group_witness", "implemented", ("layer", "group_id", "step"), (
         _c("layer", enum=LAYERS), _c("group_id"), _c("step", "int"), _c("node_a", "int"),
         _c("node_b", "int"), _c("stage", enum=STAGES),
-        _c("basis_type", enum=("identity_cluster", "evidence_item", "network_edge")),
+        _c("basis_type", enum=("identity_cluster", "evidence_item", "link_set", "network_edge")),
         _c("basis_id"), _c("assertion_key")),
         fks=(_fk(("layer", "group_id"), "groups"),),
-        description="A representative spanning tree per group (not unique, strongest or shortest)."),
+        description="A representative spanning tree per group (not unique, strongest or shortest). "
+                    "Each step cites the set that joined its two nodes (basis)."),
 
     # ---- operational network (planned, W5) ------------------------------------------------------
     Table("network_edges", "planned", ("edge_id",), (

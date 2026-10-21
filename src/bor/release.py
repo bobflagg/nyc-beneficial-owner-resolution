@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -30,6 +31,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     from bor.splink_bridge import DEFAULT_THRESHOLD, resolve
 
     as_of = as_of or date.today()
+    run_id = run_id or f"{as_of.isoformat()}-{uuid.uuid4().hex[:8]}"      # fixed first: assertion keys embed it
     code = mf.code_state()
     if require_clean:
         dirty = [k for k, v in code.items() if v["dirty"] is not False]
@@ -38,7 +40,8 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
 
     res = resolution or resolve(conn, DEFAULT_THRESHOLD if threshold is None else threshold, capture=True)
     tables, report = build_mapping(conn, res)
-    tables, deed_report = add_deed_layer(conn, tables, as_of)
+    tables, deed_report, deed_edge_frame = add_deed_layer(conn, tables, as_of)
+    tables, portfolio_report = add_owner_portfolio_layer(conn, tables, deed_edge_frame, as_of, run_id)
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -48,26 +51,28 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     manifest = mf.build_manifest(
         conn, snapshot_id=snapshot_id, pluto_snapshot_id=pluto_snapshot_id, as_of=as_of, run_id=run_id,
         resolution_params=res.params, artifacts={name: "complete" for name in tables},
-        diagnostics={"partial": "lineage, identity layer and deed evidence only; groups, witness paths and "
-                                "network tables are added by later work packages",
+        diagnostics={"partial": "lineage, identity layer, deed evidence and Owner Portfolio groups with their "
+                                "witness paths; the Operational Network and the per-lot absence summaries "
+                                "are added by later work packages",
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
-                     "mapping": report, "deed": deed_report})
+                     "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report})
     mf.write_manifest(out, manifest)
 
     loaded, written = read_release(str(out))
     return {"manifest": written, "violations": validate_release(loaded, written, path=str(out))}
 
 
-def add_deed_layer(conn, tables: dict, as_of: date | None) -> tuple[dict, dict]:
+def add_deed_layer(conn, tables: dict, as_of: date | None) -> tuple[dict, dict, object]:
     """Run the deed layer with decision capture and add its evidence and decisions to ``tables``
-    (the deed events join the identity events in ``decision_events``)."""
+    (the deed events join the identity events in ``decision_events``). Also returns the deed edges,
+    so the Owner Portfolio groups reuse this run."""
     import pandas as pd
 
     import bor
     from bor import deed_edges, deed_events
 
     trace: dict = {}
-    deed_edges.deed_edges(conn, as_of=as_of, trace=trace)
+    deed_edge_frame = deed_edges.deed_edges(conn, as_of=as_of, trace=trace)
     new, report = deed_events.deed_tables(conn, trace, f"bor-{bor.__version__}")
     out = dict(tables)
     out["evidence_items"], out["evidence_members"] = new["evidence_items"], new["evidence_members"]
@@ -76,6 +81,33 @@ def add_deed_layer(conn, tables: dict, as_of: date | None) -> tuple[dict, dict]:
     ids = pd.concat([out["decision_support"].loc[out["decision_support"]["support_type"] == "observation",
                                                 "support_id"]])
     assert set(ids) <= set(out["observations"]["observation_id"])
+    return out, report, deed_edge_frame
+
+
+def add_owner_portfolio_layer(conn, tables: dict, deed_edge_frame, as_of: date | None, run_id: str
+                              ) -> tuple[dict, dict]:
+    """Owner Portfolio groups, lots and witness paths, built from the identity resolution and the deed
+    edges already in ``tables`` (one Splink fit and one deed run per release)."""
+    import bor
+    from bor import curated_owners, group_tables
+    from bor.owner_portfolios import resolve_owner_portfolios
+
+    nc = tables["node_cluster"].rename(columns={"node_id": "nodeid"})[["nodeid", "cluster_id"]]
+    portfolios = resolve_owner_portfolios(conn, as_of=as_of, node_cluster_frame=nc, deed_edge_frame=deed_edge_frame)
+
+    version = f"bor-{bor.__version__}"
+    named = group_tables.named_link_sets(curated_owners.curated_node_groups(conn), group_tables.llc_sources(conn),
+                                         version, version)
+    link_sets = (group_tables.cluster_link_sets(tables["node_cluster"], tables["node_identity_matches"],
+                                                tables["identity_clusters"])
+                 + group_tables.deed_link_sets(tables["evidence_items"], tables["evidence_members"])
+                 + named.link_sets)
+    new, report = group_tables.owner_portfolio_tables(portfolios, link_sets, run_id)
+    out = dict(tables)
+    out.update(new)
+    out["link_sets"], out["link_set_members"] = named.sets, named.members
+    report.update({"curated_sets": int((named.sets["stage"] == "identity.curated").sum()),
+                   "registered_llc_sets": int((named.sets["stage"] == "identity.registered_llc").sum())})
     return out, report
 
 

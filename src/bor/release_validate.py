@@ -454,7 +454,58 @@ def _inv_evidence(T):
     return v
 
 
-_INVARIANTS = (_inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
+_BASIS_TABLE = {"identity_cluster": ("identity_clusters", "cluster_id"),
+                "evidence_item": ("evidence_items", "evidence_id"), "link_set": ("link_sets", "set_id"),
+                "network_edge": ("network_edges", "edge_id")}
+_STAGE_BASIS = {"identity.splink_base": "identity_cluster", "identity.splink_feedback": "identity_cluster",
+                "identity.curated": "link_set", "identity.registered_llc": "link_set",
+                "deed.held_since": "evidence_item", "deed.linked_successor": "evidence_item",
+                "network.name": "network_edge", "network.address": "network_edge"}
+
+
+def _inv_witness_basis(T):
+    w = T.get("group_witness")
+    if w is None:
+        return []
+    v = []
+    expected = w["stage"].map(_STAGE_BASIS)
+    n = int((expected != w["basis_type"]).sum())
+    if n:
+        v.append(Violation("group_witness", "basis_type", "a step's stage fixes the kind of evidence it cites", n))
+    for kind, (tbl, col) in _BASIS_TABLE.items():
+        if tbl in T:
+            m = _missing_from(w.loc[w["basis_type"] == kind, "basis_id"], T[tbl][col])
+            if m:
+                v.append(Violation("group_witness", "basis", f"{kind} basis not in {tbl}.{col}", m))
+    ls = T.get("link_sets")
+    if ls is not None:
+        sets = ls.set_index("set_id")["stage"]
+        used = w[w["basis_type"] == "link_set"]
+        n = int((used["stage"].to_numpy() != used["basis_id"].map(sets).to_numpy()).sum())
+        if n:
+            v.append(Violation("group_witness", "basis_stage", "a link-set step has the stage of its set", n))
+    return v
+
+
+def _inv_link_sets(T):
+    ls, lm = T.get("link_sets"), T.get("link_set_members")
+    if ls is None or lm is None:
+        return []
+    v = []
+    cnt = lm.groupby("set_id")["node_id"].nunique()
+    n = int((ls.set_index("set_id")["size"] != cnt.reindex(ls["set_id"]).fillna(0).to_numpy()).sum())
+    if n:
+        v.append(Violation("link_sets", "size", "size must equal the number of member nodes", n))
+    stage = lm["set_id"].map(ls.set_index("set_id")["stage"])
+    n = int(((stage == "identity.curated") & lm["source_bbl"].notna()).sum()
+            + ((stage == "identity.registered_llc") & lm["source_bbl"].isna()).sum())
+    if n:
+        v.append(Violation("link_set_members", "source_bbl",
+                           "a registered-LLC member cites its lot; a curated owner has none", n))
+    return v
+
+
+_INVARIANTS = (_inv_witness_basis, _inv_link_sets, _inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
                _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
 
 

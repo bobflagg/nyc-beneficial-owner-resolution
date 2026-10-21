@@ -105,13 +105,17 @@ def node_clusters(conn, *, threshold: float = DEFAULT_THRESHOLD) -> pd.DataFrame
 
 
 def splink_edges(conn, *, threshold: float = DEFAULT_THRESHOLD, weight: float = SPLINK_WEIGHT,
-                 star_above: int = STAR_ABOVE) -> pd.DataFrame:
+                 star_above: int = STAR_ABOVE, node_cluster_frame: pd.DataFrame | None = None) -> pd.DataFrame:
     """CONNECTED_BY_SPLINK edges as ``[src, dst, weight]`` over lwc nodeids.
 
     One clique per resolved entity of >=2 nodes (so the group stays dense under Louvain);
     entities larger than ``star_above`` fall back to a hub-and-spoke star to bound edges.
+
+    Pass ``node_cluster_frame`` (``[nodeid, cluster_id]``, only the partition matters) to build the edges
+    from a resolution already in hand instead of fitting Splink again; a release does this so that
+    every layer comes from one fit.
     """
-    nc = node_clusters(conn, threshold=threshold)
+    nc = node_cluster_frame if node_cluster_frame is not None else node_clusters(conn, threshold=threshold)
     rows: list[tuple[int, int]] = []
     for _, g in nc.groupby("cluster_id"):
         ids = sorted(g["nodeid"].tolist())

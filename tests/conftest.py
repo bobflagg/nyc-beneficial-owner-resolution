@@ -26,6 +26,17 @@ def resolved(pg):
 
 
 @pytest.fixture(scope="session")
+def release_build(pg, resolved, tmp_path_factory):
+    """One full release built from the reference dump (~8 min), shared by the tests that read it."""
+    from datetime import date
+
+    from bor.release import build_release
+    out = tmp_path_factory.mktemp("release")
+    result = build_release(pg, out, snapshot_id="justfixwow-test", as_of=date(2026, 10, 21), resolution=resolved)
+    return out, result
+
+
+@pytest.fixture(scope="session")
 def owner_portfolios(pg):
     from bor.owner_portfolios import resolve_owner_portfolios
     return resolve_owner_portfolios(pg)

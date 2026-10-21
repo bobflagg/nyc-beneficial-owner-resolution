@@ -29,7 +29,7 @@ No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS do
 | Lineage | `observations`, `node_observations`, `node_observation_alternatives`, `identity_clusters` (with `base_cluster_id`), `identity_observations`, `node_identity_matches`, `node_cluster`, `node_cluster_alternatives` | implemented |
 | Decisions and evidence | `decision_events`, `decision_support` | implemented for the identity layer (`bor.identity_events`, W2) and the deed layer (`bor.deed_events`, W3); group and network decisions are planned (W5, W6a) |
 | | `evidence_items`, `evidence_members` | implemented (`bor.deed_events`, W3) |
-| Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness` | planned (W4) |
+| Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness`, `link_sets`, `link_set_members` | implemented for the Owner Portfolio layer (`bor.group_tables`, W4); the Operational Network's groups and path are planned (W5) |
 | Operational network | `network_edges`, `network_membership`, `split_attempts` | planned (W5) |
 | Absence, masking, metrics | `bbl_status`, `masked_addresses`, `masked_address_nodes`, `method_metrics` | planned (W6b, W7) |
 
@@ -61,6 +61,22 @@ An item is `deed.linked_successor` if any member depends on that guard, else `de
 Decisions are recorded where a gate blocked a link that could have formed: a deed-level screen (parcel count, institutional party, co-op/condo majority; stage `deed.held_since` or `deed.linked_successor` for the path it blocked), a parcel the guard rejected (`deed_not_latest`, `successor_not_shell`, `successor_transfer_not_nominal`; subject `parcel`, counterpart the joint deed, with the ACRIS documents in `decision_support`), and a hub node. **A deed whose parcels all belong to one node would link nothing either way, so its gates are not events.**
 
 The queries pick a parcel's latest deed by date and then by document id (the later-recorded wins). Before that tie-break the pick was arbitrary for 23,163 BBLs and two runs of the same code differed by about 19 edges.
+
+## Owner Portfolio groups and paths
+
+`groups`, `group_members` and `group_bbls` hold the Owner Portfolios (`layer = owner_portfolio`, ids `OP-<n>`); `group_witness` holds a **representative path** for each: a spanning tree over its members, one step fewer than there are nodes, in which every step cites what joined its two nodes (`basis_type` and `basis_id`):
+
+| Stage | The step cites | Resolves in |
+|---|---|---|
+| `identity.splink_base`, `identity.splink_feedback` | the final identity cluster | `identity_clusters.cluster_id`; its decisions carry that `cluster_id` |
+| `identity.curated`, `identity.registered_llc` | a link set | `link_sets.set_id` (`CG…` curated owner, `LG…` one DOF owner-of-record entity), with `link_set_members` |
+| `deed.held_since`, `deed.linked_successor` | a deed | `evidence_items.evidence_id` |
+
+A **link set** is a set of nodes tied by a curated owner or by one registered-LLC entity. Its id is opaque; the owner label and the entity name are not exported. For a registered-LLC set each member names the PLUTO lot (`source_bbl`) the entity owns that puts the node in the set.
+
+The path is built by a union-find over these sets in a fixed order that prefers the least questionable evidence: base-cluster identities, curated owners, registered-LLC entities, deeds held since the joint deed, shared-company merges, and last the deeds that depend on the linked-successor guard. **A weak stage appears in a path only where the group cannot be connected without it.** On the reference dump that is 578 of 9,100 steps for the shared-company merge (492 of 6,523 groups) and 30 steps for the guard (28 groups). A step inside a cluster is `splink_base` if the two nodes share a base cluster and `splink_feedback` otherwise. The path is representative, not the unique, strongest or shortest one.
+
+A node whose lots are all co-op or condo stays a member and a path node; `group_bbls.rental = false` explains its lots.
 
 ## How an explanation is assembled
 
@@ -114,7 +130,7 @@ Required: `schema_version`, `run_id`, `snapshot_id`, `pluto_snapshot_id`, `effec
 
 ## What the validator checks
 
-Columns, types, nullability, enums, keys and foreign keys, then: a BBL belongs to one node; `k` is below `pair_variants`; ambiguous node rows carry no selection and list every candidate; a straddling node has one alternative per cluster and exactly one selected; a witness is a connected, acyclic spanning tree over the group's members; accepted events carry no reason and every other outcome does; event references resolve by type, and a group subject is published unless its outcome is `dropped`; group ids carry the prefix of their layer; group lot counts match their BBL lists; assertion keys are unique; `excluded_from_footprint` matches the non-rental lots; reason codes agree with their top level and the primary reason respects the precedence; an unevaluated metric has a note and a precision sits inside its interval; manifest fields, source-table entries and file checksums. It cannot check the lot universe or that the decisions are the ones bor really made.
+Columns, types, nullability, enums, keys and foreign keys, then: a BBL belongs to one node; `k` is below `pair_variants`; ambiguous node rows carry no selection and list every candidate; a straddling node has one alternative per cluster and exactly one selected; a witness is a connected, acyclic spanning tree over the group's members; accepted events carry no reason and every other outcome does; event references resolve by type, and a group subject is published unless its outcome is `dropped`; group ids carry the prefix of their layer; group lot counts match their BBL lists; assertion keys are unique; each witness step's stage fixes the kind of evidence it cites and that evidence exists; a link set's size matches its members; `excluded_from_footprint` matches the non-rental lots; reason codes agree with their top level and the primary reason respects the precedence; an unevaluated metric has a note and a precision sits inside its interval; manifest fields, source-table entries and file checksums. It cannot check the lot universe or that the decisions are the ones bor really made.
 
 ## Mapping to the KG (documented, not imported)
 
