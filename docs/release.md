@@ -25,7 +25,7 @@ uv run python -m bor.export ./release           # person-free (default)
 # or, only if the policy allows: uv run python -m bor.export ./release --include-names
 ```
 
-Produces `release/{owner_groups,owner_group_bbls,operational_networks,operational_network_bbls}.csv`
+Produces `release/{owner_portfolios,owner_portfolio_bbls,operational_networks,operational_network_bbls}.csv`
 + `release/DATA.md`. This is the data half of the artifact — attach it to the release (below),
 not committed to git (keeps the repo lean and the data tied to a versioned DOI).
 

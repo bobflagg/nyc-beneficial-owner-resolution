@@ -3,7 +3,7 @@ from bor._edges import _clique_rows
 from bor.deed_edges import _is_nominal
 from bor.eval.gate import is_aggregator_portfolio
 from bor.operational_network import _collapse, _components, _louvain_communities, _norm_bizaddr
-from bor.owner_groups import _union_groups, classify_composition
+from bor.owner_portfolios import _union_groups, classify_composition
 
 
 # --- edge kernel -------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ def test_clique_rows_star_above_threshold():
     assert rows == [(1, 2), (1, 3), (1, 4)]
 
 
-# --- owner-group union-find + composition ------------------------------------------------------
+# --- Owner Portfolio union-find + composition ------------------------------------------------------
 
 def test_union_groups_min_root_label():
     g = _union_groups([(3, 1), (1, 2), (10, 11)])

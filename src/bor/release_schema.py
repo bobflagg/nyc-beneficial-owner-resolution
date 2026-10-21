@@ -239,7 +239,7 @@ _TABLES = [
         description="Accepted pre-split graph; weight is the exact Louvain input."),
     Table("network_membership", "planned", ("node_id",), (
         _c("node_id", "int"), _c("component_id"), _c("community_id", nullable=True),
-        _c("portfolio_id")),
+        _c("operational_network_id")),
         description="Node -> original WCC -> final community."),
     Table("split_attempts", "planned", ("split_id",), (
         _c("split_id"), _c("component_id"), _c("parent_community_id", nullable=True),

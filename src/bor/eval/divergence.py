@@ -1,19 +1,19 @@
 """bor.eval.divergence — paired partition divergence vs Who Owns What.
 
-How much, and in which direction, the beneficial-owner-group partition differs from WoW's
+How much, and in which direction, the Owner Portfolio partition differs from WoW's
 registration-clustering partition, over the buildings BOTH systems group (multi-building WoW
-portfolios ∩ multi-member owner groups). A DIVERGENCE measure, not accuracy — there is no ground
+portfolios ∩ multi-member Owner Portfolio groups). A DIVERGENCE measure, not accuracy — there is no ground
 truth; adjudication decides who is right.
 
-Two directions (a WoW portfolio is an operational network; an owner group is an ownership claim):
-  * owners crossing portfolios — an owner group spans >=2 WoW portfolios: BOR *unifies* what WoW
+Two directions (a WoW portfolio is an operational network; an Owner Portfolio group is an ownership claim):
+  * owners crossing portfolios — an Owner Portfolio group spans >=2 WoW portfolios: BOR *unifies* what WoW
     split (noise in the operational signal; one owner's differently-named LLCs reunited).
-  * portfolios hiding >1 owner — a WoW portfolio spans >=2 owner groups: the portfolio is an
+  * portfolios hiding >1 owner — a WoW portfolio spans >=2 Owner Portfolio groups: the portfolio is an
     operational network (typically tied by a shared registration office) that spans several
     distinct owners, which BOR keeps apart. Not an error in the portfolio — a different question.
 
-Mirrors WatchlineNYC's compare_kg.wow_divergence exactly, but computes the owner-group partition
-off-graph (via bor.owner_groups) instead of reading it from Neo4j. Uses all member bbls, matching
+Mirrors WatchlineNYC's compare_kg.wow_divergence exactly, but computes the Owner Portfolio partition
+off-graph (via bor.owner_portfolios) instead of reading it from Neo4j. Uses all member bbls, matching
 the KG's ``UNWIND l.bbls`` universe.
 
     uv run python -m bor.eval.divergence     # (PG* / .env set; ~4 min: runs the resolution)
@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from bor.owner_groups import bbl_assignments, resolve_owner_groups
+from bor.owner_portfolios import bbl_assignments, resolve_owner_portfolios
 
 
 def _wow_partition(conn) -> tuple[dict[str, int], dict[int, int]]:
@@ -39,10 +39,10 @@ def _wow_partition(conn) -> tuple[dict[str, int], dict[int, int]]:
 
 
 def divergence(conn, *, groups=None) -> dict:
-    """Partition divergence of the owner-group layer vs WoW portfolios. Pass ``groups`` (from
-    ``resolve_owner_groups``) to reuse a resolution; otherwise it runs one (~4 min)."""
+    """Partition divergence of the Owner Portfolio layer vs WoW portfolios. Pass ``groups`` (from
+    ``resolve_owner_portfolios``) to reuse a resolution; otherwise it runs one (~4 min)."""
     if groups is None:
-        groups = resolve_owner_groups(conn)
+        groups = resolve_owner_portfolios(conn)
     bbl_og = bbl_assignments(groups, rental_only=False)      # all member bbls (matches KG l.bbls)
     bbl_wow, wow_size = _wow_partition(conn)
 
@@ -57,7 +57,7 @@ def divergence(conn, *, groups=None) -> dict:
     hidden = {p for p, gs in wow_to_og.items() if len(gs) >= 2}  # portfolios hiding >1 owner
     return {
         "wow_portfolios": len(wow_size), "wow_bbls": sum(wow_size.values()),
-        "owner_groups": len(set(bbl_og.values())), "owner_group_bbls": len(bbl_og),
+        "owner_portfolios": len(set(bbl_og.values())), "owner_portfolio_bbls": len(bbl_og),
         "shared_universe": len(both),
         "owners_crossing_portfolios": len(cross),
         "owners_crossing_bldgs": sum(1 for b in both if bbl_og[b] in cross),
@@ -69,13 +69,13 @@ def divergence(conn, *, groups=None) -> dict:
 
 def print_divergence(d: dict) -> None:
     print(f"WoW multi-building portfolios:        {d['wow_portfolios']:>6}  ({d['wow_bbls']} bbls)")
-    print(f"beneficial owner groups (multi):      {d['owner_groups']:>6}  ({d['owner_group_bbls']} bbls)")
+    print(f"Owner Portfolio groups (multi):      {d['owner_portfolios']:>6}  ({d['owner_portfolio_bbls']} bbls)")
     print(f"shared universe (grouped in BOTH):    {d['shared_universe']:>6}  buildings")
     print()
     print("  (divergence, not accuracy — how far apart / which way the two groupings differ, not who is right)")
-    print(f"owners CROSSING WoW portfolios:  {d['owners_crossing_portfolios']:>5} owner groups span >=2 WoW portfolios  ({d['owners_crossing_bldgs']} bldgs)")
-    print(f"portfolios HIDING >1 owner:      {d['portfolios_hiding_multiple_owners']:>5} WoW portfolios span >=2 owner groups  ({d['portfolios_hiding_bldgs']} bldgs)")
-    print(f"agree (1:1 on the rest):         {d['agree']:>5} owner groups map to a single WoW portfolio")
+    print(f"owners CROSSING WoW portfolios:  {d['owners_crossing_portfolios']:>5} Owner Portfolio groups span >=2 WoW portfolios  ({d['owners_crossing_bldgs']} bldgs)")
+    print(f"portfolios HIDING >1 owner:      {d['portfolios_hiding_multiple_owners']:>5} WoW portfolios span >=2 Owner Portfolio groups  ({d['portfolios_hiding_bldgs']} bldgs)")
+    print(f"agree (1:1 on the rest):         {d['agree']:>5} Owner Portfolio groups map to a single WoW portfolio")
 
 
 if __name__ == "__main__":

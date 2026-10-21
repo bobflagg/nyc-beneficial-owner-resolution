@@ -1,12 +1,12 @@
 # Parity & reproducibility
 
-BOR resolves beneficial owner groups **off-graph** (no Neo4j). This records how the off-graph
+BOR resolves Owner Portfolio groups **off-graph** (no Neo4j). This records how the off-graph
 partition was validated against WatchlineNYC's live knowledge-graph partition, and what level of
 reproducibility to expect.
 
 ## Method
 
-The live KG builds owner groups as connected components of `CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED`
+The live KG builds Owner Portfolio groups as connected components of `CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED`
 edges materialized in Neo4j. BOR builds the *same* edges from Postgres (forked verbatim from the
 pipeline) and runs the identical union-find in memory, then compares the two node→group partitions.
 Both are keyed on the `landlords_with_connections` (lwc) `nodeid`, which is stable within a single
@@ -19,7 +19,7 @@ build, so the partitions are directly comparable.
 | **BOR vs live KG** | **15,621 / 15,621 = 100.000%** of KG nodes | 6,522 (KG) vs 6,522–6,524 (BOR) | `{identity 6449, deed_only 61, deed_bridged 12}` — exact |
 | BOR run-A vs run-B (same version, same data) | 15,612 / 15,620 = 99.949% | 6,522 vs 6,524 | — |
 
-Every node in the KG's owner-group partition is reproduced by BOR with the identical group label.
+Every node in the KG's Owner Portfolio partition is reproduced by BOR with the identical group label.
 The deed layer matches exactly (941 `CONNECTED_BY_DEED` edges — byte-identical code).
 
 ## The reproducibility ceiling
@@ -47,7 +47,7 @@ as such rather than as exact integers reproducible to the unit.
 
 The operational network (`bor.operational_network`) is WCC(+Louvain) over name ∪ address ∪ splink
 edges, mirroring WatchlineNYC's `:Portfolio`. It has a different reproducibility profile than the
-owner groups, because it uses **two** clustering steps:
+Owner Portfolio groups, because it uses **two** clustering steps:
 
 - **WCC** (connected components) — deterministic, reproduces exactly.
 - **Louvain** — splits only components whose BBL-sum exceeds `MAX_SIZE = 300`. WatchlineNYC runs

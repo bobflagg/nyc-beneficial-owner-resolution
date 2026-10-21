@@ -1,4 +1,4 @@
-"""bor/owner_groups.py — the beneficial owner group, computed off-graph.
+"""bor/owner_portfolios.py — the Owner Portfolio group, computed off-graph.
 
 The owner-identity partition: *who is the apparent same owner across differently-named LLCs*,
 distinct from the operational network (shared-office clustering) and from management. It is the
@@ -10,7 +10,7 @@ WatchlineNYC computes this over Neo4j (union-find on materialized edges). BOR co
 *same* partition off-graph: it runs the four edge builders in memory and union-finds their pairs,
 then applies the identical rules — ``min_size=2``, ``OP-<min nodeid>`` roots, RENTAL-only
 building_count, and dropping groups that are >50% co-op/condo. The union-find, composition, and
-drop logic are ported verbatim from ``portfolio/owner_groups.py`` so BOR's partition matches the
+drop logic are ported verbatim from ``portfolio/owner_portfolios.py`` so BOR's partition matches the
 live graph (parity is the acceptance test).
 
 Keying: nodeids come from ``landlords_with_connections`` (lwc). lwc's ``nodeid = row_number()`` is
@@ -30,11 +30,11 @@ from bor.deed_edges import deed_edges
 from bor.llc_edges import llc_edges
 from bor.splink_bridge import DEFAULT_THRESHOLD, splink_edges
 
-OWNER_GROUP_METHOD = "splink-identity+curated+llc"
+OWNER_PORTFOLIO_METHOD = "splink-identity+curated+llc"
 
 # Co-op/condo classification (forked from portfolio/coop_condo.py, verbatim): a building is
 # co-op/condo when >50% of its owner-role HPD contacts are described CO-OP/CONDO. Such buildings
-# are owned by shareholders, not a landlord; owner groups exclude them and drop groups they dominate.
+# are owned by shareholders, not a landlord; Owner Portfolio groups exclude them and drop groups they dominate.
 _COOP_CONDO_SQL = """
     SELECT g.bbl AS bbl
     FROM hpd_contacts c
@@ -47,7 +47,7 @@ _COOP_CONDO_SQL = """
 _LWC_SQL = "SELECT nodeid, name, bbls::text[] AS bbls FROM landlords_with_connections"
 
 
-# --- pure union-find + composition (verbatim from portfolio/owner_groups.py) --------------------
+# --- pure union-find + composition (verbatim from portfolio/owner_portfolios.py) --------------------
 
 def _union_groups(pairs, *, min_size: int = 2) -> dict[int, str]:
     """Union-find over ``pairs`` (nodeid pairs). Returns ``{nodeid: 'OP-<root>'}`` for components
@@ -105,9 +105,9 @@ def _roots(pairs) -> dict[int, int]:
 
 
 def classify_composition(identity_pairs, deed_pairs, *, min_size: int = 2) -> dict[str, str]:
-    """Per owner group: ``identity`` (one resolved entity), ``deed_only`` (exists purely via deed
+    """Per Owner Portfolio group: ``identity`` (one resolved entity), ``deed_only`` (exists purely via deed
     edges — the intended veil-pierce), or ``deed_bridged`` (a deed fuses >=2 identity entities —
-    the higher-bar case). Returns ``{owner_group_id: composition}``."""
+    the higher-bar case). Returns ``{owner_portfolio_id: composition}``."""
     id_root = _roots(identity_pairs)
     id_multinode = {r for r in set(id_root.values())
                     if sum(1 for v in id_root.values() if v == r) >= 2}
@@ -132,11 +132,11 @@ def classify_composition(identity_pairs, deed_pairs, *, min_size: int = 2) -> di
 # --- off-graph assembly -------------------------------------------------------------------------
 
 @dataclass
-class OwnerGroup:
-    """A beneficial owner group. ``bbls`` are the attributed (rental) buildings; ``total_bbls``
+class OwnerPortfolio:
+    """A Owner Portfolio group. ``bbls`` are the attributed (rental) buildings; ``total_bbls``
     the full footprint. ``stable_key`` re-keys the group off the per-build nodeid onto the min
     (name, bbls-derived) member identity, for cross-build-stable, person-free references."""
-    owner_group_id: str            # OP-<min nodeid> — deterministic within a build
+    owner_portfolio_id: str            # OP-<min nodeid> — deterministic within a build
     members: list[int]             # lwc nodeids
     bbls: list[str]                # rental bbls (attributed footprint)
     total_bbls: list[str]          # all bbls (full footprint)
@@ -173,9 +173,9 @@ def _identity_and_deed_pairs(conn, *, threshold: float, include_deed: bool, as_o
     return id_pairs, deed_pairs
 
 
-def resolve_owner_groups(conn, *, threshold: float = DEFAULT_THRESHOLD,
-                         include_deed: bool = True, min_size: int = 2, as_of=None) -> list[OwnerGroup]:
-    """Resolve beneficial owner groups off-graph. Runs the four edge builders, union-finds their
+def resolve_owner_portfolios(conn, *, threshold: float = DEFAULT_THRESHOLD,
+                         include_deed: bool = True, min_size: int = 2, as_of=None) -> list[OwnerPortfolio]:
+    """Resolve Owner Portfolio groups off-graph. Runs the four edge builders, union-finds their
     pairs (CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED), maps components to buildings via lwc, applies
     the co-op/condo exclusion, and returns the surviving groups. KG-free.
     ``as_of`` is the deed cut-off date (default today); a release records it."""
@@ -205,7 +205,7 @@ def resolve_owner_groups(conn, *, threshold: float = DEFAULT_THRESHOLD,
         if name and (gid not in best_name or len(clean) > best_name[gid][0]):
             best_name[gid] = (len(clean), name)
 
-    groups: list[OwnerGroup] = []
+    groups: list[OwnerPortfolio] = []
     for gid, mem in members.items():
         total = total_bbls[gid]
         rental = rental_bbls[gid]
@@ -213,8 +213,8 @@ def resolve_owner_groups(conn, *, threshold: float = DEFAULT_THRESHOLD,
         if len(total) > 0 and 2 * len(rental) < len(total):
             continue
         mem_sorted = sorted(mem)
-        groups.append(OwnerGroup(
-            owner_group_id=gid,
+        groups.append(OwnerPortfolio(
+            owner_portfolio_id=gid,
             members=mem_sorted,
             bbls=sorted(rental),
             total_bbls=sorted(total),
@@ -222,18 +222,18 @@ def resolve_owner_groups(conn, *, threshold: float = DEFAULT_THRESHOLD,
             name=best_name.get(gid, (0, None))[1],
             stable_key="OG:" + min(str(n) for n in mem_sorted),  # placeholder stable rep; see note
         ))
-    return sorted(groups, key=lambda g: g.owner_group_id)
+    return sorted(groups, key=lambda g: g.owner_portfolio_id)
 
 
-def assignments(groups: list[OwnerGroup]) -> dict[int, str]:
-    """``{nodeid: owner_group_id}`` over the surviving groups — the partition to parity-check."""
-    return {n: g.owner_group_id for g in groups for n in g.members}
+def assignments(groups: list[OwnerPortfolio]) -> dict[int, str]:
+    """``{nodeid: owner_portfolio_id}`` over the surviving groups — the partition to parity-check."""
+    return {n: g.owner_portfolio_id for g in groups for n in g.members}
 
 
-def bbl_assignments(groups: list[OwnerGroup], *, rental_only: bool = True) -> dict[str, str]:
-    """``{bbl: owner_group_id}`` — the person-free export/benchmark key. Rental bbls by default."""
+def bbl_assignments(groups: list[OwnerPortfolio], *, rental_only: bool = True) -> dict[str, str]:
+    """``{bbl: owner_portfolio_id}`` — the person-free export/benchmark key. Rental bbls by default."""
     out: dict[str, str] = {}
     for g in groups:
         for bbl in (g.bbls if rental_only else g.total_bbls):
-            out[bbl] = g.owner_group_id
+            out[bbl] = g.owner_portfolio_id
     return out

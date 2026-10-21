@@ -35,6 +35,6 @@ make lint        # ruff, pyflakes-only (real issues); style is intentionally not
   byte-faithfully from WatchlineNYC/WoW so BOR's output matches the reference graph. Keep changes
   minimal and mirror upstream where practical; the shared kernel lives in `bor/_edges.py`.
 - **Reproducibility:** `splink==4.0.16` is pinned (the resolution version behind the published
-  partition). Owner groups are deterministic; the operational-network Louvain tail and the deed
+  partition). Owner Portfolio groups are deterministic; the operational-network Louvain tail and the deed
   layer are near- but not bit-exact. Don't assert exact counts — use a tolerance.
 - **Person-free by default:** the dataset export withholds owner names unless `--include-names`.

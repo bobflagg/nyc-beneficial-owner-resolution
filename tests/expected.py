@@ -11,9 +11,9 @@ latest-deed tiebreaks and data vintage move a handful of edges (observed 941 and
 DEED_EDGES = 947
 DEED_NODES = 1551
 
-# Owner groups (Splink-dependent → tolerant).
-OWNER_GROUPS = 6522
-OWNER_GROUP_NODES = 15621
+# Owner Portfolio groups (Splink-dependent → tolerant).
+OWNER_PORTFOLIOS = 6522
+OWNER_PORTFOLIO_NODES = 15621
 COMPOSITION = {"identity": 6449, "deed_only": 61, "deed_bridged": 12}
 
 # Operational network (Splink + Louvain tail → tolerant).

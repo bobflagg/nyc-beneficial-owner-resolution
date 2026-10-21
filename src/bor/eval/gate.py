@@ -1,8 +1,8 @@
 """eval/wow_gate.py — the hardened WoW veil-pierce gate (evaluation / analysis tooling).
 
-**Not** production. The live graph (`deed_edges.py` / `owner_groups.py` / `pipeline.py`) does not use
+**Not** production. The live graph (`deed_edges.py` / `owner_portfolios.py` / `pipeline.py`) does not use
 this gate; it is the *verification* criterion the deed-review analysis applies to decide whether a
-candidate `CONNECTED_BY_DEED` owner group is a **genuine deed veil-pierce** — real JustFix WoW *splits*
+candidate `CONNECTED_BY_DEED` Owner Portfolio group is a **genuine deed veil-pierce** — real JustFix WoW *splits*
 the owner across distinct portfolios and only the shared deed reunites them (the AXL case) — versus a
 **WoW over-lump**, where WoW already groups most of the buildings via a shared aggregator/back-office
 address, so the deed "recovers" nothing WoW hadn't already merged (Citadel, and the soft-aggregator
@@ -94,7 +94,7 @@ class Portfolio:
 
 @dataclass(frozen=True)
 class Placement:
-    """How many of a candidate owner group's member BBLs fall inside one WoW portfolio."""
+    """How many of a candidate Owner Portfolio group's member BBLs fall inside one WoW portfolio."""
     portfolio: Portfolio
     n_members: int          # member BBLs of the candidate that land in `portfolio` (>= 1)
 
@@ -135,7 +135,7 @@ def wow_gate(placements: list[Placement], n_members: int, *,
              soft_buildings: int = SOFT_MIN_BUILDINGS,
              soft_landlords: int = SOFT_MIN_LANDLORDS,
              dominant_share: float = DOMINANT_SHARE) -> GateResult:
-    """Decide whether a candidate owner group is a genuine deed veil-pierce vs a WoW over-lump.
+    """Decide whether a candidate Owner Portfolio group is a genuine deed veil-pierce vs a WoW over-lump.
 
     `placements` — one per distinct WoW portfolio the group's member BBLs land in (0..N).
     `n_members`  — total member BBLs of the candidate (denominator for the dominant-share test; members

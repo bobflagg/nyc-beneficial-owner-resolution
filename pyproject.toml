@@ -1,7 +1,7 @@
 [project]
 name = "nyc-beneficial-owner-resolution"
 version = "0.1.0.dev0"
-description = "Reliability-typed beneficial-ownership resolution over NYC public records: false-split resolution (record linkage), a name-free deed veil-pierce, and beneficial owner groups — with a paired benchmark against Who Owns What."
+description = "Reliability-typed beneficial-ownership resolution over NYC public records: false-split resolution (record linkage), a name-free deed veil-pierce, and Owner Portfolio groups — with a paired benchmark against Who Owns What."
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
@@ -13,18 +13,18 @@ keywords = [
 
 # The false-split (record-linkage) layer is the standalone, gold-validated
 # nyc-landlord-resolution engine (nlr); this package builds the deed layer,
-# the beneficial-owner-group community, the reliability typing, and the
+# the beneficial-ownership community, the reliability typing, and the
 # evaluation protocol on top of it. nlr is public → resolves over HTTPS.
 dependencies = [
     "nyc-landlord-resolution @ git+https://github.com/bobflagg/nyc-landlord-resolution.git@v0.1.0",
-    # Pinned to the resolution version behind the published / knowledge-graph owner-group
+    # Pinned to the resolution version behind the published / knowledge-graph Owner Portfolio
     # partition. This fixes the group count and composition; note the fit is NOT byte-reproducible
     # even at a fixed version — splink's u-training samples over DuckDB, which is only
     # approximately seed-stable, so a handful of borderline pairs near the 0.999 threshold jitter
     # run-to-run (~0.05% of nodes). Pinning removes the larger cross-version drift.
     "splink==4.0.16",
     "pandas>=2.0",
-    "networkx>=3.0",       # off-graph connected components for owner groups (no Neo4j)
+    "networkx>=3.0",       # off-graph connected components for Owner Portfolio groups (no Neo4j)
     "igraph>=0.11",        # weighted Louvain for the operational-network oversized-component tail
     "psycopg2-binary>=2.9.12",
     "python-dotenv>=1.0",

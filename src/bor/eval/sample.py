@@ -31,7 +31,7 @@ from bor.curated_owners import curated_edges
 from bor.deed_edges import MAX_PARCELS, _deed_sql, _groups_from, deed_edges
 from bor.llc_edges import llc_edges
 from bor.operational_network import MAX_ADDR_DEGREE, _norm_bizaddr
-from bor.owner_groups import _union_groups
+from bor.owner_portfolios import _union_groups
 from bor.splink_bridge import DEFAULT_THRESHOLD, splink_edges
 
 SEED = 42

@@ -171,7 +171,7 @@ def parameters(resolution_params: dict | None, as_of: date) -> dict:
                                 "max_size": operational_network.MAX_SIZE},
         "edges": {"identity_weight": _edges.SPLINK_WEIGHT, "star_above": _edges.STAR_ABOVE},
         "registered_llc": {"max_degree": llc_edges.DEFAULT_MAX_DEGREE},
-        "owner_group": {"min_size": 2},
+        "owner_portfolio": {"min_size": 2},
     }
 
 

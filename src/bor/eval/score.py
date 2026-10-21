@@ -163,26 +163,26 @@ def score(key_path: str, ann_path: str, out_dir: Path) -> dict:
 
 
 def gate_mode(out_dir: Path, *, og_ids: list[str] | None = None) -> dict:
-    """The WoW veil-pierce gate over candidate deed owner groups (off-graph): which are genuine WoW
+    """The WoW veil-pierce gate over candidate deed Owner Portfolio groups (off-graph): which are genuine WoW
     false-splits the deed uniquely recovers (PASS) vs over-lumps WoW already groups on a shared
     aggregator address (FAIL)? Default population = deed-only groups (composition == 'deed_only')."""
     import warnings; warnings.filterwarnings("ignore")
     import logging; logging.getLogger("splink").setLevel(logging.ERROR)
     from bor.db import pg_conn
     from bor.eval.gate import gate_bbls
-    from bor.owner_groups import resolve_owner_groups
+    from bor.owner_portfolios import resolve_owner_portfolios
 
     conn = pg_conn()
     try:
-        groups = resolve_owner_groups(conn)
+        groups = resolve_owner_portfolios(conn)
         if og_ids:
-            cand = [g for g in groups if g.owner_group_id in set(og_ids)]
+            cand = [g for g in groups if g.owner_portfolio_id in set(og_ids)]
         else:
             cand = [g for g in groups if g.composition == "deed_only"]
         results = []
         for g in cand:
             res = gate_bbls(conn, g.total_bbls)
-            results.append({"owner_group": g.owner_group_id, "buildings": len(g.total_bbls),
+            results.append({"owner_portfolio": g.owner_portfolio_id, "buildings": len(g.total_bbls),
                             "passed": res.passed, "reasons": res.reasons})
     finally:
         conn.close()
@@ -206,18 +206,18 @@ if __name__ == "__main__":
     ap.add_argument("--key")
     ap.add_argument("--annotations")
     ap.add_argument("--out", default="eval_out")
-    ap.add_argument("--gate", action="store_true", help="WoW veil-pierce gate over deed-only owner groups")
-    ap.add_argument("--owner-group", dest="owner_groups", action="append", default=[], metavar="OP-ID")
+    ap.add_argument("--gate", action="store_true", help="WoW veil-pierce gate over deed-only Owner Portfolio groups")
+    ap.add_argument("--owner-portfolio", dest="owner_portfolios", action="append", default=[], metavar="OP-ID")
     a = ap.parse_args()
 
     if a.gate:
-        rep = gate_mode(Path(a.out), og_ids=a.owner_groups or None)
+        rep = gate_mode(Path(a.out), og_ids=a.owner_portfolios or None)
         print(f"WoW veil-pierce gate [{rep['population']}]: {rep['n_pass']}/{rep['n_candidates']} PASS · "
               f"{rep['n_fail']} over-lumps  ->  {Path(a.out) / 'wow_gate.json'}")
         for r in rep["results"]:
             tag = "PASS" if r["passed"] else "FAIL"
             reason = "" if r["passed"] else (f"  — {r['reasons'][0]}" if r["reasons"] else "")
-            print(f"  {tag}  {r['owner_group']:<14} {r['buildings']:>4} bldgs{reason}")
+            print(f"  {tag}  {r['owner_portfolio']:<14} {r['buildings']:>4} bldgs{reason}")
     else:
         if not (a.key and a.annotations):
             ap.error("--key and --annotations are required (or use --gate)")

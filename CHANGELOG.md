@@ -5,7 +5,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 ## [Unreleased]
 
 ### Added
-- **Owner-group layer** (`bor.owner_groups`) — beneficial owner groups off-graph (union-find over
+- **Owner Portfolio layer** (`bor.owner_portfolios`) — Owner Portfolio groups off-graph (union-find over
   `CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED`, co-op/condo exclusion). Reproduces the live KG's
   partition exactly.
 - **Deed veil-pierce** (`bor.deed_edges`) — name-free ACRIS co-conveyance edges with the
@@ -25,8 +25,17 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 ### Changed
 - **Group id prefixes:** Owner Portfolio groups are `OP-<min nodeid>` (was `OG-`) and Operational
   Network groups are `ON-<min nodeid>` (was `PF-`). A clean break: nothing had been released with the
-  old prefixes, and ids were never stable across builds. The `owner_group_id` and `portfolio_id`
+  old prefixes, and ids were never stable across builds. The `owner_portfolio_id` and `operational_network_id`
   column names are unchanged.
+
+- **Owner Portfolio terminology.** The ownership layer is "Owner Portfolio" throughout, matching the
+  release contract and the `OP-` ids: `bor.owner_groups` is `bor.owner_portfolios`,
+  `resolve_owner_groups` is `resolve_owner_portfolios`, `OwnerGroup` is `OwnerPortfolio`, and the
+  legacy release files and columns are `owner_portfolios.csv`, `owner_portfolio_bbls.csv` and
+  `owner_portfolio_id`. The network layer's `portfolio_id` is `operational_network_id`, so
+  "portfolio" no longer means two things. Nothing had been released under the old names.
+- **Data dictionary.** The first line of the generated `DATA.md` now lists HPD contacts, the main
+  input, alongside HPD registrations.
 
 ### Notes
 - Not yet released. Cut a versioned, DOI'd release per [`docs/release.md`](docs/release.md).

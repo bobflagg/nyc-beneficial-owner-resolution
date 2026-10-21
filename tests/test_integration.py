@@ -27,18 +27,18 @@ def test_deed_edges(pg):
     assert abs(len(nodes) - E.DEED_NODES) <= E.TOL
 
 
-def test_owner_groups(owner_groups):
-    assert abs(len(owner_groups) - E.OWNER_GROUPS) <= E.TOL
-    n_nodes = sum(len(g.members) for g in owner_groups)
-    assert abs(n_nodes - E.OWNER_GROUP_NODES) <= E.TOL
-    comp = Counter(g.composition for g in owner_groups)
+def test_owner_portfolios(owner_portfolios):
+    assert abs(len(owner_portfolios) - E.OWNER_PORTFOLIOS) <= E.TOL
+    n_nodes = sum(len(g.members) for g in owner_portfolios)
+    assert abs(n_nodes - E.OWNER_PORTFOLIO_NODES) <= E.TOL
+    comp = Counter(g.composition for g in owner_portfolios)
     for kind, want in E.COMPOSITION.items():
         assert abs(comp[kind] - want) <= E.TOL, (kind, comp[kind], want)
 
 
-def test_divergence(pg, owner_groups):
+def test_divergence(pg, owner_portfolios):
     from bor.eval.divergence import divergence
-    d = divergence(pg, groups=owner_groups)
+    d = divergence(pg, groups=owner_portfolios)
     assert abs(d["owners_crossing_portfolios"] - E.OWNERS_CROSSING) <= E.TOL
     assert abs(d["portfolios_hiding_multiple_owners"] - E.PORTFOLIOS_HIDING) <= E.TOL
 

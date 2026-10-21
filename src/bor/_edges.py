@@ -2,7 +2,7 @@
 
 Every identity-edge source (record-linkage model, curated, registered-LLC, deed) emits, per
 resolved group, either a full clique or a bounded hub-and-spoke star, as ``(src, dst, weight)``
-rows over ``landlords_with_connections`` nodeids. ``weight`` is uniform — the owner-group layer
+rows over ``landlords_with_connections`` nodeids. ``weight`` is uniform — the Owner Portfolio layer
 takes plain connected components, so edge weights carry no ranking, only presence.
 
 These constants and helper are lifted verbatim from WatchlineNYC's ``portfolio`` pipeline so the

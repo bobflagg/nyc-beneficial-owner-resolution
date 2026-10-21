@@ -42,7 +42,7 @@ uv run python -m bor.build_lwc
 #    (or check an existing one: uv run python -m bor.build_lwc --verify-only)
 ```
 
-After that, all layers run: `resolve_owner_groups`, `resolve_operational_networks`,
+After that, all layers run: `resolve_owner_portfolios`, `resolve_operational_networks`,
 `bor.deed_edges.deed_edges`, and the benchmark `python -m bor.eval.divergence`.
 
 ## A note on `landlords_with_connections`

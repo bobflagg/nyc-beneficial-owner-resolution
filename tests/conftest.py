@@ -26,9 +26,9 @@ def resolved(pg):
 
 
 @pytest.fixture(scope="session")
-def owner_groups(pg):
-    from bor.owner_groups import resolve_owner_groups
-    return resolve_owner_groups(pg)
+def owner_portfolios(pg):
+    from bor.owner_portfolios import resolve_owner_portfolios
+    return resolve_owner_portfolios(pg)
 
 
 @pytest.fixture(scope="session")
