@@ -20,8 +20,8 @@ Tables (no names; HPD ids and BBLs only):
 
 **Opaque ids.** nlr's identity id (and the cluster ids Splink derives from it) is an md5 of a
 person's name and address. The release uses run-local opaque ids instead (``I0000001`` for
-identities, ``C0000001`` for clusters), numbered in sorted order of the underlying value, so the
-same population always gets the same ids and W2 can reproduce them with :func:`opaque_id_maps`.
+identities, ``C0000001`` for clusters), numbered by the identity (or, for a cluster, its smallest
+member), so the same partition always gets the same ids and W2 can reproduce them with :func:`opaque_id_maps`.
 The KG derives its own identity key from the observations (KG notes 0006 and 0007).
 
 **Observation id** ``"{registrationid}:{registrationcontactid}:{k}"``. HPD's contact id is not
@@ -142,9 +142,15 @@ GROUP BY 1, 2 HAVING count(*) > 1
 
 
 def opaque_id_maps(full: pd.DataFrame, clusters: pd.DataFrame) -> tuple[dict, dict]:
-    """``(identity_map, cluster_map)``: nlr ids -> run-local opaque ids, numbered in sorted order."""
+    """``(identity_map, cluster_map)``: nlr ids -> run-local opaque ids.
+
+    Identities are numbered in sorted order of ``unique_id``. Clusters are numbered by their
+    smallest member identity, **not** by Splink's cluster label: the label is a union-find root
+    that differs from run to run even when the partition is identical, so numbering by label would
+    give the same partition different ids."""
     ident = {u: f"I{i:07d}" for i, u in enumerate(sorted(set(full["unique_id"])), 1)}
-    clus = {c: f"C{i:07d}" for i, c in enumerate(sorted({str(c) for c in clusters["cluster_id"]}), 1)}
+    smallest = clusters.assign(_cid=clusters["cluster_id"].astype(str)).groupby("_cid")["unique_id"].min()
+    clus = {c: f"C{i:07d}" for i, c in enumerate(smallest.sort_values().index, 1)}
     return ident, clus
 
 

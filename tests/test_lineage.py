@@ -3,8 +3,8 @@ the reference dump (skipped without PG* env; see conftest)."""
 import numpy as np
 import pandas as pd
 
-from bor.lineage import (DIGEST_SQL, build_mapping, node_cluster_tables,
-                         node_observation_tables, observation_id)
+from bor.lineage import (DIGEST_SQL, build_mapping, node_cluster_tables, node_observation_tables,
+                         observation_id, opaque_id_maps)
 from bor.splink_bridge import select_cluster
 
 
@@ -17,6 +17,17 @@ def test_observation_id_format():
 
 def test_digest_is_positional_and_treats_null_like_empty():
     assert "concat_ws('|'" in DIGEST_SQL and DIGEST_SQL.count("coalesce(") == 11
+
+
+# --- opaque ids ---------------------------------------------------------------------------------
+
+def test_cluster_ids_depend_on_the_partition_not_on_splinks_label():
+    full = pd.DataFrame({"unique_id": ["u1", "u2", "u3", "u4"]})
+    run_a = pd.DataFrame({"unique_id": ["u1", "u2", "u3", "u4"], "cluster_id": ["u2", "u2", "u4", "u4"]})
+    run_b = pd.DataFrame({"unique_id": ["u1", "u2", "u3", "u4"], "cluster_id": ["u1", "u1", "u3", "u3"]})
+    (ia, ca), (ib, cb) = opaque_id_maps(full, run_a), opaque_id_maps(full, run_b)
+    assert ia == ib == {"u1": "I0000001", "u2": "I0000002", "u3": "I0000003", "u4": "I0000004"}
+    assert [ca[c] for c in ("u2", "u4")] == [cb[c] for c in ("u1", "u3")] == ["C0000001", "C0000002"]
 
 
 # --- node -> contact ---------------------------------------------------------------------------
