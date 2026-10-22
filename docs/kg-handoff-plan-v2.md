@@ -1,12 +1,12 @@
 # Plan v2.1: bor release as the handoff to the landlord KG
 
-Status: draft for final review, 2026-10-20. Supersedes the W0–W10 table in `review-request-kg-handoff.md`. v2 was revised after the first review (`kg-handoff-review.md`); v2.1 after the second (`kg-handoff-plan-v2-review.md`); the release contract was then drafted and amended after the KG developer's review (`release-contract-review.md`). The author has now read KG design notes 0002–0007. **Where this plan and `release-contract.md` disagree on table names, columns or vocabularies, the contract wins.**
+Status: draft for final review, 2026-10-20. Supersedes the W0–W10 table in the original review request. v2 was revised after the first colleague review; v2.1 after the second; the release contract was then drafted and amended after the KG developer's review. (The review request and the reviews are working papers and are not kept in this repository.) The author has now read KG design notes 0002–0007. **Where this plan and `release-contract.md` disagree on table names, columns or vocabularies, the contract wins.**
 
 This plan authorizes nothing by itself. P0 is implemented (branch `p0-shared-identity-context`). The W0 measurements are done (`w0-findings.md`) and the mapping tables are built in `bor.lineage` (branch `w0-mapping-tables`), not yet wired into `export()`. The minimal W8 contract is drafted in [release-contract.md](release-contract.md) (schemas in `bor.release_schema`, validator in `bor.release_validate`, synthetic fixture in `tests/fixtures/mini_release/`). The W5 spike has not been run.
 
 ## 1. Problem
 
-The KG (`nyc-landlord-research-kg`) must show why two buildings are grouped, say which stage linked them, and say why a building is absent. It is forbidden from rebuilding entity resolution. bor's release today is four CSVs of memberships and counts: no evidence, no path, no reasons for absence, no run identity. See `review-request-kg-handoff.md` for the full background.
+The KG (`nyc-landlord-research-kg`) must show why two buildings are grouped, say which stage linked them, and say why a building is absent. It is forbidden from rebuilding entity resolution. bor's release today is four CSVs of memberships and counts: no evidence, no path, no reasons for absence, no run identity.
 
 Decision already made: **bor's release is the handoff.** The graph model, ontology, loader and mail-drop reconciliation stay in the KG repo.
 
