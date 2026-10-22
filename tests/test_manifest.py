@@ -137,3 +137,36 @@ def test_a_real_release_directory_is_valid_and_checksummed(release_build):
     assert set(m["source_tables"]) == set(mf.SOURCE_TABLES)
     assert m["effective_date"] == "2026-10-21" and isinstance(m["diagnostics"]["latest_deed_ties"], int)
     assert set(m["output_checksums"]) == {f"{n}.csv" for n in m["artifacts"]} | {"DATA.md"}   # DATA.md is covered too
+
+
+# --- a package installed from a git commit (the pinned nlr) -----------------------------------------------------
+
+class _Dist:
+    """pip's direct_url.json for a package installed from a git commit, or none."""
+    version = "1.0"
+
+    def __init__(self, text):
+        self.text = text
+
+    def read_text(self, name):
+        return self.text
+
+
+def _state(tmp_path, monkeypatch, direct_url):
+    (tmp_path / "m.py").write_text("x = 1\n")
+    monkeypatch.setattr(mf.md, "distribution", lambda name: _Dist(direct_url))
+    return mf._package_state(tmp_path, "pandas", None)       # tmp_path is not in a git checkout
+
+
+def test_a_package_installed_from_a_git_commit_is_identified_and_can_be_built_from(tmp_path, monkeypatch):
+    """The pinned nlr is installed, not checked out: its commit comes from pip, and --require-clean must
+    accept it (dirty=None means 'unidentified' and is refused)."""
+    s = _state(tmp_path, monkeypatch, json.dumps({"url": "https://example.test/x.git",
+                                                   "vcs_info": {"vcs": "git", "commit_id": "abc123"}}))
+    assert s["revision"] == "abc123" and s["dirty"] is False and len(s["tree_hash"]) == 64
+
+
+def test_an_installed_package_with_no_known_commit_stays_unidentified(tmp_path, monkeypatch):
+    for text in (None, "{}", json.dumps({"url": "file:///wheel"})):
+        s = _state(tmp_path, monkeypatch, text)
+        assert s["revision"] is None and s["dirty"] is None

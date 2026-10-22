@@ -1,5 +1,7 @@
 """Shared fixtures. Integration fixtures need a Postgres (the JustFix `justfixwow` dump with lwc
 built); without `PGDATABASE` set they skip, so a plain `pytest` runs the unit tests offline.
+Importing nlr loads a `.env` found above its install, so with nlr installed in this checkout's `.venv`
+a `.env` here sets `PGDATABASE` and runs them. `make test-offline` (an empty `PGDATABASE`) skips them.
 
 The resolutions are expensive (~4 min of Splink each), so they are session-scoped and reused
 across the integration tests.

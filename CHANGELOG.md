@@ -19,7 +19,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - **Dataset export** — `bor.export`, person-free by default (BBL-keyed, opaque ids).
 - **Tests** — unit (pure logic) + DB-gated regression suite.
 - **Docs** — `docs/parity.md`, `docs/data.md`, `docs/release.md`.
-- Depends on [`nlr`](https://github.com/bobflagg/nyc-landlord-resolution) `v0.1.0` for record
+- Depends on [`nlr`](https://github.com/bobflagg/nyc-landlord-resolution) `v0.2.0` (resolution with decision capture) for record
   linkage; `splink` pinned to `4.0.16`.
 
 - **Fixtures and the approval gate (W9).** `tests/fixtures/synthetic_release` (all 25 tables, every case
@@ -44,6 +44,9 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   the frozen release and its no-names policy.
 
 ### Changed
+- nlr is pinned at `v0.2.0` (was `v0.1.0`): the release's identity evidence comes from its decision capture.
+- A package installed from a git commit (the pinned nlr) is recorded with `dirty: false`, so `--require-clean`
+  accepts it; it used to be `null`, which `--require-clean` refuses as unidentified.
 - The manifest no longer records the builder's local checkout path (`code.*.checkout`).
 - The validator checks that every assertion key begins with the manifest's `run_id`.
 - **Group id prefixes:** Owner Portfolios are `OP-<min nodeid>` (was `OG-`) and Operational

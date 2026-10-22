@@ -105,6 +105,8 @@ def _package_state(package_dir: Path, dist_name: str, repo_root: Path | None) ->
         try:
             direct = json.loads(md.distribution(dist_name).read_text("direct_url.json") or "{}")
             state["revision"] = direct.get("vcs_info", {}).get("commit_id")
+            if state["revision"]:                  # installed from that commit: a release can be built from it
+                state["dirty"] = False             # (the tree hash still covers the files actually loaded)
         except (md.PackageNotFoundError, json.JSONDecodeError):
             pass
     return state

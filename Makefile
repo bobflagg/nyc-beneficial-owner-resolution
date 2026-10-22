@@ -1,7 +1,7 @@
-.PHONY: install test lint build-lwc eval export build-release validate-release explain fixtures excerpt help
+.PHONY: install test test-offline lint build-lwc eval export build-release validate-release explain fixtures excerpt help
 
-# Release build (see docs/release-contract.md). Until nlr 0.2.0 is released and pinned in
-# pyproject.toml, point NLR at a local checkout of nlr's capture-decisions branch:
+# Release build (see docs/release-contract.md). nlr is pinned in pyproject.toml (v0.2.0); to try an
+# unreleased nlr, point NLR at a local checkout:
 #   make test NLR=../nyc-landlord-resolution-capture
 OUT ?= release/contract
 NLR ?=
@@ -9,7 +9,8 @@ UVRUN = uv run $(if $(NLR),--with-editable $(NLR))
 
 help:
 	@echo "install    - uv sync (deps incl. nlr from git)"
-	@echo "test       - run the test suite (integration tests skip without PG*)"
+	@echo "test       - run the test suite (the integration tests run when PGDATABASE is set, in the environment or bor's .env)"
+	@echo "test-offline - the same, with the integration tests skipped even if .env sets PGDATABASE"
 	@echo "lint       - ruff check"
 	@echo "build-lwc  - build landlords_with_connections from wow_landlords (needs PG*)"
 	@echo "eval       - the paired divergence report vs Who Owns What (needs PG*)"
@@ -26,6 +27,10 @@ install:
 
 test:
 	$(UVRUN) pytest -q
+
+# An empty PGDATABASE is not overridden by the .env that nlr loads when it is imported.
+test-offline:
+	PGDATABASE= $(UVRUN) pytest -q
 
 lint:
 	uv run ruff check src tests

@@ -10,10 +10,10 @@ A release is **person-free**. The contract release has no name column anywhere, 
 
 ## 1. Preconditions
 
-- **nlr is released and pinned.** The release is built with `nyc-landlord-resolution` 0.2.0 (it returns the captured decisions the evidence tables come from). Until the tag exists, `pyproject.toml` still pins `v0.1.0`, which has no `Resolution`, and only a local checkout of nlr's `capture-decisions` branch works (`make … NLR=<path>`). **(you)** tag nlr, then move the pin and `uv lock`.
+- **nlr is released and pinned.** The release is built with `nyc-landlord-resolution` v0.2.0 (it returns the captured decisions the evidence tables come from), pinned in `pyproject.toml` and `uv.lock`. A clean install (`uv sync`) is enough; `NLR=<path>` points a build or the tests at a local nlr checkout instead, for trying an unreleased one.
 - **The work is merged and the trees are clean.** The manifest records each package's revision, a dirty flag and a hash of the code itself. A tagged release is built with `REQUIRE_CLEAN=1`, which refuses an unclean tree.
 - **Versions.** `splink==4.0.16` stays pinned (the version behind the published partition). Drop `.dev0` from `pyproject.toml` and `CITATION.cff` at tag time.
-- **The test suite passes against the reference Postgres** (`PGDATABASE=justfixwow make test NLR=…`; about half an hour). The offline subset runs without it.
+- **The test suite passes against the reference Postgres** (`PGDATABASE=justfixwow make test`; about half an hour). `make test-offline` runs the subset that needs no database (about ten seconds). A plain `make test` runs the database tests too whenever `PGDATABASE` is set, including by bor's `.env`.
 - **The evaluation is scored with counts.** `uv run python -m bor.eval.score --key eval_out/blinding_key.jsonl --annotations eval_out/annotations.jsonl --out eval_out` records the counts behind each proportion and the gold's annotators (the figures themselves do not change). A `metrics.json` from an older scorer is refused with this instruction.
 
 ## 2. Build and validate

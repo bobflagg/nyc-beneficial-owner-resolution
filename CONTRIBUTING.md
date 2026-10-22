@@ -13,12 +13,13 @@ See [`docs/data.md`](docs/data.md) for the required tables and where they come f
 ## Tests
 
 ```bash
-make test        # or: uv run pytest -q
+make test-offline   # no database: the integration tests skip
+make test           # also runs them when PGDATABASE is set (in the environment or in your .env)
 ```
 
 - **Unit tests** (`tests/test_unit.py`) are pure logic — no database — and run anywhere.
 - **Integration tests** (`tests/test_integration.py`) are regression checks against the reference
-  `justfixwow` Postgres and **skip** unless `PG*` is set. They run the resolutions (~15 min) and
+  `justfixwow` Postgres and **skip** unless `PGDATABASE` is set (importing nlr loads your `.env`, so a `.env` here counts). They run the resolutions (~15 min) and
   assert the frozen targets in `tests/expected.py` (Splink-dependent counts use a tolerance; see
   [`docs/parity.md`](docs/parity.md)).
 

@@ -16,7 +16,7 @@ keywords = [
 # the beneficial-ownership community, the reliability typing, and the
 # evaluation protocol on top of it. nlr is public → resolves over HTTPS.
 dependencies = [
-    "nyc-landlord-resolution @ git+https://github.com/bobflagg/nyc-landlord-resolution.git@v0.1.0",
+    "nyc-landlord-resolution @ git+https://github.com/bobflagg/nyc-landlord-resolution.git@v0.2.0",
     # Pinned to the resolution version behind the published / knowledge-graph Owner Portfolio
     # partition. This fixes the group count and composition; note the fit is NOT byte-reproducible
     # even at a fixed version — splink's u-training samples over DuckDB, which is only
