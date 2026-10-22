@@ -345,6 +345,19 @@ def test_citadel_is_one_owner_portfolio_and_no_operational_network_because_the_h
     assert cit.t["masked_addresses"].iloc[0]["degree"] == "33" and len(cit.t["masked_address_nodes"]) == 3
 
 
+def test_citadel_shows_the_real_published_precision_beside_its_weak_stage(cit):
+    """The excerpt comes from a build with the real evaluation: the deed-successor stage is the weakest
+    deed evidence, and its estimate is displayed as stored, labeled provisional."""
+    assert not any(c.get("dirty") for c in cit.manifest["code"].values())      # a clean parent
+    m = cit.t["method_metrics"].set_index(["stage", "metric"])
+    assert set(m["adjudication_status"]) == {"human_llm_provisional", "none"} and m["provisional"].eq("True").all()
+    row = m.loc[("deed.linked_successor", "precision_strict")]
+    assert (row["numerator"], row["denominator"]) == ("35", "49") and 0.71 < float(row["precision"]) < 0.72
+    weak = ex.explain_pair(cit, "3012590047", "3052110017").weakest[0]
+    assert "published strict precision 0.71 (95% interval 0.58 to 0.82; 35 of 49 sampled pairs; provisional" in weak
+    assert "not the chance this link is right" in weak
+
+
 def test_citadel_does_not_overstate_what_it_found(cit):
     e = ex.explain_group(cit, "OP-67966")
     text = e.render()

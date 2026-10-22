@@ -19,7 +19,7 @@ help:
 	@echo "validate-release - validate the release in OUT against the contract"
 	@echo "explain          - explain a lot, pair or group of the release in OUT: make explain ARGS=\"lot <bbl>\""
 	@echo "fixtures         - regenerate tests/fixtures/synthetic_release (no database)"
-	@echo "excerpt          - cut an excerpt of the release in OUT: make excerpt SEEDS=\"OP-67966\" EXCERPT_OUT=tests/fixtures/citadel_excerpt"
+	@echo "excerpt          - cut an excerpt of the release in OUT: make excerpt SEEDS=\"OP-67966\" EXCERPT_OUT=tests/fixtures/citadel_excerpt [NOTE=\"text\"]"
 
 install:
 	uv sync
@@ -56,4 +56,4 @@ fixtures:
 EXCERPT_OUT ?= tests/fixtures/citadel_excerpt
 excerpt:
 	@test -n "$(SEEDS)" || { echo "usage: make excerpt SEEDS=\"OP-67966\" [OUT=<release>] [EXCERPT_OUT=<dir>]"; exit 2; }
-	$(UVRUN) python -m bor.excerpt $(OUT) $(EXCERPT_OUT) $(SEEDS)
+	$(UVRUN) python -m bor.excerpt $(OUT) $(EXCERPT_OUT) $(SEEDS) $(if $(NOTE),--note "$(NOTE)")

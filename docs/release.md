@@ -23,16 +23,18 @@ make build-release SNAPSHOT_ID=<id> REQUIRE_CLEAN=1 EVAL_DIR=eval_out GOLD_STATU
 make validate-release
 ```
 
-`SNAPSHOT_ID` takes the form the KG defines and is repeated exactly in the manifest. `GOLD_STATUS` says who produced the gold behind the metrics (`human_llm_provisional` today; `blind_human` only after a second blind human and human arbitration). The release lands in `release/contract` (git-ignored): 27 files (25 tables, `DATA.md`, `manifest.json`), about 190 MB, about 21 MB zipped. `bbl_status.csv` is 137 MB of it, because it covers every PLUTO lot in both layers and about four fifths of those rows are lots with no HPD registration. `DATA.md` is generated from the contract and the manifest, so it matches the files.
+`SNAPSHOT_ID` takes the form the KG defines and is repeated exactly in the manifest. `GOLD_STATUS` says who produced the gold behind the metrics (`human_llm_provisional` today; `blind_human` only after a second blind human and human arbitration). The release lands in `release/contract` (git-ignored): 27 files (25 tables, `DATA.md`, `manifest.json`), 200 MB, 21 MB zipped. `bbl_status.csv` is 137 MB of it, because it covers every PLUTO lot in both layers and about four fifths of those rows are lots with no HPD registration. `DATA.md` is generated from the contract and the manifest, so it matches the files.
 
 The build validates itself; a nonzero error count is a failed build. `python -m bor.explain release/contract lot <bbl>` (or `make explain ARGS="lot <bbl>"`) answers from the release alone and is the quickest read on whether it makes sense.
 
 ## 3. Regenerate the fixtures from the release
 
+A dry run on 2026-10-22 (bor `cee24f3`, nlr `6a9b1a1`, both clean; placeholder snapshot id) built in about ten minutes with 0 validation errors and matched the earlier reference build exactly: the same row counts in every table checked, and the same group for every node in both layers (15,623 Owner Portfolio nodes, 30,924 Operational Network nodes) from a fresh Splink fit.
+
 The checked-in fixtures are what a consumer tests against, so they come from the release being cut:
 
 ```bash
-make excerpt SEEDS="OP-67966" OUT=release/contract EXCERPT_OUT=tests/fixtures/citadel_excerpt
+make excerpt SEEDS="OP-67966" OUT=release/contract EXCERPT_OUT=tests/fixtures/citadel_excerpt NOTE="<what the parent was>"
 make fixtures
 ```
 

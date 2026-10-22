@@ -48,8 +48,9 @@ def test_row_counts_come_from_the_tables(syn):
 def test_an_excerpt_says_whose_it_is_and_lists_only_the_tables_it_has():
     tables, manifest = read_release(CIT)
     text = render_data_md(manifest, tables)
-    assert "an **excerpt** of run 2026-10-21-b1e2cf2a" in text and "### `network_edges`" not in text
-    assert "Built from an uncommitted tree" in text                 # the parent build was dirty: said, not hidden
+    assert f"an **excerpt** of run {manifest['run_id']}" in text and "### `network_edges`" not in text
+    dirty = any(c.get("dirty") for c in manifest["code"].values())
+    assert ("Built from an uncommitted tree" in text) == dirty      # said when true, absent when not
     assert "hpd_contacts" in text and "synthetic" not in text.lower().split("provenance")[0]
 
 

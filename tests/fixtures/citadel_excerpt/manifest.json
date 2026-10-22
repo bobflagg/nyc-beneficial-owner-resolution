@@ -1,19 +1,19 @@
 {
   "schema_version": "0.1.0",
-  "run_id": "2026-10-21-b1e2cf2a",
+  "run_id": "2026-10-21-fd807ff5",
   "snapshot_id": "justfixwow-2026-10-21",
   "pluto_snapshot_id": "justfixwow-2026-10-21",
   "effective_date": "2026-10-21",
-  "created_at": "2026-10-21T23:37:58+00:00",
-  "bor_revision": "86ef9d65f91d6ca062283ca2c2213d0bbe31da39",
+  "created_at": "2026-10-22T14:36:10+00:00",
+  "bor_revision": "cee24f37991d5a56fddce965dc1b9b99f7f3f684",
   "nlr_revision": "6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79",
-  "source_tree_hash": "5ec93d30587e217fa44e6e1d6508d6d798a2202cd5c47b82a0169d217741c8cc",
+  "source_tree_hash": "e1a73a94cdc80c00501bda1af293755beac57e60005117705eb0b60ac529ad86",
   "code": {
     "bor": {
       "version": "0.1.0.dev0",
-      "tree_hash": "8906d42177a997fee337b39c8ce47d8405b88bb8c92b2f8ee8a778662f1ced7e",
-      "revision": "86ef9d65f91d6ca062283ca2c2213d0bbe31da39",
-      "dirty": true
+      "tree_hash": "78368b7dc728f115214ccec3951dfe7c55307b9a7623030e1ddbc61949c1bed3",
+      "revision": "cee24f37991d5a56fddce965dc1b9b99f7f3f684",
+      "dirty": false
     },
     "nlr": {
       "version": "0.2.0",
@@ -149,12 +149,18 @@
     "link_set_members": "complete",
     "masked_addresses": "complete",
     "masked_address_nodes": "complete",
-    "bbl_status": "complete"
+    "bbl_status": "complete",
+    "method_metrics": "complete"
   },
   "stage_vocabulary_version": "0.1.0",
   "reason_vocabulary_version": "0.1.0",
   "diagnostics": {
-    "partial": "lineage, identity layer, deed evidence, and both layers' groups with their paths, and the per-lot absence summary; the method metrics are added by a later work package",
+    "partial": "lineage, identity layer, deed evidence, and both layers' groups with their paths, the per-lot absence summary and the method metrics",
+    "evaluation": {
+      "frame": "accuracy-eval-4-strata",
+      "metrics_sha256": "55c4eafc5cb4d774529a0e4ef734fd5c267c0c6cba65b31cfa14c055888e0b38",
+      "gold_status": "human_llm_provisional"
+    },
     "latest_deed_ties": 23163,
     "mapping": {
       "lwc_nodes": 118493,
@@ -277,7 +283,7 @@
     }
   },
   "excerpt": {
-    "of_run_id": "2026-10-21-b1e2cf2a",
+    "of_run_id": "2026-10-21-fd807ff5",
     "seed_groups": [
       "OP-67966"
     ],
@@ -290,24 +296,25 @@
     "events_omitted": 36224,
     "evidence_omitted": 838
   },
-  "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. The parent was built from an uncommitted tree (code.bor.dirty); the release candidate regenerates this fixture.",
+  "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. Cut from a release candidate built from clean commits, with a placeholder snapshot id.",
   "output_checksums": {
-    "DATA.md": "35d8a0fe5d419089d7ba1bf649d4ca35cf3dd8d78c702c51aa5e1562d5edfdb8",
+    "DATA.md": "54325a2e807410f892f86abdeff39f6fe349c067dcc194f09804600cb42a742f",
     "bbl_status.csv": "40ac377eff7cd64500de509384bf12f6b048c8675f0f279d93eff2fe4295728b",
     "decision_events.csv": "71816d2920e922e79f7ed8c8883b569ad33d068c9d5068c857a3b72b15dfce84",
     "decision_support.csv": "69bd7112bccdcc3091c8d52d23d9cc12b52a0aaebd9897ec78ebb350aadad687",
     "evidence_items.csv": "bac8d39a5db5020b3d7428102db5f656827103ca8a3e2dbeaa9dba3cdb6edae3",
     "evidence_members.csv": "0abb9b17cae98c8fd5830d50c6d20eec11fd80c20ccae2e56b5317f3ed292169",
     "group_bbls.csv": "b3480dc218af67ca7ca4a982f37bc0ac0db5396ee3c3620b6e009bdb2745af3d",
-    "group_members.csv": "0439c891f31cbc5803f62e9d839d6af3d2bd15dda40b153d74aa4f0be2b97f1e",
-    "group_witness.csv": "d83576ffffbf2150796c91e642cf982a07c3b1f1fd1a2cf8c047434fdfe8ee0d",
-    "groups.csv": "b800a7022a8993b73196a025c0779b74d0bad0377573cf33bb543d297a755836",
+    "group_members.csv": "7d97ad2edac84e2fc770bfad96b7f9e60ae00b54a770ddc90d49897c060ad00b",
+    "group_witness.csv": "02552cf0cfc623321516d81b44e2a0cecadf10d388984f5e5c750986cbc79c17",
+    "groups.csv": "290b1ca5394c1cf1bc451a3ebd9448db4cc42fc8db961e5d7518e75ffcafbe9a",
     "identity_clusters.csv": "b4591f616cf225f95545c289e36843ceabde72d666f54f50c6794e7a193437e6",
     "identity_observations.csv": "e99de5bf21de013c570d3c95c9b34b9d6754f35a4dd856989896eb95fca46cee",
     "link_set_members.csv": "a6331f5cc074cc039c42e6b75375c64cb4c1c1b5ccc51abb89d004a207b31fb6",
     "link_sets.csv": "c5285d217d39850123412558ad2479491a0660bd5fbd680db07969ee55485798",
     "masked_address_nodes.csv": "f67fe490e6bcb39544d47ef56298ed8ccd658c3ff7100bfc8023176187997632",
     "masked_addresses.csv": "41f979fc320a67c71d3b7ff0aeba9a41e70a16ad4efb116011db9c0889b63eff",
+    "method_metrics.csv": "fa8899d541bf80d7a63db29f0d437bec337b61d59c5e02461d6307764f74870b",
     "node_cluster.csv": "35f228af8f178a8fcd38499ea70e2d280f02a545ae2044427c40fd0ff99d3d1f",
     "node_cluster_alternatives.csv": "d9f0bc29736acada3472669eb0ef80f13be9f817f7384a6610540515a723f9a8",
     "node_identity_matches.csv": "c7d28ba4179adcdca627fb2d3a7b34dc29d84709ff54408b8960c5bd97a44a5a",

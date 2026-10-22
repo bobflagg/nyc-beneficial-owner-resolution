@@ -1,6 +1,6 @@
-# Beneficial Ownership Resolution: release `2026-10-21-b1e2cf2a`
+# Beneficial Ownership Resolution: release `2026-10-21-fd807ff5`
 
-This directory is an **excerpt** of run 2026-10-21-b1e2cf2a (a few Owner Portfolios and what they cite). Contract version 0.1.0.
+This directory is an **excerpt** of run 2026-10-21-fd807ff5 (a few Owner Portfolios and what they cite). Contract version 0.1.0.
 
 Owner Portfolios and Operational Networks resolved from NYC public records (HPD registrations and
 contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release contains no owner
@@ -17,18 +17,16 @@ missing row in `bbl_status` means nothing.
 
 | | |
 |---|---|
-| Run | `2026-10-21-b1e2cf2a` |
+| Run | `2026-10-21-fd807ff5` |
 | Source snapshot | `justfixwow-2026-10-21` |
 | PLUTO snapshot | `justfixwow-2026-10-21` |
 | Deed cut-off | `2026-10-21` |
-| Built | `2026-10-21T23:37:58+00:00` |
-| bor revision | `86ef9d65f91d6ca062283ca2c2213d0bbe31da39` |
+| Built | `2026-10-22T14:36:10+00:00` |
+| bor revision | `cee24f37991d5a56fddce965dc1b9b99f7f3f684` |
 | nlr revision | `6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79` |
-| Source-tree hash | `5ec93d30587e217fa44e6e1d6508d6d798a2202cd5c47b82a0169d217741c8cc` |
+| Source-tree hash | `e1a73a94cdc80c00501bda1af293755beac57e60005117705eb0b60ac529ad86` |
 | Lockfile digest | `2d7a1f93b16c06b6531a21ce3d5e7a5b4af971a3d07ac48f2b91565d7b1845b5` |
 | Splink threshold | `0.999` |
-
-**Built from an uncommitted tree** (`manifest.code.*.dirty`); a tagged release is not.
 
 Source tables, as fingerprinted (compare with your own load using `bor.manifest.fingerprint_sql`):
 
@@ -43,6 +41,8 @@ Source tables, as fingerprinted (compare with your own load using `bor.manifest.
 | `real_property_master` | 17,009,118 | `9805580637410314130378991` |
 | `real_property_legals` | 22,652,824 | `13056767151149614161428376` |
 | `real_property_parties` | 46,375,598 | `26737199831231077171312090` |
+
+Method metrics rest on a gold of status: `human_llm_provisional`. Rows are `provisional` unless the status is `blind_human`.
 
 ## Keys and ids
 
@@ -83,6 +83,7 @@ Source tables, as fingerprinted (compare with your own load using `bor.manifest.
 | `bbl_status.csv` | 40 | Summary over the PLUTO-snapshot lot universe; a missing row means nothing. |
 | `masked_addresses.csv` | 1 | Aggregator addresses masked from the network layer. |
 | `masked_address_nodes.csv` | 3 | Crosswalk from a masked address to the nodes (and so HPD observations) using it. |
+| `method_metrics.csv` | 20 | Method precision (not a link probability). |
 
 `manifest.json` holds the provenance above and the sha256 of every file.
 
@@ -417,6 +418,34 @@ References `masked_addresses` on `address_id`.
 |---|---|---|---|
 | `address_id` | str |  |  |
 | `node_id` | int |  |  |
+
+### `method_metrics`
+
+Method precision (not a link probability). Null with a note when unevaluated.
+
+Key: `stage`, `metric`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `stage` | str |  | 14 values, see below |
+| `metric` | str |  | `precision_strict`, `precision_inclusive`, `split_precision` |
+| `unit` | str |  |  |
+| `population` | str | yes |  |
+| `n` | int | yes |  |
+| `numerator` | int | yes |  |
+| `denominator` | int | yes |  |
+| `precision` | float | yes |  |
+| `ci_lower` | float | yes |  |
+| `ci_upper` | float | yes |  |
+| `confidence_level` | float | yes |  |
+| `interval_method` | str | yes |  |
+| `estimator` | str | yes |  |
+| `strata_ref` | str | yes |  |
+| `eval_artifact` | str | yes |  |
+| `eval_version` | str | yes |  |
+| `adjudication_status` | str |  | `none`, `synthetic`, `human_llm_provisional`, `blind_human` |
+| `provisional` | bool |  |  |
+| `note` | str | yes |  |
 
 ## Vocabularies
 
