@@ -30,6 +30,13 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - `explain pair` shows the closest evidence for a pair that is not in one group: a blocked decision, a
   shared deed that did not link them, or a tied alternative reading of a node.
 
+- **Method metrics (W7).** `bor.metrics` builds `method_metrics` from the evaluation: strict and inclusive
+  precision per stratum, split precision for the aggregator and hard-negative strata, a null row with a
+  note for each unevaluated link stage, and the gold's status (`human_llm_provisional` today). `bor.eval.score`
+  now also records the counts behind each proportion and the gold's annotators (the published figures are
+  unchanged). The validator checks the counts, the stage/scope split and metric-stage coverage;
+  `explain` shows a weak stage's published estimate.
+
 ### Changed
 - The manifest no longer records the builder's local checkout path (`code.*.checkout`).
 - The validator checks that every assertion key begins with the manifest's `run_id`.

@@ -15,7 +15,7 @@ help:
 	@echo "eval       - the paired divergence report vs Who Owns What (needs PG*)"
 	@echo "export     - write the person-free dataset to release/ (needs PG*)"
 	@echo "build-release    - build and validate a contract release in OUT (default release/contract)"
-	@echo "                   make build-release SNAPSHOT_ID=<id> [AS_OF=YYYY-MM-DD] [RUN_ID=<id>] [REQUIRE_CLEAN=1] [NLR=<path>]"
+	@echo "                   make build-release SNAPSHOT_ID=<id> [AS_OF=YYYY-MM-DD] [RUN_ID=<id>] [REQUIRE_CLEAN=1] [EVAL_DIR=eval_out GOLD_STATUS=<status>] [NLR=<path>]"
 	@echo "validate-release - validate the release in OUT against the contract"
 	@echo "explain          - explain a lot, pair or group of the release in OUT: make explain ARGS=\"lot <bbl>\""
 	@echo "fixtures         - regenerate tests/fixtures/synthetic_release (no database)"
@@ -41,7 +41,7 @@ export:
 
 build-release:
 	@test -n "$(SNAPSHOT_ID)" || { echo "SNAPSHOT_ID is required, in the form the KG defines: make build-release SNAPSHOT_ID=<id>"; exit 2; }
-	$(UVRUN) python -m bor.release build $(OUT) --snapshot-id $(SNAPSHOT_ID) $(if $(AS_OF),--as-of $(AS_OF)) $(if $(RUN_ID),--run-id $(RUN_ID)) $(if $(REQUIRE_CLEAN),--require-clean)
+	$(UVRUN) python -m bor.release build $(OUT) --snapshot-id $(SNAPSHOT_ID) $(if $(AS_OF),--as-of $(AS_OF)) $(if $(RUN_ID),--run-id $(RUN_ID)) $(if $(REQUIRE_CLEAN),--require-clean) $(if $(EVAL_DIR),--eval-dir $(EVAL_DIR) --gold-status $(GOLD_STATUS))
 
 validate-release:
 	$(UVRUN) python -m bor.release validate $(OUT)

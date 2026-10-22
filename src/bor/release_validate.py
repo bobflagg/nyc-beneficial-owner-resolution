@@ -18,7 +18,7 @@ import pandas as pd
 
 from bor import absence
 from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, EXCERPT_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
-                                REASON_CODES, SCHEMA_VERSION, SOURCE_TABLE_FIELDS, TABLES, Table)
+                                REASON_CODES, SCHEMA_VERSION, SOURCE_TABLE_FIELDS, STAGES, TABLES, Table)
 
 
 @dataclass(frozen=True)
@@ -410,6 +410,24 @@ def _inv_metrics(T):
     n += int(((p["ci_lower"] > p["precision"]) | (p["ci_upper"] < p["precision"])).sum())
     if n:
         v.append(Violation("method_metrics", "interval", "precision must lie in [0,1] and inside its interval", n))
+    # the estimate is the counts' ratio, and the counts fit the sample
+    c = p.dropna(subset=["numerator", "denominator"])
+    n = int(((c["precision"] - c["numerator"] / c["denominator"]).abs() > 1e-9).sum())
+    n += int(((c["numerator"] > c["denominator"]) | ((c["n"].notna()) & (c["denominator"] > c["n"]))).sum())
+    if n:
+        v.append(Violation("method_metrics", "counts", "precision must equal numerator/denominator, within the sample", n))
+    # a link precision is a stage's; a split precision belongs to a sampled population
+    split = m["metric"] == "split_precision"
+    n = int((split == m["stage"].isin(STAGES)).sum())
+    if n:
+        v.append(Violation("method_metrics", "scope",
+                           "split_precision belongs to a method scope; the precision metrics to a stage", n))
+    # every stage a path cites has a row, evaluated or not: a missing row would read as "no problem"
+    w = T.get("group_witness")
+    if w is not None:
+        missing = set(w["stage"]) - set(m["stage"])
+        if missing:
+            v.append(Violation("method_metrics", "coverage", f"no metric row for stage(s) {sorted(missing)}", len(missing)))
     return v
 
 

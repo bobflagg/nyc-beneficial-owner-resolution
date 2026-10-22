@@ -27,8 +27,9 @@ What is kept, for the selected groups ``G``:
 * **Masked addresses** of the kept nodes. ``degree`` stays the parent's: the excerpt lists only the
   kept nodes, so for an excerpt ``degree`` is at least the number of rows, not equal to it.
 * ``bbl_status`` for the kept lots (rows whose group is not kept are left out).
+* ``method_metrics`` whole: it describes the run, not any lot, it is small, and ``explain`` shows it.
 
-Not kept: ``method_metrics`` (a property of the run, not of any lot) and the whole network layer.
+Not kept: the whole network layer.
 Operational Network seeds are not supported yet: a network is a graph component, and keeping one means
 keeping every group it touches. The synthetic fixture covers that layer.
 """
@@ -150,6 +151,9 @@ def excerpt_release(tables: dict, manifest: dict, groups, *, note: str | None = 
                   | (_s(alt["observation_id"]) if alt is not None else set())
                   | _s(out["decision_support"].loc[out["decision_support"]["support_type"] == "observation", "support_id"]))
     out["observations"] = _take(T["observations"], "observation_id", obs_needed)
+
+    if "method_metrics" in T:
+        out["method_metrics"] = T["method_metrics"]
 
     # --- the per-lot summary --------------------------------------------------------------------
     s = T["bbl_status"]

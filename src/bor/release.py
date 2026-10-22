@@ -1,6 +1,7 @@
 """Build a release directory: the tables bor produces today, plus a manifest that checks them.
 
     uv run python -m bor.release build ./release --snapshot-id <id> [--as-of 2026-10-21] [--require-clean]
+        [--eval-dir eval_out --gold-status human_llm_provisional]
     uv run python -m bor.release validate ./release
 
 ``build`` resolves identities with decision capture, writes the lineage and identity-layer tables,
@@ -18,14 +19,20 @@ from datetime import date
 from pathlib import Path
 
 from bor import manifest as mf
+from bor.metrics import load_evaluation
+from bor.release_schema import ADJUDICATION_STATUSES
 from bor.release_validate import read_release, validate_release
 
 
 def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | None = None,
                   as_of: date | None = None, run_id: str | None = None, threshold: float | None = None,
-                  require_clean: bool = False, resolution=None) -> dict:
+                  require_clean: bool = False, resolution=None, evaluation: dict | None = None,
+                  gold_status: str = "none") -> dict:
     """Write the release into ``out_dir`` and return ``{"manifest", "violations"}``. Pass a
-    ``resolution`` captured with ``splink_bridge.resolve(..., capture=True)`` to reuse one."""
+    ``resolution`` captured with ``splink_bridge.resolve(..., capture=True)`` to reuse one, and an
+    ``evaluation`` (``bor.metrics.load_evaluation``) with the ``gold_status`` of its gold to publish the
+    method metrics; without one, ``method_metrics`` says no stage was evaluated."""
+    from bor.metrics import method_metrics_table
     from bor import deed_edges
     from bor.lineage import build_mapping
     from bor.splink_bridge import DEFAULT_THRESHOLD, resolve
@@ -44,6 +51,9 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     tables, portfolio_report = add_owner_portfolio_layer(conn, tables, deed_edge_frame, as_of, run_id)
     tables, network_report = add_operational_network_layer(conn, tables, run_id)
     tables, absence_report = add_absence_summary(conn, tables)
+    if evaluation and gold_status == "none":
+        raise ValueError("say who produced the gold (gold_status) when supplying an evaluation")
+    tables["method_metrics"] = method_metrics_table(evaluation, gold_status)
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -55,8 +65,10 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
         resolution_params=res.params,
         artifacts={name: ("representative" if name == "group_witness" else "complete") for name in tables},
         diagnostics={"partial": "lineage, identity layer, deed evidence, and both layers' groups with their "
-                                "paths, and the per-lot absence summary; the method metrics are added by "
-                                "a later work package",
+                                "paths, the per-lot absence summary and the method metrics",
+                     "evaluation": None if not evaluation else {
+                         "frame": (evaluation.get("frame") or {}).get("frame"),
+                         "metrics_sha256": evaluation["sha256"], "gold_status": gold_status},
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
                      "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report,
                      "operational_network": network_report, "absence": absence_report})
@@ -185,6 +197,9 @@ def main() -> None:  # pragma: no cover - needs the database
     b.add_argument("--threshold", type=float)
     b.add_argument("--require-clean", action="store_true",
                    help="refuse to build unless bor and nlr are clean git checkouts")
+    b.add_argument("--eval-dir", help="directory with the evaluation's metrics.json (bor.eval.score) to publish")
+    b.add_argument("--gold-status", default="none", choices=ADJUDICATION_STATUSES,
+                   help="who produced the gold behind --eval-dir (required with it)")
     v = sub.add_parser("validate")
     v.add_argument("path")
     args = ap.parse_args()
@@ -198,7 +213,9 @@ def main() -> None:  # pragma: no cover - needs the database
         try:
             r = build_release(conn, args.out_dir, snapshot_id=args.snapshot_id,
                               pluto_snapshot_id=args.pluto_snapshot_id, as_of=args.as_of, run_id=args.run_id,
-                              threshold=args.threshold, require_clean=args.require_clean)
+                              threshold=args.threshold, require_clean=args.require_clean,
+                              evaluation=load_evaluation(args.eval_dir) if args.eval_dir else None,
+                              gold_status=args.gold_status)
         finally:
             conn.close()
         found = r["violations"]

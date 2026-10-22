@@ -348,17 +348,32 @@ registered = [*LOT_NODE, U_NO_CONTACT]
 status = absence.bbl_status_table(universe, registered, S)
 frames["bbl_status"] = status.sort_values(["layer", "bbl"]).reset_index(drop=True)
 
-METRICS = [  # not measurements: the shape of what a consumer displays
-    dict(stage="identity.splink_base", metric="precision", unit="pair", population="synthetic", n=10, numerator=5,
-         denominator=10, precision=0.5, ci_lower=0.25, ci_upper=0.75, confidence_level=0.95, interval_method="synthetic",
-         estimator="synthetic", strata_ref=None, eval_artifact="synthetic", eval_version="synthetic-0",
-         adjudication_status="synthetic", provisional="True", note="SYNTHETIC fixture value, not a measurement"),
-    dict(stage="identity.splink_feedback", metric="precision", unit="pair", population=None, n=None, numerator=None,
-         denominator=None, precision=None, ci_lower=None, ci_upper=None, confidence_level=None, interval_method=None,
-         estimator=None, strata_ref=None, eval_artifact=None, eval_version=None, adjudication_status="none",
-         provisional="True", note="synthetic fixture: unevaluated"),
-]
-frames["method_metrics"] = pd.DataFrame(METRICS, columns=[c.name for c in TABLES["method_metrics"].columns])
+# A made-up evaluation, pushed through the real transform (bor.metrics) so the rows have the real shape.
+from bor.eval.score import wilson                                  # noqa: E402
+from bor.metrics import method_metrics_table                       # noqa: E402
+
+
+def _stratum(n, adjudicable, counts):
+    out = {"n": n, "adjudicable": adjudicable, "coverage": round(adjudicable / n, 3), "counts": counts}
+    if "c1" in counts:
+        c1, c2, d = counts["c1"], counts["c2"], counts["different"]
+        out["strict_precision"], out["inclusive_precision"] = wilson(c1, c1 + d), wilson(c1 + c2, c1 + c2 + d)
+    else:
+        out["split_precision"] = wilson(counts["good"], counts["adjudicable"])
+    return out
+
+
+SYNTHETIC_EVALUATION = {"sha256": "0" * 64, "frame": {
+    "frame": "synthetic-frame", "builder_commit": "synthetic", "built_at": "2026-10-22",
+    "strata": {"S1a_deed_held": {"frame": 40, "n": 10}, "S1b_deed_linked_successor": {"frame": 6, "n": 6},
+               "S2_model": {"frame": 100, "n": 10}, "S3_aggregator": {"frame": 30, "n": 10},
+               "S4_hard_neg": {"frame": 50, "n": 10}}}, "metrics": {"strata": {
+    "S1a_deed_held": _stratum(10, 10, dict(c1=8, c2=1, different=1)),
+    "S1b_deed_linked_successor": _stratum(6, 6, dict(c1=3, c2=0, different=3)),
+    "S2_model": _stratum(10, 10, dict(c1=9, c2=0, different=1)),
+    "S3_aggregator": _stratum(10, 10, dict(good=9, adjudicable=10)),
+    "S4_hard_neg": _stratum(10, 8, dict(good=6, adjudicable=8))}}}
+frames["method_metrics"] = method_metrics_table(SYNTHETIC_EVALUATION, "synthetic")
 
 os.makedirs(D, exist_ok=True)
 for stale in os.listdir(D):

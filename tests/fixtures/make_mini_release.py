@@ -11,6 +11,7 @@ import csv
 import hashlib
 import json
 import os
+import sys
 
 D = os.path.join(os.path.dirname(__file__), "mini_release")
 os.makedirs(D, exist_ok=True)
@@ -83,11 +84,9 @@ w("bbl_status", ["layer", "bbl", "status", "group_id", "reason_code", "top_level
     ["owner_portfolio", B[4], "excluded_from_footprint", "OP-1", "coop_condo_excluded", "excluded_by_policy"],
     ["owner_portfolio", B[5], "not_in_group", "", "coop_condo_dominated", "excluded_by_policy"],
     ["owner_portfolio", B[6], "not_in_group", "", "coop_condo_dominated", "excluded_by_policy"]])
-w("method_metrics", ["stage", "metric", "unit", "population", "n", "numerator", "denominator", "precision", "ci_lower",
-                     "ci_upper", "confidence_level", "interval_method", "estimator", "strata_ref", "eval_artifact",
-                     "eval_version", "adjudication_status", "provisional", "note"],
-  [[st, "precision", "pair", "", "", "", "", "", "", "", "", "", "", "", "", "", "none", "True", "fixture: unevaluated"]
-   for st in ("identity.splink_base", "identity.splink_feedback")])
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+from bor.metrics import method_metrics_table  # noqa: E402  (no evaluation: every link stage says so)
+method_metrics_table(None).to_csv(f"{D}/method_metrics.csv", index=False)
 
 files = sorted(f for f in os.listdir(D) if f.endswith(".csv"))
 manifest = {

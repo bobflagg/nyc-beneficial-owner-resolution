@@ -1,3 +1,19 @@
 stage,metric,unit,population,n,numerator,denominator,precision,ci_lower,ci_upper,confidence_level,interval_method,estimator,strata_ref,eval_artifact,eval_version,adjudication_status,provisional,note
-identity.splink_base,precision,pair,,,,,,,,,,,,,,none,True,fixture: unevaluated
-identity.splink_feedback,precision,pair,,,,,,,,,,,,,,none,True,fixture: unevaluated
+identity.splink_base,precision_inclusive,pair,,,,,,,,,,,,,,none,True,No evaluation was supplied to this build.
+identity.splink_base,precision_strict,pair,,,,,,,,,,,,,,none,True,No evaluation was supplied to this build.
+identity.splink_feedback,precision_inclusive,pair,,,,,,,,,,,,,,none,True,"Not evaluated on its own. The identity sample draws pairs from inside resolved clusters, which include shared-company merges, so its estimate pools them; no pair was drawn to isolate this stage. It is the weakest identity evidence."
+identity.splink_feedback,precision_strict,pair,,,,,,,,,,,,,,none,True,"Not evaluated on its own. The identity sample draws pairs from inside resolved clusters, which include shared-company merges, so its estimate pools them; no pair was drawn to isolate this stage. It is the weakest identity evidence."
+identity.curated,precision_inclusive,pair,,,,,,,,,,,,,,none,True,"Not evaluated: a hand-verified owner list, not a scored match."
+identity.curated,precision_strict,pair,,,,,,,,,,,,,,none,True,"Not evaluated: a hand-verified owner list, not a scored match."
+identity.registered_llc,precision_inclusive,pair,,,,,,,,,,,,,,none,True,Not evaluated: no stratum was drawn for links through a shared registered owner entity.
+identity.registered_llc,precision_strict,pair,,,,,,,,,,,,,,none,True,Not evaluated: no stratum was drawn for links through a shared registered owner entity.
+deed.held_since,precision_inclusive,pair,,,,,,,,,,,,,,none,True,No evaluation was supplied to this build.
+deed.held_since,precision_strict,pair,,,,,,,,,,,,,,none,True,No evaluation was supplied to this build.
+deed.linked_successor,precision_inclusive,pair,,,,,,,,,,,,,,none,True,No evaluation was supplied to this build.
+deed.linked_successor,precision_strict,pair,,,,,,,,,,,,,,none,True,No evaluation was supplied to this build.
+network.identity,precision_inclusive,pair,,,,,,,,,,,,,,none,True,"Not evaluated separately: an identity edge repeats a resolved-owner link, so the identity and deed rows are its evidence."
+network.identity,precision_strict,pair,,,,,,,,,,,,,,none,True,"Not evaluated separately: an identity edge repeats a resolved-owner link, so the identity and deed rows are its evidence."
+network.name,precision_inclusive,pair,,,,,,,,,,,,,,none,True,"Not evaluated. The evaluation asked whether a pair is the same owner; an Operational Network claims operational linkage, which is a different question, and no evaluation of it exists."
+network.name,precision_strict,pair,,,,,,,,,,,,,,none,True,"Not evaluated. The evaluation asked whether a pair is the same owner; an Operational Network claims operational linkage, which is a different question, and no evaluation of it exists."
+network.address,precision_inclusive,pair,,,,,,,,,,,,,,none,True,"Not evaluated, for the same reason as network.name."
+network.address,precision_strict,pair,,,,,,,,,,,,,,none,True,"Not evaluated, for the same reason as network.name."

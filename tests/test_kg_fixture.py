@@ -154,7 +154,7 @@ def test_every_group_names_its_stages_and_every_path_step_cites_evidence(rel):
             a, b = rel.lots_of(nodes[0])[0], rel.lots_of(nodes[-1])[0]
             p = ex.explain_pair(rel, a, b, r.layer)
             assert p.answer.startswith("Yes") and p.steps and all(s["evidence"] for s in p.steps), (r.group_id, p.render())
-            assert set(p.weakest) <= {f"{k} ({v})" for k, v in ex.WEAK_STAGES.items()}
+            assert all(any(w.startswith(f"{k} ({v}") for k, v in ex.WEAK_STAGES.items()) for w in p.weakest)
 
 
 def test_the_weak_stage_a_path_needs_is_named_and_only_then(syn):
@@ -293,15 +293,23 @@ def test_an_ambiguous_contact_mapping_is_a_tie_the_release_shows_instead_of_hidi
 # --- 5. a published metric, as stored -----------------------------------------------------------------------------
 
 def test_a_metric_is_displayed_as_published_and_an_unevaluated_one_says_why(syn):
-    m = syn.t["method_metrics"]
-    assert set(m["stage"]) <= set(STAGES) and (m["unit"] == "pair").all() and m["provisional"].eq("True").all()
-    done = m[m["precision"].notna()].iloc[0]
-    assert (float(done["precision"]), float(done["ci_lower"]), float(done["ci_upper"]), done["confidence_level"]) == (0.5, 0.25, 0.75, "0.95")
-    assert float(done["ci_lower"]) <= float(done["precision"]) <= float(done["ci_upper"])
-    assert "SYNTHETIC" in done["note"]                                         # not a measurement
-    blank = m[m["precision"].isna()].iloc[0]
-    assert blank["note"] and blank["adjudication_status"] == "none"
-    assert not any("probab" in c for c in m.columns)                           # a precision, never a link probability
+    m = syn.t["method_metrics"].set_index(["stage", "metric"])
+    assert (m["unit"] == "pair").all() and m["provisional"].eq("True").all()
+    # a consumer reads the estimate and its interval from the row, as stored
+    row = m.loc[("deed.linked_successor", "precision_strict")]
+    assert (row["numerator"], row["denominator"], float(row["precision"])) == ("3", "6", 0.5)
+    assert 0.18 < float(row["ci_lower"]) < 0.19 and 0.81 < float(row["ci_upper"]) < 0.82
+    assert row["confidence_level"] == "0.95" and "Wilson" in row["interval_method"] and "census" in row["interval_method"]
+    assert row["adjudication_status"] == "synthetic" and "not the probability" in row["note"]
+    assert "census" not in m.loc[("deed.held_since", "precision_strict"), "interval_method"]
+    # strict and inclusive are both published; a split precision belongs to a sampled population, not a stage
+    assert m.loc[("deed.held_since", "precision_inclusive"), "numerator"] == "9"
+    assert m.loc[("method.hard_negatives", "split_precision"), "denominator"] == "8"
+    # every stage the release's paths cite has a row; an unevaluated one is empty and says why
+    assert set(syn.t["group_witness"]["stage"]) <= {stage for stage, _ in m.index}
+    blank = m.loc[("identity.splink_feedback", "precision_strict")]
+    assert pd.isna(blank["precision"]) and "pools them" in blank["note"] and blank["adjudication_status"] == "none"
+    assert not any("probab" in c for c in m.reset_index().columns)             # a precision, never a link probability
 
 
 # --- a fixture is stable ------------------------------------------------------------------------------------------------

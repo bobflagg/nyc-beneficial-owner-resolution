@@ -127,7 +127,11 @@ def score(key_path: str, ann_path: str, out_dir: Path) -> dict:
             kappa_pairs.append((prim[0]["label"], prim[1]["label"]))
 
     strata = sorted({r["stratum"] for r in recs})
-    report: dict = {"kappa": cohens_kappa(kappa_pairs), "n_pairs": len(recs), "strata": {}}
+    report: dict = {"kappa": cohens_kappa(kappa_pairs), "n_pairs": len(recs), "strata": {},
+                    # who produced the gold, as recorded in the annotation file (not who they were)
+                    "gold": {"annotators": sorted({a["annotator_id"] for v in anns_by_pair.values() for a in v}),
+                             "adjudicator_rows": sum(1 for v in anns_by_pair.values() for a in v
+                                                     if a["annotator_id"] == ADJUDICATOR)}}
     for st in strata:
         rs = [r for r in recs if r["stratum"] == st]
         watchline = rs[0]["watchline"] if rs else "SAME"
@@ -141,9 +145,11 @@ def score(key_path: str, ann_path: str, out_dir: Path) -> dict:
             m["strict_precision"] = wilson(c1, c1 + diff)
             m["inclusive_precision"] = wilson(c1 + c2, c1 + c2 + diff)
             m["c2_share"] = round(c2 / (c1 + c2), 3) if (c1 + c2) else 0
+            m["counts"] = {"c1": c1, "c2": c2, "different": diff}      # the integers behind the proportions
         else:                                                           # DIFFERENT stratum
             good = sum(1 for r in adjud if r["gold"] == "DIFFERENT")
             m["split_precision"] = wilson(good, len(adjud))
+            m["counts"] = {"good": good, "adjudicable": len(adjud)}
         report["strata"][st] = m
 
     disc = [r for r in recs if r["gold"] in ("SAME", "DIFFERENT") and r["watchline"] != r["wow"]]

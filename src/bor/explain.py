@@ -260,12 +260,27 @@ def _tree_path(steps: pd.DataFrame, a: str, b: str):
     return list(reversed(path))
 
 
-def _weak_list(steps: list[dict]) -> list[str]:
+def _published(rel: Release, stage: str) -> str:
+    """The stage's published strict precision as stored in ``method_metrics`` (never recomputed), or ''."""
+    m = rel.table("method_metrics")
+    if m is None:
+        return ""
+    r = m[(m["stage"] == stage) & (m["metric"] == "precision_strict") & m["precision"].notna()]
+    if r.empty:
+        return ""
+    r = r.iloc[0]
+    prov = "provisional" if str(r["provisional"]) == "True" else "final"
+    return (f"; published strict precision {float(r['precision']):.2f} (95% interval {float(r['ci_lower']):.2f} to "
+            f"{float(r['ci_upper']):.2f}; {r['numerator']} of {r['denominator']} sampled pairs; {prov}; a share of "
+            "sampled pairs, not the chance this link is right)")
+
+
+def _weak_list(steps: list[dict], rel: Release | None = None) -> list[str]:
     seen, out = set(), []
     for s in steps:
         if s["weak"] and s["stage"] not in seen:
             seen.add(s["stage"])
-            out.append(f"{s['stage']} ({WEAK_STAGES[s['stage']]})")
+            out.append(f"{s['stage']} ({WEAK_STAGES[s['stage']]}" + (_published(rel, s["stage"]) if rel else "") + ")")
     return out
 
 
@@ -351,7 +366,7 @@ def explain_pair(rel: Release, bbl_a: str, bbl_b: str, layer: str = "owner_portf
             return out
         steps = [_explain_step(rel, s) | {"directed": (u, v)} for u, v, s in path]
         out.steps = steps
-        out.weakest = _weak_list(steps)
+        out.weakest = _weak_list(steps, rel)
         out.answer = f"Yes: both are in {nm} {ga}, joined by a path of {len(steps)} step{'s' if len(steps) != 1 else ''}."
         return out
     # not in one group
@@ -468,7 +483,7 @@ def explain_group(rel: Release, group_id: str, layer: str | None = None) -> Expl
     steps = [_explain_step(rel, s) for s in w[(w["layer"] == lay) & (w["group_id"] == group_id)].sort_values("step", key=pd.to_numeric).to_dict("records")]
     by = pd.Series([s["stage"] for s in steps]).value_counts() if steps else pd.Series(dtype=int)
     out.details.append("Its path uses: " + (", ".join(f"{n} × {k}" for k, n in by.items()) or "no steps (a single node)") + ".")
-    out.weakest = _weak_list(steps)
+    out.weakest = _weak_list(steps, rel)
     pieces = pd.to_numeric(r.get("witness_pieces"), errors="coerce")
     if pd.notna(pieces) and int(pieces) > 1:
         out.details.append(f"Its own edges leave {r['witness_pieces']} separate pieces; the connection between them runs "

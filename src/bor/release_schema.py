@@ -97,6 +97,17 @@ REASON_CODES = {
                              "A scored pair fell below the threshold (recorded only if a release opts in)."),
 }
 
+# method_metrics: a link precision belongs to a stage; a split precision (pairs the method keeps apart,
+# judged to really be different owners) belongs to the sampled population, which no single stage owns.
+METRIC_SCOPES = ("method.aggregator_splits", "method.hard_negatives")
+METRIC_NAMES = ("precision_strict", "precision_inclusive", "split_precision")
+# Who produced the gold the estimate rests on. `human_llm_provisional`: one human, an LLM second reader and
+# LLM-resolved disagreements. `blind_human` is reserved for a gold with a second blind human and human arbitration.
+ADJUDICATION_STATUSES = ("none", "synthetic", "human_llm_provisional", "blind_human")
+# The stages that create a link, each of which a release's witness paths can cite: every one needs a metric row.
+LINK_STAGES = ("identity.splink_base", "identity.splink_feedback", "identity.curated", "identity.registered_llc",
+               "deed.held_since", "deed.linked_successor", "network.identity", "network.name", "network.address")
+
 EVIDENCE_ROLES = ("held_under_joint_deed", "transferred_onward")
 ARTIFACT_KINDS = ("complete", "representative")
 
@@ -264,7 +275,7 @@ _TABLES = [
                     "those that found no useful split (the piece is then kept whole)."),
 
     # ---- absence, masking, metrics (planned, W6b/W7) --------------------------------------------
-    Table("bbl_status", "planned", ("layer", "bbl"), (
+    Table("bbl_status", "implemented", ("layer", "bbl"), (
         _c("layer", enum=LAYERS), _c("bbl"),
         _c("status", enum=("in_group", "not_in_group", "excluded_from_footprint")),
         _c("group_id", nullable=True), _c("reason_code", nullable=True, enum=tuple(REASON_CODES)),
@@ -281,15 +292,15 @@ _TABLES = [
         _c("address_id"), _c("node_id", "int")),
         fks=(_fk("address_id", "masked_addresses"),),
         description="Crosswalk from a masked address to the nodes (and so HPD observations) using it."),
-    Table("method_metrics", "planned", ("stage", "metric"), (
-        _c("stage", enum=STAGES), _c("metric"), _c("unit"), _c("population", nullable=True),
+    Table("method_metrics", "implemented", ("stage", "metric"), (
+        _c("stage", enum=STAGES + METRIC_SCOPES), _c("metric", enum=METRIC_NAMES), _c("unit"), _c("population", nullable=True),
         _c("n", "int", nullable=True), _c("numerator", "int", nullable=True),
         _c("denominator", "int", nullable=True), _c("precision", "float", nullable=True),
         _c("ci_lower", "float", nullable=True), _c("ci_upper", "float", nullable=True),
         _c("confidence_level", "float", nullable=True), _c("interval_method", nullable=True),
         _c("estimator", nullable=True), _c("strata_ref", nullable=True),
         _c("eval_artifact", nullable=True), _c("eval_version", nullable=True),
-        _c("adjudication_status"), _c("provisional", "bool"), _c("note", nullable=True)),
+        _c("adjudication_status", enum=ADJUDICATION_STATUSES), _c("provisional", "bool"), _c("note", nullable=True)),
         description="Method precision (not a link probability). Null with a note when unevaluated."),
 ]
 
