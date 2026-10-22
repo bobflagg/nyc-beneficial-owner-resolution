@@ -1,3 +1,3 @@
 layer,group_id,step,node_a,node_b,stage,basis_type,basis_id,assertion_key
-owner_portfolio,OP-67966,1,67966,79951,deed.linked_successor,evidence_item,DV0000136,2026-10-21-fd807ff5/owner_portfolio/OP-67966/w1
-owner_portfolio,OP-67966,2,67966,108398,deed.linked_successor,evidence_item,DV0000136,2026-10-21-fd807ff5/owner_portfolio/OP-67966/w2
+owner_portfolio,OP-67966,1,67966,79951,deed.linked_successor,evidence_item,DV0000136,2026-05-29-7edb54cf/owner_portfolio/OP-67966/w1
+owner_portfolio,OP-67966,2,67966,108398,deed.linked_successor,evidence_item,DV0000136,2026-05-29-7edb54cf/owner_portfolio/OP-67966/w2

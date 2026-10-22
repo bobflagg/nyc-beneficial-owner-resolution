@@ -8,7 +8,7 @@ Status of the KG notes this rests on: 0002 and 0005 are accepted; **0007 is prop
 
 | bor release | knowledge graph | notes |
 |---|---|---|
-| `manifest.snapshot_id` | `snapshot_id` property on every loaded assertion | The release is valid only with the matching source snapshot. The form of the id is the KG's (open). |
+| `manifest.snapshot_id` | `snapshot_id` property on every loaded assertion | The release is valid only with the matching source snapshot. Proposed form: `<source>-<YYYY-MM-DD>`, the latest record date in the data, for example `justfixwow-2026-05-29` ([release.md](release.md)); the KG confirms it. |
 | `manifest.run_id` | the BOR run, recorded on each Type II link and in the snapshot/run catalog | Every `assertion_key` starts with it. |
 | `group_bbls` row (`layer`, `bbl`, `group_id`) | a membership of one building in an Owner Portfolio or Operational Network | `link_id = <assertion_key>#<bbl>`, the key a later review points at. A bor node can hold several BBLs, so the graph models a membership per building. |
 | `groups.lot_count`, `total_lot_count`, `composition`, `split` | properties of the group | Counting unit is the tax lot. `rental = false` lots are co-op/condo lots outside the published footprint. |
@@ -18,7 +18,7 @@ Status of the KG notes this rests on: 0002 and 0005 are accepted; **0007 is prop
 | `node_observations`, `node_identity_matches`, `node_cluster` | how a bor node maps to recorded parties | bor nodes are `landlords_with_connections` rows. Whether to load them as run-scoped nodes or expand edges onto identities is open (note 0007, item 5). `ambiguous` and `tied` rows are shown, not hidden. |
 | `evidence_items`, `evidence_members` | ACRIS deed evidence | `original_document_id` and `latest_document_id` are ACRIS document ids; a member either still sits under the joint deed or was transferred onward. |
 | `decision_events` | why a link was made or refused | One row per decision, with the rule and its version, outcome, reason code, score and threshold where there is one. Absence of an event means the rule did not run. |
-| `bbl_status` | the answer to "why is this building not in a group?" | Five top-level reasons, in precedence order: `outside_source_coverage`, `outside_method_input`, `excluded_by_policy`, `below_eligibility_rule`, `no_qualifying_linkage`. The detailed `reason_code`s are narrower terms of these (the KG's `AbsenceReason` scheme). A missing row means nothing. |
+| `bbl_status` | the answer to "why is this building not in a group?" | Five top-level reasons, in precedence order: `outside_source_coverage`, `outside_method_input`, `excluded_by_policy`, `below_eligibility_rule`, `no_qualifying_linkage`. The detailed `reason_code`s are narrower terms of these (the KG's `AbsenceReason` scheme). A missing row means nothing. `no_registration` is about 79% of the rows (a lot HPD does not register): a loader may skip them and answer "no HPD registration" from its own HPD data, which is the source record itself. |
 | `method_metrics` | the published precision shown beside a link | Show `precision` with its interval and `adjudication_status` exactly as stored. Do not recompute it and do not call it a probability. |
 
 The questions this serves are the KG's Q9 and Q10 (footprint and comparison of the two layers), Q19 (why are these grouped?) and Q26 (absence).

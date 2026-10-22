@@ -1,6 +1,6 @@
-# Beneficial Ownership Resolution: release `2026-10-21-fd807ff5`
+# Beneficial Ownership Resolution: release `2026-05-29-7edb54cf`
 
-This directory is an **excerpt** of run 2026-10-21-fd807ff5 (a few Owner Portfolios and what they cite). Contract version 0.1.0.
+This directory is an **excerpt** of run 2026-05-29-7edb54cf (a few Owner Portfolios and what they cite). Contract version 0.1.0.
 
 Owner Portfolios and Operational Networks resolved from NYC public records (HPD registrations and
 contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release contains no owner
@@ -17,15 +17,15 @@ missing row in `bbl_status` means nothing.
 
 | | |
 |---|---|
-| Run | `2026-10-21-fd807ff5` |
-| Source snapshot | `justfixwow-2026-10-21` |
-| PLUTO snapshot | `justfixwow-2026-10-21` |
-| Deed cut-off | `2026-10-21` |
-| Built | `2026-10-22T14:36:10+00:00` |
-| bor revision | `cee24f37991d5a56fddce965dc1b9b99f7f3f684` |
+| Run | `2026-05-29-7edb54cf` |
+| Source snapshot | `justfixwow-2026-05-29` |
+| PLUTO snapshot | `justfixwow-2026-05-29` |
+| Deed cut-off | `2026-05-29` |
+| Built | `2026-10-22T16:50:03+00:00` |
+| bor revision | `52b168efcfe5f871943552e070f54fbcec22e6f4` |
 | nlr revision | `6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79` |
-| Source-tree hash | `e1a73a94cdc80c00501bda1af293755beac57e60005117705eb0b60ac529ad86` |
-| Lockfile digest | `2d7a1f93b16c06b6531a21ce3d5e7a5b4af971a3d07ac48f2b91565d7b1845b5` |
+| Source-tree hash | `e2111fd432511ea5f6f1ff1980b3b750baee381d15ca5707c6462ae61c2f9585` |
+| Lockfile digest | `ba882e9c5ec55c64e8b3b5a97ea7b0078b4b0a75cbd2e6f3b2f876ced67aaead` |
 | Splink threshold | `0.999` |
 
 Source tables, as fingerprinted (compare with your own load using `bor.manifest.fingerprint_sql`):

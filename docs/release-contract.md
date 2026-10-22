@@ -155,7 +155,7 @@ A detailed `reason_code` maps to one of five top-level reasons, listed in **prec
 
 Required: `schema_version`, `run_id`, `snapshot_id`, `pluto_snapshot_id`, `effective_date`, `bor_revision`, `nlr_revision`, `source_tree_hash`, `dependency_lock_digest`, `threshold`, `parameters`, `source_tables`, `deed_selection_rule`, `normalizer_versions`, `artifacts`, `stage_vocabulary_version`, `reason_vocabulary_version`, `output_checksums`.
 
-- `snapshot_id` takes the form the KG defines (an open KG decision); the manifest repeats it exactly.
+- `snapshot_id` is proposed as `<source>-<YYYY-MM-DD>`, the latest record date in the source data (for the reference dump, `justfixwow-2026-05-29`), and the manifest repeats it exactly; the KG confirms the form. The date is the data's, not the build day.
 - `source_tables` maps each source table bor read (HPD contacts and registrations, `wow_landlords`, the ACRIS tables, PLUTO) to `{row_count, fingerprint, fingerprint_method}`. The KG compares these with its own load and refuses a mismatch. The fingerprint method is fixed in W1.
 - `deed_selection_rule` is `{rule, version}`. bor currently selects `doctype ILIKE '%DEED%'`, which includes `DEED COR` and `DEED, TS`; the KG can check document types from the ACRIS ids in `evidence_members`.
 - `artifacts` declares each artifact `complete` or `representative`. Storage choices never silently change what a release means.
@@ -198,7 +198,7 @@ Opaque identity ids; one polymorphic `decision_events` table; gate-blocked rejec
 
 1. **Witness only, or the full network graph?** Decided after the W5 size spike.
 2. **Run-scoped nodes versus edge expansion** onto identities in the graph (KG note 0007, item 5). The KG's call once the node and edge tables exist.
-3. **The fingerprint method** for large source tables (W1), and the form of `snapshot_id` (KG).
+3. **The fingerprint method** for large source tables (W1), and the form of `snapshot_id` (proposed above; the KG confirms).
 4. **Whether the fifth reason is accepted** (KG note 0007); the codes under it are ready either way.
 
 ## Not promised

@@ -44,6 +44,10 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   the frozen release and its no-names policy.
 
 ### Changed
+- Snapshot id: `<source>-<YYYY-MM-DD>` with the date of the data, not the build (`justfixwow-2026-05-29` for the
+  reference dump, whose newest ACRIS and HPD records are 2026-05-29); the deed cut-off equals it.
+- Recorded decisions: `bor.export` stays as a documented convenience, releases ship with the provisional gold
+  labeled as such, and `bbl_status` keeps every PLUTO lot in both layers.
 - nlr is pinned at `v0.2.0` (was `v0.1.0`): the release's identity evidence comes from its decision capture.
 - A package installed from a git commit (the pinned nlr) is recorded with `dirty: false`, so `--require-clean`
   accepts it; it used to be `null`, which `--require-clean` refuses as unidentified.

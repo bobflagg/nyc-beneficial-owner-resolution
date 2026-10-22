@@ -19,17 +19,17 @@ A release is **person-free**. The contract release has no name column anywhere, 
 ## 2. Build and validate
 
 ```bash
-make build-release SNAPSHOT_ID=<id> REQUIRE_CLEAN=1 EVAL_DIR=eval_out GOLD_STATUS=<status> [AS_OF=YYYY-MM-DD] [NLR=<path>]
+make build-release SNAPSHOT_ID=<source>-<YYYY-MM-DD> AS_OF=<YYYY-MM-DD> REQUIRE_CLEAN=1 EVAL_DIR=eval_out GOLD_STATUS=<status> [NLR=<path>]
 make validate-release
 ```
 
-`SNAPSHOT_ID` takes the form the KG defines and is repeated exactly in the manifest. `GOLD_STATUS` says who produced the gold behind the metrics (`human_llm_provisional` today; `blind_human` only after a second blind human and human arbitration). The release lands in `release/contract` (git-ignored): 27 files (25 tables, `DATA.md`, `manifest.json`), 200 MB, 21 MB zipped. `bbl_status.csv` is 137 MB of it, because it covers every PLUTO lot in both layers and about four fifths of those rows are lots with no HPD registration. `DATA.md` is generated from the contract and the manifest, so it matches the files.
+**The snapshot id** is `<source>-<YYYY-MM-DD>`, the source dump plus the latest record date in its data, and it is repeated exactly in the manifest. For the reference dump that is `justfixwow-2026-05-29`: its newest ACRIS filing and newest HPD registration are both 2026-05-29. Take the date from the data (`select max(recordedfiled) from real_property_master`, `max(lastregistrationdate)` from `hpd_registrations`), **not** from the day you build: the id appears on every fact the graph loads, and an answer that says "as of the snapshot" must not claim more recent data than the dump holds. Set `AS_OF` to the same date so the manifest's `effective_date` equals the snapshot date (checked on the reference dump: no deed falls between 2026-05-29 and the build date, so the choice does not change a result). If PLUTO's own vintage differs, pass `--pluto-snapshot-id`. The form is a proposal until the KG confirms it. `GOLD_STATUS` says who produced the gold behind the metrics (`human_llm_provisional` today; `blind_human` only after a second blind human and human arbitration). The release lands in `release/contract` (git-ignored): 27 files (25 tables, `DATA.md`, `manifest.json`), 200 MB, 21 MB zipped. `bbl_status.csv` is 137 MB of it, because it covers every PLUTO lot in both layers and about four fifths of those rows are lots with no HPD registration. `DATA.md` is generated from the contract and the manifest, so it matches the files.
 
 The build validates itself; a nonzero error count is a failed build. `python -m bor.explain release/contract lot <bbl>` (or `make explain ARGS="lot <bbl>"`) answers from the release alone and is the quickest read on whether it makes sense.
 
 ## 3. Regenerate the fixtures from the release
 
-A dry run on 2026-10-22 (bor `cee24f3`, nlr `6a9b1a1`, both clean; placeholder snapshot id) built in about ten minutes with 0 validation errors and matched the earlier reference build exactly: the same row counts in every table checked, and the same group for every node in both layers (15,623 Owner Portfolio nodes, 30,924 Operational Network nodes) from a fresh Splink fit.
+Two dry runs on 2026-10-22, from clean commits, each about ten minutes with 0 validation errors. The first (nlr from a local checkout, a placeholder snapshot id) matched the earlier reference build exactly. The second (bor `52b168e`, nlr v0.2.0 from the pinned install, `justfixwow-2026-05-29`, `AS_OF=2026-05-29`, run `2026-05-29-7edb54cf`) matched the first: 20 of 25 tables identical apart from the run id, and the other five identical in content (`groups`, `group_members` and `group_witness` differ only in row order; `decision_events` and `decision_support` in the float noise of the scores, at most 3e-16, and one symmetric shared-company event recorded as A to B in one build and B to A in the other). Two builds on different days from fresh Splink fits give the same groups, paths, decisions and absences. `REQUIRE_CLEAN=1` accepts the pinned nlr.
 
 The checked-in fixtures are what a consumer tests against, so they come from the release being cut:
 
@@ -65,12 +65,15 @@ Enable the GitHub–Zenodo integration (or upload the archive directly). Zenodo 
 
 Edit `CITATION.cff`: set `doi:`, bump `version:` to the tag, add your ORCID. Commit.
 
-## Open decisions
+## Decisions
 
-- **Legacy dataset.** Keep `bor.export` as a documented convenience, or retire it in favor of the contract release. Its four files carry only memberships and its group ids are per-build.
-- **The gold.** Ship with the provisional gold labeled as such, or wait for the blind human re-adjudication. Either way the labels in `method_metrics` say which. Public wording about the evaluation ("blind human adjudication", "inter-annotator") should not go out ahead of it.
-- **`bbl_status` size.** Keep every PLUTO lot in both layers (a missing row would otherwise be ambiguous), or publish only lots with a node or a reason other than `no_registration`. The contract promises that a missing row means nothing, so shrinking it is a contract change.
-- **`snapshot_id` form** (the KG's) and **KG acceptance of design note 0007** (the fifth absence reason).
+Settled by the maintainer, 2026-10-22:
+
+- **Legacy dataset.** `bor.export` stays as a documented convenience: four membership files, person-free by default, one Splink fit shared by both layers. It is not the handoff, its group ids are per-build and it carries no evidence; the contract release is what to cite and what the graph loads.
+- **The gold.** The release ships with the provisional gold, labeled `human_llm_provisional` in every metric row and in `DATA.md`: one human annotator, an LLM second reader and an LLM-run resolution of their disagreements. A release rebuilt after the blind human re-adjudication carries `blind_human`. Public wording about the evaluation ("blind human adjudication", "inter-annotator") does not go out ahead of that.
+- **`bbl_status` keeps every PLUTO lot in both layers.** It is 1.7 million rows and 137 MB, but 6.6 MB gzipped, and 79% of the rows are `no_registration`. Dropping them would save 112 MB raw and 5 MB compressed and break the promise that a missing row means nothing. A loader that does not want them can skip them and answer "no HPD registration" from its own HPD data ([kg-mapping.md](kg-mapping.md)).
+
+Still the KG's: confirming the snapshot id form above, and acceptance of design note 0007 (the fifth absence reason).
 
 ## Still open before a "1.0"
 
