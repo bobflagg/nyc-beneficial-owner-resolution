@@ -1,18 +1,28 @@
 {
   "schema_version": "0.1.0",
-  "run_id": "2026-05-29-7edb54cf",
+  "run_id": "2026-05-29-39ad2213",
   "snapshot_id": "justfixwow-2026-05-29",
-  "pluto_snapshot_id": "justfixwow-2026-05-29",
+  "snapshot_date": "2026-05-29",
+  "snapshot_date_basis": {
+    "real_property_master.recordedfiled": {
+      "newest": "2026-05-29",
+      "future_dated_rows": 0
+    },
+    "hpd_registrations.lastregistrationdate": {
+      "newest": "2026-05-29",
+      "future_dated_rows": 0
+    }
+  },
   "effective_date": "2026-05-29",
-  "created_at": "2026-10-22T16:50:03+00:00",
-  "bor_revision": "52b168efcfe5f871943552e070f54fbcec22e6f4",
+  "created_at": "2026-10-22T18:45:59+00:00",
+  "bor_revision": "73bc6cdd2d39c0fc4aa075c3aef7c05f794b6f84",
   "nlr_revision": "6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79",
-  "source_tree_hash": "e2111fd432511ea5f6f1ff1980b3b750baee381d15ca5707c6462ae61c2f9585",
+  "source_tree_hash": "204e2e085b0a697afd187c1dc7dc9a3322643d7831f09399530397142b3f5cb7",
   "code": {
     "bor": {
       "version": "0.1.0.dev0",
-      "tree_hash": "e094d88f096e1ac5ba2708eb50af822cd5d2c5317c5e15eeef31adb79c9fb187",
-      "revision": "52b168efcfe5f871943552e070f54fbcec22e6f4",
+      "tree_hash": "310538e0ba2793538dac889c9faef6b9a8fccbadd66ab6af3e83b436148983e6",
+      "revision": "73bc6cdd2d39c0fc4aa075c3aef7c05f794b6f84",
       "dirty": false
     },
     "nlr": {
@@ -283,7 +293,7 @@
     }
   },
   "excerpt": {
-    "of_run_id": "2026-05-29-7edb54cf",
+    "of_run_id": "2026-05-29-39ad2213",
     "seed_groups": [
       "OP-67966"
     ],
@@ -296,18 +306,18 @@
     "events_omitted": 36224,
     "evidence_omitted": 838
   },
-  "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. Cut from a release built from clean commits with the pinned nlr v0.2.0, the real snapshot id and the provisional gold.",
+  "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. Cut from a release built from clean commits (bor 73bc6cd) with the pinned nlr v0.2.0, snapshot justfixwow-2026-05-29 and the provisional gold.",
   "output_checksums": {
-    "DATA.md": "3dc3f60bee4e52841629bdb1f9060496d8eb91c24473df57d1e2c7292608b59b",
+    "DATA.md": "6950b942b200c38195347db06a134800b7f8fc2f07e66d5198bd14d01296ed42",
     "bbl_status.csv": "40ac377eff7cd64500de509384bf12f6b048c8675f0f279d93eff2fe4295728b",
     "decision_events.csv": "71816d2920e922e79f7ed8c8883b569ad33d068c9d5068c857a3b72b15dfce84",
     "decision_support.csv": "69bd7112bccdcc3091c8d52d23d9cc12b52a0aaebd9897ec78ebb350aadad687",
     "evidence_items.csv": "bac8d39a5db5020b3d7428102db5f656827103ca8a3e2dbeaa9dba3cdb6edae3",
     "evidence_members.csv": "0abb9b17cae98c8fd5830d50c6d20eec11fd80c20ccae2e56b5317f3ed292169",
     "group_bbls.csv": "b3480dc218af67ca7ca4a982f37bc0ac0db5396ee3c3620b6e009bdb2745af3d",
-    "group_members.csv": "6fc0c0f7d9dbe4f45f254579547dca631ea9483d4bb59ef1709b2534d90fda9a",
-    "group_witness.csv": "a64c0fc8b3ccc6ea21cb223b4c640fc976c0a38a5cc82d0068b828b80c74ebc5",
-    "groups.csv": "5c037b8851eefb3b7f6abc55692233e699249dbb8e32c928dc6c295694a16509",
+    "group_members.csv": "cd28349b4914f51f4c7e78ba6a099ced5ef2fa5a3a0d9a3afdeadcf958267fd6",
+    "group_witness.csv": "4ba22db071e4d810814014c21b7552ecf6ba5dcd75b4a76ba213b1a21e4dc067",
+    "groups.csv": "8051c998ba282dbc64741f8850cd68d2a376304f827b91613d6b4effe2bff937",
     "identity_clusters.csv": "b4591f616cf225f95545c289e36843ceabde72d666f54f50c6794e7a193437e6",
     "identity_observations.csv": "e99de5bf21de013c570d3c95c9b34b9d6754f35a4dd856989896eb95fca46cee",
     "link_set_members.csv": "a6331f5cc074cc039c42e6b75375c64cb4c1c1b5ccc51abb89d004a207b31fb6",
