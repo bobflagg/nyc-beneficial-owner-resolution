@@ -42,6 +42,7 @@ from pathlib import Path
 import pandas as pd
 
 from bor.manifest import write_manifest
+from bor.release_docs import write_data_md
 from bor.release_validate import read_release, validate_release
 
 
@@ -186,6 +187,7 @@ def write_excerpt(tables: dict, manifest: dict, out_dir) -> Path:
         stale.unlink()
     for name, df in tables.items():
         df.to_csv(out / f"{name}.csv", index=False)
+    write_data_md(out, manifest, tables)
     write_manifest(out, manifest)
     return out
 

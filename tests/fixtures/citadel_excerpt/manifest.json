@@ -292,6 +292,7 @@
   },
   "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. The parent was built from an uncommitted tree (code.bor.dirty); the release candidate regenerates this fixture.",
   "output_checksums": {
+    "DATA.md": "35d8a0fe5d419089d7ba1bf649d4ca35cf3dd8d78c702c51aa5e1562d5edfdb8",
     "bbl_status.csv": "40ac377eff7cd64500de509384bf12f6b048c8675f0f279d93eff2fe4295728b",
     "decision_events.csv": "71816d2920e922e79f7ed8c8883b569ad33d068c9d5068c857a3b72b15dfce84",
     "decision_support.csv": "69bd7112bccdcc3091c8d52d23d9cc12b52a0aaebd9897ec78ebb350aadad687",

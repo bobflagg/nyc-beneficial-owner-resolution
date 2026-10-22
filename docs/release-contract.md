@@ -186,6 +186,8 @@ Columns, types, nullability, enums, keys and foreign keys, then: a BBL belongs t
 
 ## Mapping to the KG (documented, not imported)
 
+The field-by-field mapping, the checks a loader makes and what it must never do are in [kg-mapping.md](kg-mapping.md). Each release also ships a generated data dictionary, `DATA.md` (`bor.release_docs`), rendered from the schema and the manifest, so it matches the files.
+
 The KG loader marks bor-derived assertions `reliability: II`, `source_category: project_derived`, `review_status: unreviewed` (notes 0002–0004, 0007), keeps the HPD/ACRIS source facts distinct, and takes `snapshot_id` from the manifest. bor does not adopt the KG's ontology or graph model; whether evidence becomes list properties, per-edge relationships or promoted nodes is the KG's decision (note 0005).
 
 ## Settled by the KG review

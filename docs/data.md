@@ -31,6 +31,10 @@ All are read **unqualified**; in `justfixwow` they resolve via `search_path` to 
 (where the connecting `wow` user's schema is first). `nlr` reads the same Postgres via the same
 `PG*` config.
 
+## What the release fingerprints
+
+A contract release records, for each of nine of these tables, a row count and a fingerprint (`bor.manifest.fingerprint_sql`): `hpd_contacts`, `hpd_registrations`, `hpd_registrations_grouped_by_bbl_with_contacts`, `wow_landlords`, `landlords_with_connections`, `pluto_latest`, `real_property_master`, `real_property_legals` and `real_property_parties`. A consumer compares them with its own load before trusting the release, and a different dump or a rebuilt `landlords_with_connections` (its node ids come from an unordered `row_number()`) gives different ones. `wow.wow_portfolios` is read only by the benchmark.
+
 ## Setup
 
 ```bash
@@ -44,6 +48,12 @@ uv run python -m bor.build_lwc
 
 After that, all layers run: `resolve_owner_portfolios`, `resolve_operational_networks`,
 `bor.deed_edges.deed_edges`, and the benchmark `python -m bor.eval.divergence`.
+
+## What BOR writes
+
+- **The contract release** (`bor.release`, `make build-release`): 25 CSV tables, a generated `DATA.md` and `manifest.json`, in `release/contract`. Run-local opaque ids, no names. See [release-contract.md](release-contract.md) and [release.md](release.md).
+- **The legacy dataset** (`bor.export`): four membership CSVs in `release/`. Person-free by default.
+- **The evaluation** (`bor.eval.*`) reads and writes `eval_out/`, which is git-ignored: the blinded packet carries public-record names, and the key joins pairs back to them. Only the scorer's aggregate `metrics.json` and the frame manifest are inputs to a release (`make build-release EVAL_DIR=eval_out`).
 
 ## A note on `landlords_with_connections`
 

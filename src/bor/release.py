@@ -20,6 +20,7 @@ from pathlib import Path
 
 from bor import manifest as mf
 from bor.metrics import load_evaluation
+from bor.release_docs import write_data_md
 from bor.release_schema import ADJUDICATION_STATUSES
 from bor.release_validate import read_release, validate_release
 
@@ -72,6 +73,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
                      "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report,
                      "operational_network": network_report, "absence": absence_report})
+    write_data_md(out, manifest, tables)            # before the checksums, so DATA.md is covered by them
     mf.write_manifest(out, manifest)
 
     loaded, written = read_release(str(out))

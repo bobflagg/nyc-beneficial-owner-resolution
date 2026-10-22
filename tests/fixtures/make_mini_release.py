@@ -88,9 +88,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 from bor.metrics import method_metrics_table  # noqa: E402  (no evaluation: every link stage says so)
 method_metrics_table(None).to_csv(f"{D}/method_metrics.csv", index=False)
 
-files = sorted(f for f in os.listdir(D) if f.endswith(".csv"))
 manifest = {
-    "schema_version": "0.1.0", "run_id": R, "snapshot_id": "fixture-2026-10-20", "effective_date": "2026-10-20",
+    "schema_version": "0.1.0", "synthetic": True, "run_id": R, "snapshot_id": "fixture-2026-10-20", "effective_date": "2026-10-20",
     "bor_revision": "fixture", "nlr_revision": "fixture", "source_tree_hash": "fixture",
     "dependency_lock_digest": "fixture", "threshold": 0.999, "parameters": {"splink_threshold": 0.999},
     "pluto_snapshot_id": "fixture-pluto",
@@ -100,8 +99,12 @@ manifest = {
     "normalizer_versions": {"business_address": "fixture", "owner_name": "fixture"},
     "artifacts": {"group_witness": "representative", "observations": "complete", "decision_events": "complete"},
     "stage_vocabulary_version": "0.1.0", "reason_vocabulary_version": "0.1.0",
-    "output_checksums": {f: hashlib.sha256(open(f"{D}/{f}", "rb").read()).hexdigest() for f in files},
     "note": "Synthetic fixture for the release contract. Not real data.",
 }
+from bor.release_docs import write_data_md  # noqa: E402
+from bor.release_validate import read_release  # noqa: E402
+write_data_md(D, manifest, read_release(D)[0])
+files = sorted(f for f in os.listdir(D) if f != "manifest.json")
+manifest["output_checksums"] = {f: hashlib.sha256(open(f"{D}/{f}", "rb").read()).hexdigest() for f in files}
 json.dump(manifest, open(f"{D}/manifest.json", "w"), indent=2)
 print(len(files), "tables")

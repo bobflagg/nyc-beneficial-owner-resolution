@@ -5,7 +5,7 @@ plus ``manifest.json``; :mod:`bor.release_validate` checks one against these spe
 
 Status marks what exists today:
 
-* ``implemented`` — produced by bor now (the W0 lineage tables, :mod:`bor.lineage`).
+* ``implemented`` — produced by bor now. As of W7 every table is.
 * ``planned``     — specified here so the KG can review the shape; built by a later work package.
 
 No table holds names. Keys are HPD ids, BBLs, ACRIS document ids, opaque run-local ids and nlr's
@@ -186,7 +186,7 @@ _TABLES = [
         fks=(_fk("node_id", "node_cluster"), _fk("cluster_id", "identity_clusters")),
         description="Every cluster a straddling node matched, with votes and the selected one."),
 
-    # ---- decisions and evidence (planned, W2/W3/W6a) --------------------------------------------
+    # ---- decisions and evidence (implemented) --------------------------------------------
     Table("decision_events", "implemented", ("decision_id",), (
         _c("decision_id"), _c("layer", enum=DECISION_LAYERS), _c("stage", enum=STAGES),
         _c("subject_type", enum=SUBJECT_TYPES), _c("subject_id"),
@@ -196,8 +196,8 @@ _TABLES = [
         _c("threshold", "float", nullable=True), _c("cluster_id", nullable=True),
         _c("detail", nullable=True)),
         description="One row per decision at the grain where a rule ran: accepted links and "
-                    "policy outcomes alike. Absence of an event means the rule did not run. Identity-layer "
-                    "rows are implemented (bor.identity_events); deed, group and network rows are planned."),
+                    "policy outcomes alike. Absence of an event means the rule did not run. "
+                    "Identity, deed, group and network decisions are all recorded here."),
     Table("decision_support", "implemented", ("decision_id", "support_type", "support_id", "role"), (
         _c("decision_id"), _c("support_type", enum=("observation", "bbl", "document")),
         _c("support_id"), _c("role")),
@@ -216,7 +216,7 @@ _TABLES = [
         description="Per parcel: held under the joint deed, or transferred onward. excluded_reason "
                     "marks a member whose node was left out of the deed's clique (deed_hub_capped)."),
 
-    # ---- groups and paths (planned, W4/W5) ------------------------------------------------------
+    # ---- groups and paths (implemented) ------------------------------------------------------
     Table("link_sets", "implemented", ("set_id",), (
         _c("set_id"), _c("stage", enum=("identity.curated", "identity.registered_llc")),
         _c("rule", enum=RULES), _c("rule_version"), _c("size", "int")),
@@ -254,7 +254,7 @@ _TABLES = [
         description="A representative spanning tree per group (not unique, strongest or shortest). "
                     "Each step cites the set that joined its two nodes (basis)."),
 
-    # ---- operational network (planned, W5) ------------------------------------------------------
+    # ---- operational network (implemented) ------------------------------------------------------
     Table("network_edges", "implemented", ("edge_id",), (
         _c("edge_id"), _c("component_id"), _c("node_a", "int"), _c("node_b", "int"),
         _c("name_weight", "float"), _c("address_weight", "float"), _c("identity_weight", "float"),
@@ -274,7 +274,7 @@ _TABLES = [
         description="Every Louvain call on a component or community over the size cap, including "
                     "those that found no useful split (the piece is then kept whole)."),
 
-    # ---- absence, masking, metrics (planned, W6b/W7) --------------------------------------------
+    # ---- absence, masking, metrics (implemented) --------------------------------------------
     Table("bbl_status", "implemented", ("layer", "bbl"), (
         _c("layer", enum=LAYERS), _c("bbl"),
         _c("status", enum=("in_group", "not_in_group", "excluded_from_footprint")),

@@ -238,6 +238,19 @@ with pg_conn() as conn:
 # each carries members, bbls, building_count, and split ('wcc' = exact | 'louvain' = oversized tail)
 ```
 
+### A frozen release, with the evidence
+
+For a downstream system (the knowledge graph is the first), `make build-release` writes a **release**:
+25 CSV tables and a manifest that pin the run, the source snapshot and every file's checksum. It holds
+both layers, a representative path for every group with the evidence behind each step, the decisions
+that were made and refused, a per-lot reason for every lot that is not in a group, and the method's
+measured precision. It has no names. `python -m bor.explain <release> pair <bbl> <bbl>` answers in plain
+language from the release alone, with no database. Start with
+[`docs/release-contract.md`](docs/release-contract.md); a loader's checklist is
+[`docs/kg-mapping.md`](docs/kg-mapping.md), and the procedure for cutting one is
+[`docs/release.md`](docs/release.md). Small examples to load and test against, including the Citadel
+case above as real rows, are in `tests/fixtures/`.
+
 ## How it relates to the other repos
 
 ```
@@ -256,8 +269,9 @@ BOR's export and is where the Neo4j graph, the conversational agent, and the pub
 Grounded **entirely in already-public record** — it surfaces and organizes, it does not collect.
 Every inferred claim is typed as inferred and carries a standardized caveat — *leads, not
 verdicts*. The merge-vs-split (precision-vs-recall) tradeoff is documented, not hidden. The
-dataset-release policy for this repo is deliberately scoped to match this stance, to be settled
-with the first release.
+dataset-release policy for this repo is deliberately scoped to match this stance: a release has no
+owner names (lots are public tax-lot ids, and people and companies are opaque ids local to
+one run).
 
 ## License
 

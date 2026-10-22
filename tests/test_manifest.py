@@ -136,4 +136,4 @@ def test_a_real_release_directory_is_valid_and_checksummed(release_build):
     assert m["source_tables"]["wow_landlords"]["row_count"] == 171_347
     assert set(m["source_tables"]) == set(mf.SOURCE_TABLES)
     assert m["effective_date"] == "2026-10-21" and isinstance(m["diagnostics"]["latest_deed_ties"], int)
-    assert set(m["output_checksums"]) == {f"{n}.csv" for n in m["artifacts"]}
+    assert set(m["output_checksums"]) == {f"{n}.csv" for n in m["artifacts"]} | {"DATA.md"}   # DATA.md is covered too

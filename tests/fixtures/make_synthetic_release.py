@@ -396,6 +396,9 @@ manifest = {
     "note": "Synthetic fixture for the release contract. Not real data: every BBL starts with 9 and no id is a real one.",
 }
 files = sorted(f for f in os.listdir(D) if f.endswith(".csv"))
+from bor.release_docs import write_data_md                        # noqa: E402
+write_data_md(D, manifest, frames)
+files = sorted(f for f in os.listdir(D) if f != "manifest.json")
 manifest["output_checksums"] = {f: hashlib.sha256(open(os.path.join(D, f), "rb").read()).hexdigest() for f in files}
 json.dump(manifest, open(os.path.join(D, "manifest.json"), "w"), indent=2)
 

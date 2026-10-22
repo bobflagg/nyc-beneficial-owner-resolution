@@ -37,6 +37,12 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   unchanged). The validator checks the counts, the stage/scope split and metric-stage coverage;
   `explain` shows a weak stage's published estimate.
 
+- **Release docs (W10).** `docs/release.md` is rewritten around the contract release (the legacy export is
+  now a side note), `docs/data.md` lists what a release fingerprints and what BOR writes,
+  `docs/kg-mapping.md` is a loader's checklist and field mapping, and every release and fixture ships a
+  `DATA.md` generated from the schema and manifest (`bor.release_docs`). The README gains a short section on
+  the frozen release and its no-names policy.
+
 ### Changed
 - The manifest no longer records the builder's local checkout path (`code.*.checkout`).
 - The validator checks that every assertion key begins with the manifest's `run_id`.

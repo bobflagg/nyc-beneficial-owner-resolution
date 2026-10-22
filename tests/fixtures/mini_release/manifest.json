@@ -1,5 +1,6 @@
 {
   "schema_version": "0.1.0",
+  "synthetic": true,
   "run_id": "mini-0001",
   "snapshot_id": "fixture-2026-10-20",
   "effective_date": "2026-10-20",
@@ -54,7 +55,9 @@
   },
   "stage_vocabulary_version": "0.1.0",
   "reason_vocabulary_version": "0.1.0",
+  "note": "Synthetic fixture for the release contract. Not real data.",
   "output_checksums": {
+    "DATA.md": "653edcd7f35d16b02665571f9690a921a225594ccc933d555fe2011447c9ffb1",
     "bbl_status.csv": "97c6cdf63ec8a779cf808127c34e17379c8dd5590d2286cc626a80e9adf8852f",
     "decision_events.csv": "cee1c87ca3a13e5322e5c38077bb2a29f7cd006028bd232e785cebf726dc77fc",
     "decision_support.csv": "7b70f26b510d3024b8032db9b9f0165e101df40227f2a24c13ac79ab10870241",
@@ -69,6 +72,5 @@
     "node_identity_matches.csv": "a4d8192d9ad9140a0c49bd76a234c49dc63216245bf87f88c26c67801c9585f6",
     "node_observations.csv": "82eda5c36c6f031c4026aebbc209d6436738e5c3921f20e7e208b29e538bc3a5",
     "observations.csv": "b80a94ac5cc815f4a390240322d5f291be71fa18c33ec18278601b924ab2ebaa"
-  },
-  "note": "Synthetic fixture for the release contract. Not real data."
+  }
 }
