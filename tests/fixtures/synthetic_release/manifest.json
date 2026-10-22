@@ -2,7 +2,17 @@
   "schema_version": "0.1.0",
   "run_id": "synthetic-0001",
   "snapshot_id": "synthetic-2026-10-22",
-  "pluto_snapshot_id": "synthetic-pluto",
+  "snapshot_date": "2026-10-22",
+  "snapshot_date_basis": {
+    "real_property_master.recordedfiled": {
+      "newest": "2026-10-22",
+      "future_dated_rows": 0
+    },
+    "hpd_registrations.lastregistrationdate": {
+      "newest": "2026-10-22",
+      "future_dated_rows": 0
+    }
+  },
   "effective_date": "2026-10-22",
   "synthetic": true,
   "bor_revision": "fixture",
@@ -60,7 +70,7 @@
   "reason_vocabulary_version": "0.1.0",
   "note": "Synthetic fixture for the release contract. Not real data: every BBL starts with 9 and no id is a real one.",
   "output_checksums": {
-    "DATA.md": "cd64c80bd62a74881e97d39acc4cdb455aa522018d6e4f5f32709e649ba1898a",
+    "DATA.md": "409b9e096aad0b58d265d5ce1aefc7383b9791610653ab05a3157f1de7a65228",
     "bbl_status.csv": "77ee1e9f9f948b960ac2ba51ceb1230e97941f1d8dff772f6efa9ddc53a7e23d",
     "decision_events.csv": "6f9effd36a303bffb11bab06887d579239990ad68196180b9342a40fea843490",
     "decision_support.csv": "019c05a5d868a01d3bbe50321b165f4363206ab95d2470973da1dd0ced903d4a",

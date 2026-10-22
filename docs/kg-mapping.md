@@ -8,7 +8,7 @@ Status of the KG notes this rests on: 0002 and 0005 are accepted; **0007 is prop
 
 | bor release | knowledge graph | notes |
 |---|---|---|
-| `manifest.snapshot_id` | `snapshot_id` property on every loaded assertion | The release is valid only with the matching source snapshot. Proposed form: `<source>-<YYYY-MM-DD>`, the latest record date in the data, for example `justfixwow-2026-05-29` ([release.md](release.md)); the KG confirms it. |
+| `manifest.snapshot_id`, `snapshot_date` | `snapshot_id` property on every loaded assertion; `snapshot_date` on the snapshot node | One source dump, `<source>-<YYYY-MM-DD>[-rN]` (KG design note 0008, accepted). The date is the data's: the earlier of the newest ACRIS `recordedfiled` and HPD `lastregistrationdate`, both recorded in `snapshot_date_basis`. The release is valid only with the matching snapshot. |
 | `manifest.run_id` | the BOR run, recorded on each Type II link and in the snapshot/run catalog | Every `assertion_key` starts with it. |
 | `group_bbls` row (`layer`, `bbl`, `group_id`) | a membership of one building in an Owner Portfolio or Operational Network | `link_id = <assertion_key>#<bbl>`, the key a later review points at. A bor node can hold several BBLs, so the graph models a membership per building. |
 | `groups.lot_count`, `total_lot_count`, `composition`, `split` | properties of the group | Counting unit is the tax lot. `rental = false` lots are co-op/condo lots outside the published footprint. |
@@ -27,7 +27,10 @@ The questions this serves are the KG's Q9 and Q10 (footprint and comparison of t
 
 1. `manifest.schema_version` is one it supports, and `bor.release_validate` passes on the directory (it checks keys, foreign keys, the invariants in the contract and the checksums).
 2. Every file matches `manifest.output_checksums`.
-3. The release was built from the source snapshot the graph holds: compare `manifest.source_tables[t]` (`row_count`, `fingerprint`) with the same query on the graph's own load (`bor.manifest.fingerprint_sql`). `landlords_with_connections` is bor-built and only matches the same build, so compare the tables the graph actually mirrors.
+3. The release was built from the source snapshot the graph holds. The loader reads `snapshot_id` from the manifest and verifies it by fingerprint; it does not re-derive it (note 0008). It checks `snapshot_id` against `^[a-z][a-z0-9]*-\d{4}-\d{2}-\d{2}(-r\d+)?$`, runs the two date queries behind `snapshot_date_basis` on its own load and refuses a mismatch, and compares `manifest.source_tables[t]` (`row_count`, `fingerprint`) with the same query on the graph's own load (`bor.manifest.fingerprint_sql`), in three tiers:
+   - *required, refuse on mismatch:* `hpd_contacts`, `hpd_registrations`, `pluto_latest`, `real_property_master`, `real_property_legals`, `real_property_parties`;
+   - *warning only:* `wow_landlords`, `hpd_registrations_grouped_by_bbl_with_contacts` (the graph does not read them);
+   - *skipped:* `landlords_with_connections`, which bor builds and which matches only its own build.
 4. Every `assertion_key` starts with `manifest.run_id` (the validator checks this).
 5. `manifest.synthetic` is absent. A synthetic release is for tests and is refused in a production load.
 6. `manifest.excerpt` is absent, or the load is deliberately partial: an excerpt leaves rows out and says so.
@@ -44,4 +47,4 @@ The questions this serves are the KG's Q9 and Q10 (footprint and comparison of t
 
 ## Open on the KG side
 
-Acceptance of note 0007 (the fifth reason, `outside_method_input`, and the building-level `coop_condo_excluded` code); run-scoped nodes versus edge expansion (item 5); the `AbsenceReason` vocabulary; the form of `snapshot_id`; and whether reviews should survive across runs once a review process exists.
+Acceptance of note 0007 (the fifth reason, `outside_method_input`, and the building-level `coop_condo_excluded` code); run-scoped nodes versus edge expansion (item 5); the `AbsenceReason` vocabulary; and whether reviews should survive across runs once a review process exists.

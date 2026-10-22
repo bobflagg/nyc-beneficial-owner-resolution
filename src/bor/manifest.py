@@ -13,8 +13,11 @@ so the manifest has to let a reader *check* that, not trust it:
 * ``effective_date`` — the deed cut-off the queries used in place of ``CURRENT_DATE``.
 * ``output_checksums`` — sha256 of every file in the release, computed last.
 
-``snapshot_id`` takes whatever form the KG defines (an open KG decision); it is supplied by the
-caller and repeated exactly.
+* ``snapshot_id`` and ``snapshot_date`` — which source dump this is (KG design note 0008). The id is
+  ``<source>-<YYYY-MM-DD>``: the date is the data's, the **earlier** of the newest ACRIS ``recordedfiled`` and
+  the newest HPD ``lastregistrationdate``, so the id means "complete through" it and an answer never claims
+  more recent data than the dump holds. Both newest dates are recorded in ``snapshot_date_basis`` so a loader
+  can run the same two queries on its own load. The build computes the date and refuses an id that disagrees.
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ import importlib.metadata as md
 import inspect
 import json
 import platform
+import re
 import subprocess
 import uuid
 from datetime import date, datetime, timezone
@@ -185,23 +189,61 @@ def file_checksums(out_dir: Path) -> dict:
             for f in sorted(Path(out_dir).iterdir()) if f.is_file() and f.name != "manifest.json"}
 
 
-def build_manifest(conn, *, snapshot_id: str, pluto_snapshot_id: str | None = None, as_of: date | None = None,
+def snapshot_basis(conn, today: date | None = None) -> dict:
+    """The newest date of each column that says how recent the dump is, with the number of rows dated after
+    ``today`` (sentinel and future dates are ignored for the newest, and counted so they are visible)."""
+    today = today or date.today()
+    cur = conn.cursor()
+    out = {}
+    for table, col in schema.SNAPSHOT_DATE_COLUMNS:
+        cur.execute(f"SELECT max({col}::date) FILTER (WHERE {col}::date <= %s), "
+                    f"count(*) FILTER (WHERE {col}::date > %s) FROM {table}", (today, today))
+        newest, future = cur.fetchone()
+        out[f"{table}.{col}"] = {"newest": newest.isoformat() if newest else None, "future_dated_rows": int(future)}
+    return out
+
+
+def snapshot_date(basis: dict) -> date:
+    """The data's date: the earlier of the newest dates, so the snapshot is complete through it."""
+    newest = [e["newest"] for e in basis.values()]
+    if not newest or any(n is None for n in newest):
+        raise ValueError(f"cannot date the snapshot: a source column has no usable date ({basis})")
+    return date.fromisoformat(min(newest))
+
+
+def check_snapshot_id(snapshot_id: str, data_date: date) -> None:
+    """Raise unless ``snapshot_id`` has the agreed form and carries the data's date."""
+    m = re.match(schema.SNAPSHOT_ID_RE, snapshot_id or "")
+    if not m or len(snapshot_id) > schema.SNAPSHOT_ID_MAX:
+        raise ValueError(f"snapshot id {snapshot_id!r} must look like <source>-<YYYY-MM-DD>[-rN] "
+                         f"(lowercase letters, digits, hyphens; at most {schema.SNAPSHOT_ID_MAX} characters)")
+    if m.group(1) != data_date.isoformat():
+        raise ValueError(f"snapshot id {snapshot_id!r} carries {m.group(1)}, but the data is complete through "
+                         f"{data_date.isoformat()} (the earlier of the newest ACRIS recordedfiled and HPD "
+                         f"lastregistrationdate); the build day is not the snapshot date")
+
+
+def build_manifest(conn, *, snapshot_id: str, as_of: date | None = None,
                    run_id: str | None = None, resolution_params: dict | None = None,
                    artifacts: dict | None = None, lock_file: Path | None = None,
-                   tables=SOURCE_TABLES, diagnostics: dict | None = None) -> dict:
+                   tables=SOURCE_TABLES, diagnostics: dict | None = None, basis: dict | None = None) -> dict:
     """The manifest for a release about to be built, without ``output_checksums`` (added by
     :func:`write_manifest` once the files exist)."""
     from bor import deed_edges
 
     as_of = as_of or date.today()
     run_id = run_id or f"{as_of.isoformat()}-{uuid.uuid4().hex[:8]}"
+    basis = basis if basis is not None else snapshot_basis(conn)
+    data_date = snapshot_date(basis)
+    check_snapshot_id(snapshot_id, data_date)
     code = code_state()
     lock = lock_file or Path(__file__).resolve().parents[2] / "uv.lock"
     return {
         "schema_version": schema.SCHEMA_VERSION,
         "run_id": run_id,
         "snapshot_id": snapshot_id,
-        "pluto_snapshot_id": pluto_snapshot_id or snapshot_id,
+        "snapshot_date": data_date.isoformat(),
+        "snapshot_date_basis": basis,
         "effective_date": as_of.isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "bor_revision": code["bor"]["revision"],

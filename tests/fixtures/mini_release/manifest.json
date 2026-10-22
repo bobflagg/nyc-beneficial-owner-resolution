@@ -12,7 +12,17 @@
   "parameters": {
     "splink_threshold": 0.999
   },
-  "pluto_snapshot_id": "fixture-pluto",
+  "snapshot_date": "2026-10-20",
+  "snapshot_date_basis": {
+    "real_property_master.recordedfiled": {
+      "newest": "2026-10-20",
+      "future_dated_rows": 0
+    },
+    "hpd_registrations.lastregistrationdate": {
+      "newest": "2026-10-20",
+      "future_dated_rows": 0
+    }
+  },
   "source_tables": {
     "hpd_contacts": {
       "row_count": 0,
@@ -57,7 +67,7 @@
   "reason_vocabulary_version": "0.1.0",
   "note": "Synthetic fixture for the release contract. Not real data.",
   "output_checksums": {
-    "DATA.md": "653edcd7f35d16b02665571f9690a921a225594ccc933d555fe2011447c9ffb1",
+    "DATA.md": "52a482d05fcbbc0a14887b5597df7956788122232b13ee7cb8a139b588fc6116",
     "bbl_status.csv": "97c6cdf63ec8a779cf808127c34e17379c8dd5590d2286cc626a80e9adf8852f",
     "decision_events.csv": "cee1c87ca3a13e5322e5c38077bb2a29f7cd006028bd232e785cebf726dc77fc",
     "decision_support.csv": "7b70f26b510d3024b8032db9b9f0165e101df40227f2a24c13ac79ab10870241",

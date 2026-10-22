@@ -39,6 +39,14 @@ def test_it_says_what_the_release_is_and_what_it_is_not(syn):
     assert "`synthetic`" in text                                    # the gold status of its metrics
 
 
+def test_the_snapshot_date_and_what_it_rests_on_are_stated(syn):
+    manifest, _, text = syn
+    text = " ".join(text.split())
+    assert f"| Complete through | `{manifest['snapshot_date']}` |" in text and "PLUTO snapshot" not in text
+    assert "the **earlier** of the newest dates" in text and "`real_property_master.recordedfiled`" in text
+    assert "`hpd_registrations.lastregistrationdate`" in text
+
+
 def test_row_counts_come_from_the_tables(syn):
     _, tables, text = syn
     assert f"| `groups.csv` | {len(tables['groups']):,} |" in text

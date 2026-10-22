@@ -51,7 +51,7 @@ All eleven findings are accepted; `release-contract.md` and `bor.release_schema`
 | 2. No building-level co-op reason | `coop_condo_excluded` added; `bbl_status` gains `excluded_from_footprint`; the two co-op rules (contact description, building class) are named separately |
 | 3. Policy events had no stage | `owner_portfolio.group_size` and `owner_portfolio.footprint` added |
 | 4. Primary reason undefined | Precedence stated (coverage, method input, policy, eligibility, no linkage); the validator checks it |
-| 5. Snapshot match unverifiable | Manifest gains `pluto_snapshot_id`, per-table `source_tables` fingerprints, `deed_selection_rule` and `normalizer_versions`; `snapshot_id` takes the KG's form |
+| 5. Snapshot match unverifiable | Manifest gains `snapshot_date` (PLUTO shares the dump's snapshot id; KG note 0008), per-table `source_tables` fingerprints, `deed_selection_rule` and `normalizer_versions`; `snapshot_id` takes the KG's form |
 | 6. `k` not reproducible | Normative join is (registration, contact id); `observations.pair_variants` flags the 0.08% ambiguous pairs; the digest stays internal |
 | 7. Coverage vs method input | Fifth top-level reason `outside_method_input` (KG note 0007, proposed) |
 | 8. `building_count` counts BBLs | Renamed `lot_count`, `total_lot_count` |

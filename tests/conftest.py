@@ -34,7 +34,7 @@ def release_build(pg, resolved, tmp_path_factory):
 
     from bor.release import build_release
     out = tmp_path_factory.mktemp("release")
-    result = build_release(pg, out, snapshot_id="justfixwow-test", as_of=date(2026, 10, 21), resolution=resolved)
+    result = build_release(pg, out, snapshot_id="justfixwow-2026-05-29", as_of=date(2026, 10, 21), resolution=resolved)
     return out, result
 
 

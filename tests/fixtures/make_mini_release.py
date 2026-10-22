@@ -92,7 +92,9 @@ manifest = {
     "schema_version": "0.1.0", "synthetic": True, "run_id": R, "snapshot_id": "fixture-2026-10-20", "effective_date": "2026-10-20",
     "bor_revision": "fixture", "nlr_revision": "fixture", "source_tree_hash": "fixture",
     "dependency_lock_digest": "fixture", "threshold": 0.999, "parameters": {"splink_threshold": 0.999},
-    "pluto_snapshot_id": "fixture-pluto",
+    "snapshot_date": "2026-10-20",
+    "snapshot_date_basis": {"real_property_master.recordedfiled": {"newest": "2026-10-20", "future_dated_rows": 0},
+                           "hpd_registrations.lastregistrationdate": {"newest": "2026-10-20", "future_dated_rows": 0}},
     "source_tables": {t: {"row_count": 0, "fingerprint": "fixture", "fingerprint_method": "fixture"}
                       for t in ("hpd_contacts", "hpd_registrations", "wow_landlords", "real_property_master", "pluto_latest")},
     "deed_selection_rule": {"rule": "doctype ILIKE '%DEED%'", "version": "fixture"},

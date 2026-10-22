@@ -19,13 +19,20 @@ missing row in `bbl_status` means nothing.
 |---|---|
 | Run | `synthetic-0001` |
 | Source snapshot | `synthetic-2026-10-22` |
-| PLUTO snapshot | `synthetic-pluto` |
+| Complete through | `2026-10-22` |
 | Deed cut-off | `2026-10-22` |
 | bor revision | `fixture` |
 | nlr revision | `fixture` |
 | Source-tree hash | `fixture` |
 | Lockfile digest | `fixture` |
 | Splink threshold | `0.999` |
+
+The snapshot is complete through the **earlier** of the newest dates of these columns, so it never claims more recent data than the dump holds (rows dated after the build are ignored and counted):
+
+| column | newest | rows dated after the build |
+|---|---|---|
+| `real_property_master.recordedfiled` | `2026-10-22` | 0 |
+| `hpd_registrations.lastregistrationdate` | `2026-10-22` | 0 |
 
 Source tables, as fingerprinted (compare with your own load using `bor.manifest.fingerprint_sql`):
 

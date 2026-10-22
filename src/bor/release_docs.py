@@ -68,12 +68,18 @@ def render_data_md(manifest: dict, tables: dict | None = None) -> str:
     out = [f"# Beneficial Ownership Resolution: release `{m['run_id']}`", "",
            f"This directory is {kind}. Contract version {m.get('schema_version', SCHEMA_VERSION)}.", "", _INTRO,
            "## Provenance", ""]
-    rows = [("Run", m["run_id"]), ("Source snapshot", m["snapshot_id"]), ("PLUTO snapshot", m.get("pluto_snapshot_id")),
-            ("Deed cut-off", m.get("effective_date")), ("Built", m.get("created_at")),
+    rows = [("Run", m["run_id"]), ("Source snapshot", m["snapshot_id"]),
+            ("Complete through", m.get("snapshot_date")), ("Deed cut-off", m.get("effective_date")), ("Built", m.get("created_at")),
             ("bor revision", m.get("bor_revision")), ("nlr revision", m.get("nlr_revision")),
             ("Source-tree hash", m.get("source_tree_hash")), ("Lockfile digest", m.get("dependency_lock_digest")),
             ("Splink threshold", m.get("threshold"))]
     out += ["| | |", "|---|---|"] + [f"| {k} | `{v}` |" for k, v in rows if v is not None] + [""]
+    basis = m.get("snapshot_date_basis") or {}
+    if basis:
+        out += ["The snapshot is complete through the **earlier** of the newest dates of these columns, so it never "
+                "claims more recent data than the dump holds (rows dated after the build are ignored and counted):", "",
+                "| column | newest | rows dated after the build |", "|---|---|---|"]
+        out += [f"| `{c}` | `{e.get('newest')}` | {e.get('future_dated_rows', 0):,} |" for c, e in basis.items()] + [""]
     code = m.get("code") or {}
     if any(isinstance(c, dict) and c.get("dirty") for c in code.values()):
         out += ["**Built from an uncommitted tree** (`manifest.code.*.dirty`); a tagged release is not.", ""]

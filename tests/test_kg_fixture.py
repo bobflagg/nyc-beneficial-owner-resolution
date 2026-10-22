@@ -56,7 +56,7 @@ def test_a_consumer_loads_each_fixture_without_postgres_and_it_satisfies_the_con
 
 def test_one_run_and_snapshot_names_every_assertion(rel):
     m, run = rel.manifest, rel.manifest["run_id"]
-    assert m["snapshot_id"] and m["pluto_snapshot_id"] and set(m["source_tables"]) >= {"hpd_contacts", "real_property_master"}
+    assert m["snapshot_id"] and m["snapshot_date"] and set(m["source_tables"]) >= {"hpd_contacts", "real_property_master"}
     for name in ("groups", "group_members", "group_witness"):
         assert rel.t[name]["assertion_key"].str.startswith(run + "/").all(), name
     # the KG's link id: one per (layer, lot), unique across the release

@@ -307,11 +307,18 @@ _TABLES = [
 TABLES = {t.name: t for t in _TABLES}
 
 MANIFEST_REQUIRED = (
-    "schema_version", "run_id", "snapshot_id", "effective_date", "bor_revision", "nlr_revision",
-    "source_tree_hash", "dependency_lock_digest", "threshold", "parameters", "artifacts",
-    "stage_vocabulary_version", "reason_vocabulary_version", "output_checksums",
-    "pluto_snapshot_id", "source_tables", "deed_selection_rule", "normalizer_versions",
+    "schema_version", "run_id", "snapshot_id", "snapshot_date", "snapshot_date_basis", "effective_date",
+    "bor_revision", "nlr_revision", "source_tree_hash", "dependency_lock_digest", "threshold", "parameters",
+    "artifacts", "stage_vocabulary_version", "reason_vocabulary_version", "output_checksums", "source_tables",
+    "deed_selection_rule", "normalizer_versions",
 )
+
+# The snapshot id (KG design note 0008): one source dump, `<source>-<YYYY-MM-DD>`, with `-rN` when the same date is
+# extracted again with different content. The date is the data's: the earlier of the newest values of the columns in
+# SNAPSHOT_DATE_COLUMNS, so the id means "complete through" it. PLUTO is part of the dump and has no id of its own.
+SNAPSHOT_ID_RE = r"^[a-z][a-z0-9]*-(\d{4}-\d{2}-\d{2})(-r\d+)?$"
+SNAPSHOT_ID_MAX = 40
+SNAPSHOT_DATE_COLUMNS = (("real_property_master", "recordedfiled"), ("hpd_registrations", "lastregistrationdate"))
 
 # Each entry of manifest["source_tables"] (table name -> object). The KG compares these with its
 # own load and refuses a mismatch. snapshot_id takes the form the KG defines (KG tech-stack, open

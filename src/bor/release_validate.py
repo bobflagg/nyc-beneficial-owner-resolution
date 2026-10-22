@@ -11,14 +11,17 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import dataclass
+from datetime import date
 
 import pandas as pd
 
 from bor import absence
 from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, EXCERPT_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
-                                REASON_CODES, SCHEMA_VERSION, SOURCE_TABLE_FIELDS, STAGES, TABLES, Table)
+                                REASON_CODES, SCHEMA_VERSION, SNAPSHOT_ID_MAX, SNAPSHOT_ID_RE, SOURCE_TABLE_FIELDS, STAGES, TABLES,
+                                Table)
 
 
 @dataclass(frozen=True)
@@ -595,6 +598,32 @@ def _check_run(T, manifest) -> list[Violation]:
 
 # ---- manifest ------------------------------------------------------------------------------------
 
+def _check_snapshot(manifest: dict) -> list[Violation]:
+    """The snapshot id has the agreed form, carries the data's date, and that date is the earlier of the newest
+    dates recorded in ``snapshot_date_basis`` (KG design note 0008)."""
+    v, sid, sd = [], manifest.get("snapshot_id"), manifest.get("snapshot_date")
+    m = re.match(SNAPSHOT_ID_RE, sid) if isinstance(sid, str) else None
+    if sid is not None and (not m or len(sid) > SNAPSHOT_ID_MAX):
+        v.append(Violation("manifest", "snapshot_id", f"{sid!r} must look like <source>-<YYYY-MM-DD>[-rN], "
+                           f"lowercase letters, digits and hyphens, at most {SNAPSHOT_ID_MAX} characters"))
+    if sd is None:
+        return v
+    try:
+        d = date.fromisoformat(sd)
+    except (TypeError, ValueError):
+        return v + [Violation("manifest", "snapshot_date", f"{sd!r} is not an ISO date")]
+    if m and m.group(1) != d.isoformat():
+        v.append(Violation("manifest", "snapshot_date", f"snapshot_id carries {m.group(1)} but snapshot_date is {sd}"))
+    basis = manifest.get("snapshot_date_basis")
+    newest = [e.get("newest") for e in basis.values()] if isinstance(basis, dict) and basis else []
+    if not newest or any(n is None for n in newest):
+        v.append(Violation("manifest", "snapshot_date_basis", "needs the newest date of each source column"))
+    elif min(newest) != sd:
+        v.append(Violation("manifest", "snapshot_date_basis",
+                           f"snapshot_date {sd} must be the earlier of the newest dates {sorted(newest)}"))
+    return v
+
+
 def check_manifest(manifest: dict | None, path: str | None = None) -> list[Violation]:
     if manifest is None:
         return [Violation("manifest", "missing", "manifest.json is required")]
@@ -608,6 +637,7 @@ def check_manifest(manifest: dict | None, path: str | None = None) -> list[Viola
     rule = manifest.get("deed_selection_rule")
     if rule is not None and (not isinstance(rule, dict) or any(f not in rule for f in DEED_RULE_FIELDS)):
         v.append(Violation("manifest", "deed_selection_rule", f"needs {list(DEED_RULE_FIELDS)}"))
+    v += _check_snapshot(manifest)
     ex = manifest.get("excerpt")
     if ex is not None:
         miss = [f for f in EXCERPT_FIELDS if not isinstance(ex, dict) or f not in ex]

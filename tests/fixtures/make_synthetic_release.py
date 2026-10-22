@@ -382,7 +382,9 @@ for name, df in frames.items():
     df.to_csv(os.path.join(D, f"{name}.csv"), index=False)
 
 manifest = {
-    "schema_version": "0.1.0", "run_id": R, "snapshot_id": "synthetic-2026-10-22", "pluto_snapshot_id": "synthetic-pluto",
+    "schema_version": "0.1.0", "run_id": R, "snapshot_id": "synthetic-2026-10-22", "snapshot_date": "2026-10-22",
+    "snapshot_date_basis": {"real_property_master.recordedfiled": {"newest": "2026-10-22", "future_dated_rows": 0},
+                           "hpd_registrations.lastregistrationdate": {"newest": "2026-10-22", "future_dated_rows": 0}},
     "effective_date": "2026-10-22", "synthetic": True, "bor_revision": "fixture", "nlr_revision": "fixture",
     "source_tree_hash": "fixture", "dependency_lock_digest": "fixture", "threshold": 0.999,
     "parameters": {"splink_threshold": 0.999, "louvain_seed": 42, "max_address_degree": 3},

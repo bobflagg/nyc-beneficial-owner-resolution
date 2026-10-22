@@ -303,7 +303,7 @@ def test_k_must_be_below_pair_variants():
 
 def test_manifest_must_fingerprint_sources_and_name_the_deed_rule():
     t, m = _load()
-    for field in ("pluto_snapshot_id", "source_tables", "deed_selection_rule", "normalizer_versions"):
+    for field in ("snapshot_date", "snapshot_date_basis", "source_tables", "deed_selection_rule", "normalizer_versions"):
         assert field in MANIFEST_REQUIRED
     bad = copy.deepcopy(m)
     del bad["source_tables"]["hpd_contacts"]["fingerprint"]

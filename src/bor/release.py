@@ -25,7 +25,7 @@ from bor.release_schema import ADJUDICATION_STATUSES
 from bor.release_validate import read_release, validate_release
 
 
-def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | None = None,
+def build_release(conn, out_dir, *, snapshot_id: str,
                   as_of: date | None = None, run_id: str | None = None, threshold: float | None = None,
                   require_clean: bool = False, resolution=None, evaluation: dict | None = None,
                   gold_status: str = "none") -> dict:
@@ -40,6 +40,8 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
 
     as_of = as_of or date.today()
     run_id = run_id or f"{as_of.isoformat()}-{uuid.uuid4().hex[:8]}"      # fixed first: assertion keys embed it
+    basis = mf.snapshot_basis(conn)                                       # refuse a wrong snapshot id now, not
+    mf.check_snapshot_id(snapshot_id, mf.snapshot_date(basis))            # after ten minutes of work
     code = mf.code_state()
     if require_clean:
         dirty = [k for k, v in code.items() if v["dirty"] is not False]
@@ -62,7 +64,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
         df.to_csv(out / f"{name}.csv", index=False)
 
     manifest = mf.build_manifest(
-        conn, snapshot_id=snapshot_id, pluto_snapshot_id=pluto_snapshot_id, as_of=as_of, run_id=run_id,
+        conn, snapshot_id=snapshot_id, as_of=as_of, run_id=run_id, basis=basis,
         resolution_params=res.params,
         artifacts={name: ("representative" if name == "group_witness" else "complete") for name in tables},
         diagnostics={"partial": "lineage, identity layer, deed evidence, and both layers' groups with their "
@@ -192,8 +194,8 @@ def main() -> None:  # pragma: no cover - needs the database
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build")
     b.add_argument("out_dir")
-    b.add_argument("--snapshot-id", required=True, help="in the form the KG defines; repeated exactly")
-    b.add_argument("--pluto-snapshot-id")
+    b.add_argument("--snapshot-id", required=True,
+                   help="<source>-<YYYY-MM-DD>[-rN]; the date must be the data's (the build checks it)")
     b.add_argument("--as-of", type=date.fromisoformat, help="deed cut-off, YYYY-MM-DD (default today)")
     b.add_argument("--run-id")
     b.add_argument("--threshold", type=float)
@@ -214,7 +216,7 @@ def main() -> None:  # pragma: no cover - needs the database
         conn = pg_conn()
         try:
             r = build_release(conn, args.out_dir, snapshot_id=args.snapshot_id,
-                              pluto_snapshot_id=args.pluto_snapshot_id, as_of=args.as_of, run_id=args.run_id,
+                              as_of=args.as_of, run_id=args.run_id,
                               threshold=args.threshold, require_clean=args.require_clean,
                               evaluation=load_evaluation(args.eval_dir) if args.eval_dir else None,
                               gold_status=args.gold_status)

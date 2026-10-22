@@ -44,8 +44,11 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   the frozen release and its no-names policy.
 
 ### Changed
-- Snapshot id: `<source>-<YYYY-MM-DD>` with the date of the data, not the build (`justfixwow-2026-05-29` for the
-  reference dump, whose newest ACRIS and HPD records are 2026-05-29); the deed cut-off equals it.
+- Snapshot id (KG design note 0008): `<source>-<YYYY-MM-DD>[-rN]`, one source dump, with the date of the data, not the build
+  (`justfixwow-2026-05-29` for the reference dump): the earlier of the newest ACRIS `recordedfiled` and HPD
+  `lastregistrationdate`. The manifest gains `snapshot_date` and `snapshot_date_basis` (both newest dates) and
+  loses `pluto_snapshot_id` (PLUTO is part of the dump). The build refuses an id that disagrees with the data,
+  and the validator checks the form, the date and the basis.
 - Recorded decisions: `bor.export` stays as a documented convenience, releases ship with the provisional gold
   labeled as such, and `bbl_status` keeps every PLUTO lot in both layers.
 - nlr is pinned at `v0.2.0` (was `v0.1.0`): the release's identity evidence comes from its decision capture.

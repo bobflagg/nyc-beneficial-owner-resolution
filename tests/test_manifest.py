@@ -58,8 +58,13 @@ def test_checksums_cover_every_file_but_the_manifest(tmp_path):
 
 # --- the manifest ------------------------------------------------------------------------------
 
+BASIS = {"real_property_master.recordedfiled": {"newest": "2026-10-21", "future_dated_rows": 0},
+         "hpd_registrations.lastregistrationdate": {"newest": "2026-10-21", "future_dated_rows": 0}}
+
+
 def _manifest(**kw):
-    return mf.build_manifest(_FakeConn(), snapshot_id="snap-1", as_of=date(2026, 10, 21),
+    kw.setdefault("basis", BASIS)
+    return mf.build_manifest(_FakeConn(), snapshot_id="test-2026-10-21", as_of=date(2026, 10, 21),
                              resolution_params={"threshold": 0.999, "seed": 42},
                              tables=("hpd_contacts",), **kw)
 
@@ -67,7 +72,8 @@ def _manifest(**kw):
 def test_manifest_has_every_required_field_but_the_checksums():
     m = _manifest()
     assert set(MANIFEST_REQUIRED) - {"output_checksums"} <= set(m)
-    assert m["snapshot_id"] == "snap-1" and m["pluto_snapshot_id"] == "snap-1"
+    assert m["snapshot_id"] == "test-2026-10-21" and m["snapshot_date"] == "2026-10-21"
+    assert m["snapshot_date_basis"] == BASIS and "pluto_snapshot_id" not in m      # PLUTO is part of the dump
     assert m["effective_date"] == "2026-10-21" and m["parameters"]["deed"]["as_of"] == "2026-10-21"
     assert m["threshold"] == 0.999
     assert m["deed_selection_rule"]["rule"] == de.DEED_DOCTYPE_RULE
@@ -170,3 +176,88 @@ def test_an_installed_package_with_no_known_commit_stays_unidentified(tmp_path, 
     for text in (None, "{}", json.dumps({"url": "file:///wheel"})):
         s = _state(tmp_path, monkeypatch, text)
         assert s["revision"] is None and s["dirty"] is None
+
+
+# --- the snapshot id and date (KG design note 0008) ---------------------------------------------------------------
+
+class _DateConn:
+    """Answers the two 'newest date' queries: (newest, rows dated after today)."""
+    def __init__(self, *answers):
+        self.answers, self.sql = list(answers), []
+
+    def cursor(self):
+        return self
+
+    def execute(self, sql, params=None):
+        self.sql.append((sql, params))
+
+    def fetchone(self):
+        return self.answers.pop(0)
+
+
+def test_the_newest_dates_are_read_from_the_two_columns_and_future_rows_are_counted_not_used():
+    conn = _DateConn((date(2026, 5, 29), 0), (date(2026, 5, 29), 2))
+    basis = mf.snapshot_basis(conn, today=date(2026, 10, 22))
+    assert basis == {"real_property_master.recordedfiled": {"newest": "2026-05-29", "future_dated_rows": 0},
+                     "hpd_registrations.lastregistrationdate": {"newest": "2026-05-29", "future_dated_rows": 2}}
+    sql, params = conn.sql[0]
+    assert "FROM real_property_master" in sql and "recordedfiled" in sql and "FILTER (WHERE" in sql
+    assert params == (date(2026, 10, 22), date(2026, 10, 22))
+    assert "hpd_registrations" in conn.sql[1][0] and "lastregistrationdate" in conn.sql[1][0]
+
+
+def test_the_snapshot_date_is_the_earlier_of_the_newest_dates():
+    basis = {"a.x": {"newest": "2026-07-02", "future_dated_rows": 0}, "b.y": {"newest": "2026-05-29", "future_dated_rows": 0}}
+    assert mf.snapshot_date(basis) == date(2026, 5, 29)
+    with pytest.raises(ValueError, match="cannot date the snapshot"):
+        mf.snapshot_date({"a.x": {"newest": None, "future_dated_rows": 0}})
+
+
+@pytest.mark.parametrize("good", ["justfixwow-2026-05-29", "justfixwow-2026-05-29-r2", "dos-2026-05-29-r12"])
+def test_a_snapshot_id_of_the_agreed_form_with_the_datas_date_is_accepted(good):
+    mf.check_snapshot_id(good, date(2026, 5, 29))
+
+
+@pytest.mark.parametrize("bad, why", [
+    ("justfixwow-2026-10-21", "build day"),                  # the date is not the data's
+    ("JustFix-2026-05-29", "must look like"), ("justfixwow_2026-05-29", "must look like"),
+    ("2026-05-29", "must look like"), ("justfixwow-20260529", "must look like"),
+    ("just-fix-2026-05-29", "must look like"), ("justfixwow-2026-05-29-r", "must look like"),
+    ("a" * 30 + "-2026-05-29", "at most 40"),
+])
+def test_a_snapshot_id_of_the_wrong_form_or_with_the_wrong_date_is_refused(bad, why):
+    with pytest.raises(ValueError) as e:
+        mf.check_snapshot_id(bad, date(2026, 5, 29))
+    assert (why if why != "build day" else "not the snapshot date") in str(e.value)
+
+
+def test_the_build_refuses_an_id_that_disagrees_with_the_data():
+    with pytest.raises(ValueError, match="not the snapshot date"):
+        mf.build_manifest(_FakeConn(), snapshot_id="test-2026-10-22", as_of=date(2026, 10, 22), basis=BASIS,
+                          resolution_params={"threshold": 0.999}, tables=("hpd_contacts",))
+
+
+def _violations(**changes):
+    m = _manifest()
+    m["output_checksums"] = {}
+    m.update(changes)
+    return {(v.check, v.message) for v in check_manifest(m) if v.table == "manifest"}
+
+
+def test_the_validator_checks_the_snapshot_id_the_date_and_the_basis():
+    assert not [c for c, _ in _violations() if c.startswith("snapshot")]
+    assert any(c == "snapshot_id" for c, _ in _violations(snapshot_id="Test_2026-10-21"))
+    assert any(c == "snapshot_date" and "carries 2026-10-21" in m for c, m in _violations(snapshot_date="2026-10-22"))
+    assert any(c == "snapshot_date" and "not an ISO date" in m for c, m in _violations(snapshot_date="yesterday"))
+    later = {k: dict(v, newest="2026-10-30") for k, v in BASIS.items()}
+    assert any(c == "snapshot_date_basis" and "earlier of the newest" in m for c, m in _violations(snapshot_date_basis=later))
+    gap = {"x.a": {"newest": None, "future_dated_rows": 0}}
+    assert any(c == "snapshot_date_basis" for c, _ in _violations(snapshot_date_basis=gap))
+
+
+def test_the_reference_dump_dates_itself_to_2026_05_29(pg):
+    """Needs Postgres: both columns end on the same day, so the snapshot is justfixwow-2026-05-29."""
+    basis = mf.snapshot_basis(pg)
+    assert {e["newest"] for e in basis.values()} == {"2026-05-29"} and mf.snapshot_date(basis) == date(2026, 5, 29)
+    assert all(e["future_dated_rows"] >= 0 for e in basis.values())
+    mf.check_snapshot_id("justfixwow-2026-05-29", mf.snapshot_date(basis))
