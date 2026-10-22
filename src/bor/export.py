@@ -9,7 +9,7 @@ and carries composition + building counts but **no owner names**. Names are the 
 release that includes them is a deliberate choice — pass ``include_names=True`` to opt in, and only
 do so if the release policy calls for it.
 
-    uv run python -m bor.export ./release      # (PG* / .env set; runs both resolutions, ~5 min)
+    uv run python -m bor.export ./release      # (PG* / .env set; one Splink fit shared by both layers, ~5 min)
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ import os
 
 from bor.operational_network import resolve_operational_networks
 from bor.owner_portfolios import resolve_owner_portfolios
-from bor.splink_bridge import DEFAULT_THRESHOLD
+from bor.splink_bridge import DEFAULT_THRESHOLD, node_clusters
 
 _DICTIONARY = """# Beneficial Ownership Resolution — dataset
 
@@ -44,10 +44,15 @@ approximate).
 
 def export(conn, out_dir: str, *, include_names: bool = False,
            threshold: float = DEFAULT_THRESHOLD) -> dict:
-    """Resolve both layers and write the release CSVs into ``out_dir``. Returns a small manifest."""
+    """Resolve both layers and write the release CSVs into ``out_dir``. Returns a small manifest.
+
+    Splink is fitted once and both layers are built from that one partition. Each resolver would
+    otherwise refit, and two fits can differ slightly (docs/parity.md), so one export could carry two
+    identity resolutions."""
     os.makedirs(out_dir, exist_ok=True)
-    groups = resolve_owner_portfolios(conn, threshold=threshold)
-    nets = resolve_operational_networks(conn, threshold=threshold)
+    nc = node_clusters(conn, threshold=threshold)
+    groups = resolve_owner_portfolios(conn, node_cluster_frame=nc)
+    nets = resolve_operational_networks(conn, node_cluster_frame=nc)
 
     def _write(name, header, rows):
         with open(os.path.join(out_dir, name), "w", newline="") as f:

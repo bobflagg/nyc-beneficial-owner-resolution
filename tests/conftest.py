@@ -37,12 +37,19 @@ def release_build(pg, resolved, tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def owner_portfolios(pg):
-    from bor.owner_portfolios import resolve_owner_portfolios
-    return resolve_owner_portfolios(pg)
+def node_cluster_frame(pg):
+    """One Splink fit for the layer fixtures below, shared as a release shares it (the fit is ~4 min)."""
+    from bor.splink_bridge import node_clusters
+    return node_clusters(pg)
 
 
 @pytest.fixture(scope="session")
-def operational_networks(pg):
+def owner_portfolios(pg, node_cluster_frame):
+    from bor.owner_portfolios import resolve_owner_portfolios
+    return resolve_owner_portfolios(pg, node_cluster_frame=node_cluster_frame)
+
+
+@pytest.fixture(scope="session")
+def operational_networks(pg, node_cluster_frame):
     from bor.operational_network import resolve_operational_networks
-    return resolve_operational_networks(pg)
+    return resolve_operational_networks(pg, node_cluster_frame=node_cluster_frame)
