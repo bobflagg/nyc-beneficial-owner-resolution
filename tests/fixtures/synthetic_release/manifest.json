@@ -1,0 +1,89 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "synthetic-0001",
+  "snapshot_id": "synthetic-2026-10-22",
+  "pluto_snapshot_id": "synthetic-pluto",
+  "effective_date": "2026-10-22",
+  "synthetic": true,
+  "bor_revision": "fixture",
+  "nlr_revision": "fixture",
+  "source_tree_hash": "fixture",
+  "dependency_lock_digest": "fixture",
+  "threshold": 0.999,
+  "parameters": {
+    "splink_threshold": 0.999,
+    "louvain_seed": 42,
+    "max_address_degree": 3
+  },
+  "source_tables": {
+    "hpd_contacts": {
+      "row_count": 0,
+      "fingerprint": "synthetic",
+      "fingerprint_method": "synthetic"
+    },
+    "hpd_registrations": {
+      "row_count": 0,
+      "fingerprint": "synthetic",
+      "fingerprint_method": "synthetic"
+    },
+    "wow_landlords": {
+      "row_count": 0,
+      "fingerprint": "synthetic",
+      "fingerprint_method": "synthetic"
+    },
+    "real_property_master": {
+      "row_count": 0,
+      "fingerprint": "synthetic",
+      "fingerprint_method": "synthetic"
+    },
+    "pluto_latest": {
+      "row_count": 0,
+      "fingerprint": "synthetic",
+      "fingerprint_method": "synthetic"
+    }
+  },
+  "deed_selection_rule": {
+    "rule": "doctype ILIKE '%DEED%'",
+    "version": "fixture"
+  },
+  "normalizer_versions": {
+    "business_address": "fixture",
+    "owner_name": "fixture"
+  },
+  "artifacts": {
+    "group_witness": "representative",
+    "observations": "complete",
+    "decision_events": "complete",
+    "network_edges": "complete"
+  },
+  "stage_vocabulary_version": "0.1.0",
+  "reason_vocabulary_version": "0.1.0",
+  "note": "Synthetic fixture for the release contract. Not real data: every BBL starts with 9 and no id is a real one.",
+  "output_checksums": {
+    "bbl_status.csv": "77ee1e9f9f948b960ac2ba51ceb1230e97941f1d8dff772f6efa9ddc53a7e23d",
+    "decision_events.csv": "6f9effd36a303bffb11bab06887d579239990ad68196180b9342a40fea843490",
+    "decision_support.csv": "019c05a5d868a01d3bbe50321b165f4363206ab95d2470973da1dd0ced903d4a",
+    "evidence_items.csv": "35329dc83ac0929004dc2962f382aae1212ce03d3e2e0bb5eea85ee230ec51f1",
+    "evidence_members.csv": "752f0c8898297061e2b41964da49d4b3e4d37fb653d1d5aeec87ac68324f556a",
+    "group_bbls.csv": "dc2a923e67a9ba9e87e79bffc8e368ba4e9b3d5a13a0f39d24e8efc7f517577c",
+    "group_members.csv": "e7d221f00cff09ccc265a50d2788488bf2b09be93f0503ae866f465e445c09f8",
+    "group_witness.csv": "500c492afb53c91e9ff5b85a7186e8b669bf6918ecbc50b15396461ca56ddbe5",
+    "groups.csv": "e6b41890fb6754764c5512fe893716d92ba7593b66592d83b742fc2e66a7b84f",
+    "identity_clusters.csv": "485dabef2ada64f3db4b7b4b9f89322164060e4a99ce7fece960a13631782436",
+    "identity_observations.csv": "a87debeabbb6e34c6c58cf426fe8ad73a4367b22f42851e95b68f8584943ec1e",
+    "link_set_members.csv": "cf7d5f644dc6526576f085ab8ddbae995227172fc71656aabbc9aa3f39ffd4a8",
+    "link_sets.csv": "4144ab806b37af15b625d0e415a5f92f84a6433001730399bffca3b55f47c520",
+    "masked_address_nodes.csv": "e391717d0ef858c1bf01b91db93ae87180bc8f25a893f7f6e67e43926426ae2a",
+    "masked_addresses.csv": "2b9704f1853cbd9293930d9c32c5d4ce14358b4a76ad3d61739423e583a1f407",
+    "method_metrics.csv": "8834e87f28a3bda444d4a2d39800a7b85040e2552c5e8f79b1ae77502655bdba",
+    "network_edges.csv": "8fe22d2ff79c53f3659e3708bd8a8baa7aa0483430f5aa0bfeade4446a108f0d",
+    "network_membership.csv": "3a8eaf5cc1b1b698ce451dd66a21b97668e6f3e81cee352a2d563bde5e0bae62",
+    "node_cluster.csv": "81c25a7d5ba5487dc1243ac0993306020e742a3752c124d693f16196c8732fe2",
+    "node_cluster_alternatives.csv": "eca118012179cab9d71c22ac8dbf8fe1b4ed28181f1031ff5dfa60441c25a72a",
+    "node_identity_matches.csv": "c4dee9bf3b8cddad3564450580a234f7ff7a9d30ee7acaed2e2d969506b4c571",
+    "node_observation_alternatives.csv": "017405a326a52caec2435426a25c4ba5611a681212a60751420ef59087d67704",
+    "node_observations.csv": "96a5d888996434502690ce526be6ccd4d9e3c703fca164177130af118f576872",
+    "observations.csv": "80dd3d55f5f70c3961c50cb3e3dae1adaa3bdbc0189965a3d1f9501187662c0c",
+    "split_attempts.csv": "c57359b26b48d119b119c7207650ab6198ce5a62596c19255ea5972cd9a0e275"
+  }
+}

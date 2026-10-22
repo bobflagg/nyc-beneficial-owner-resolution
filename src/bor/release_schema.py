@@ -307,3 +307,5 @@ MANIFEST_REQUIRED = (
 # decision); the manifest repeats it exactly. The fingerprint method is fixed in W1.
 SOURCE_TABLE_FIELDS = ("row_count", "fingerprint", "fingerprint_method")
 DEED_RULE_FIELDS = ("rule", "version")
+# `manifest.excerpt`, present only on an excerpt of a larger release (bor.excerpt)
+EXCERPT_FIELDS = ("of_run_id", "seed_groups", "rule", "tables_omitted", "events_omitted", "evidence_omitted")

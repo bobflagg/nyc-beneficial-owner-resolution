@@ -1,0 +1,3 @@
+set_id,stage,rule,rule_version,size
+LG9000001,identity.registered_llc,registered_llc_owner_match,synthetic-0,2
+CG9000001,identity.curated,curated_owner_list,synthetic-0,2

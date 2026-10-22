@@ -91,7 +91,7 @@ def _package_state(package_dir: Path, dist_name: str, repo_root: Path | None) ->
     commit and ``dirty`` says whether code files differ from it; an installed copy has the commit
     from pip's direct_url.json when installed from git, and is never dirty (it is what it is)."""
     state = {"version": md.version(dist_name), "tree_hash": tree_hash(package_dir),
-             "revision": None, "dirty": None, "checkout": None}
+             "revision": None, "dirty": None}
     root = repo_root or package_dir
     top = _git(root, "rev-parse", "--show-toplevel")
     # A package installed under a checkout's own .venv is inside that repo's tree but is not part of
@@ -101,7 +101,6 @@ def _package_state(package_dir: Path, dist_name: str, repo_root: Path | None) ->
         status = _git(Path(top), "status", "--porcelain", "--untracked-files=all", "--", str(package_dir),
                       "pyproject.toml", "uv.lock") or ""
         state["dirty"] = bool(status.strip())
-        state["checkout"] = top
     else:
         try:
             direct = json.loads(md.distribution(dist_name).read_text("direct_url.json") or "{}")

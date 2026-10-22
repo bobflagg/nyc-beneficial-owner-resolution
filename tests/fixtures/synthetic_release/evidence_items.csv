@@ -1,0 +1,4 @@
+evidence_id,stage,document_id,parcel_count,rule_version
+DV9000001,deed.linked_successor,2999010100001001,4,synthetic-0
+DV9000002,deed.held_since,2999020200003001,3,synthetic-0
+DV9000003,deed.held_since,2999030300004001,2,synthetic-0

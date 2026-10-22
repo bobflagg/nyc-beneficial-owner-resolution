@@ -1,0 +1,12 @@
+layer,group_id,assertion_key,composition,split,lot_count,total_lot_count,witness_pieces
+owner_portfolio,OP-9001,synthetic-0001/owner_portfolio/OP-9001,identity,,3,4,1
+owner_portfolio,OP-9010,synthetic-0001/owner_portfolio/OP-9010,deed_only,,4,4,1
+owner_portfolio,OP-9030,synthetic-0001/owner_portfolio/OP-9030,identity,,2,2,1
+owner_portfolio,OP-9032,synthetic-0001/owner_portfolio/OP-9032,deed_only,,2,2,1
+owner_portfolio,OP-9050,synthetic-0001/owner_portfolio/OP-9050,identity,,2,2,1
+owner_portfolio,OP-9060,synthetic-0001/owner_portfolio/OP-9060,identity,,2,2,1
+owner_portfolio,OP-9070,synthetic-0001/owner_portfolio/OP-9070,deed_bridged,,4,4,1
+owner_portfolio,OP-9080,synthetic-0001/owner_portfolio/OP-9080,identity,,2,2,1
+owner_portfolio,OP-9082,synthetic-0001/owner_portfolio/OP-9082,identity,,2,2,1
+operational_network,ON-9060,synthetic-0001/operational_network/ON-9060,,louvain,3,3,1
+operational_network,ON-9063,synthetic-0001/operational_network/ON-9063,,louvain,3,3,1

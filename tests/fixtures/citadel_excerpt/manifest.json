@@ -1,0 +1,317 @@
+{
+  "schema_version": "0.1.0",
+  "run_id": "2026-10-21-b1e2cf2a",
+  "snapshot_id": "justfixwow-2026-10-21",
+  "pluto_snapshot_id": "justfixwow-2026-10-21",
+  "effective_date": "2026-10-21",
+  "created_at": "2026-10-21T23:37:58+00:00",
+  "bor_revision": "86ef9d65f91d6ca062283ca2c2213d0bbe31da39",
+  "nlr_revision": "6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79",
+  "source_tree_hash": "5ec93d30587e217fa44e6e1d6508d6d798a2202cd5c47b82a0169d217741c8cc",
+  "code": {
+    "bor": {
+      "version": "0.1.0.dev0",
+      "tree_hash": "8906d42177a997fee337b39c8ce47d8405b88bb8c92b2f8ee8a778662f1ced7e",
+      "revision": "86ef9d65f91d6ca062283ca2c2213d0bbe31da39",
+      "dirty": true
+    },
+    "nlr": {
+      "version": "0.2.0",
+      "tree_hash": "6e8dfd7613c538c8d951e216f9819cf2db9b717e70b012b6509ad5591cb465c8",
+      "revision": "6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79",
+      "dirty": false
+    }
+  },
+  "dependency_lock_digest": "2d7a1f93b16c06b6531a21ce3d5e7a5b4af971a3d07ac48f2b91565d7b1845b5",
+  "environment": {
+    "python": "3.13.3",
+    "platform": "macOS-26.7.1-arm64-arm-64bit-Mach-O",
+    "splink": "4.0.16",
+    "duckdb": "1.5.5",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "psycopg2-binary": "2.9.13"
+  },
+  "threshold": 0.999,
+  "parameters": {
+    "resolution": {
+      "threshold": 0.999,
+      "feedback": true,
+      "seed": 42,
+      "aggregator_degree": 25,
+      "first_name_sim": 0.7,
+      "corp_cap": 25,
+      "name_cap": 15,
+      "excluded": 24
+    },
+    "deed": {
+      "min_parcels": 2,
+      "max_parcels": 25,
+      "hub_cap": 20,
+      "successor_max": 3,
+      "nominal_max": 100,
+      "restructure_min_date": "2005-01-01",
+      "as_of": "2026-10-21"
+    },
+    "operational_network": {
+      "name_weight": 1.5,
+      "address_weight": 1.0,
+      "max_address_degree": 25,
+      "max_size": 300,
+      "louvain_seed": 42
+    },
+    "edges": {
+      "identity_weight": 100.0,
+      "star_above": 150
+    },
+    "registered_llc": {
+      "max_degree": 100
+    },
+    "owner_portfolio": {
+      "min_size": 2
+    }
+  },
+  "source_tables": {
+    "hpd_contacts": {
+      "row_count": 782024,
+      "fingerprint": "446723573507456567766101",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "hpd_registrations": {
+      "row_count": 203236,
+      "fingerprint": "116952552060625267150906",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "hpd_registrations_grouped_by_bbl_with_contacts": {
+      "row_count": 193710,
+      "fingerprint": "111639779985286756401565",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "wow_landlords": {
+      "row_count": 171347,
+      "fingerprint": "98790780466472732475958",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "landlords_with_connections": {
+      "row_count": 118493,
+      "fingerprint": "68417755281667780513872",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "pluto_latest": {
+      "row_count": 858602,
+      "fingerprint": "495732327790862256518451",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "real_property_master": {
+      "row_count": 17009118,
+      "fingerprint": "9805580637410314130378991",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "real_property_legals": {
+      "row_count": 22652824,
+      "fingerprint": "13056767151149614161428376",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    },
+    "real_property_parties": {
+      "row_count": 46375598,
+      "fingerprint": "26737199831231077171312090",
+      "fingerprint_method": "count + sum(first 60 bits of md5(row::text)) as numeric"
+    }
+  },
+  "deed_selection_rule": {
+    "rule": "doctype ILIKE '%DEED%'",
+    "version": "1"
+  },
+  "normalizer_versions": {
+    "business_address_mask": "c92693351768",
+    "owner_name": "456448beab22",
+    "name_match_key": "b884ff6c490b",
+    "nlr_address_key": "8f0dbc32fde2"
+  },
+  "artifacts": {
+    "observations": "complete",
+    "node_observations": "complete",
+    "node_observation_alternatives": "complete",
+    "identity_observations": "complete",
+    "node_identity_matches": "complete",
+    "node_cluster": "complete",
+    "node_cluster_alternatives": "complete",
+    "identity_clusters": "complete",
+    "decision_events": "complete",
+    "decision_support": "complete",
+    "evidence_items": "complete",
+    "evidence_members": "complete",
+    "groups": "complete",
+    "group_members": "complete",
+    "group_bbls": "complete",
+    "group_witness": "representative",
+    "link_sets": "complete",
+    "link_set_members": "complete",
+    "masked_addresses": "complete",
+    "masked_address_nodes": "complete",
+    "bbl_status": "complete"
+  },
+  "stage_vocabulary_version": "0.1.0",
+  "reason_vocabulary_version": "0.1.0",
+  "diagnostics": {
+    "partial": "lineage, identity layer, deed evidence, and both layers' groups with their paths, and the per-lot absence summary; the method metrics are added by a later work package",
+    "latest_deed_ties": 23163,
+    "mapping": {
+      "lwc_nodes": 118493,
+      "node_bbl_rows": 171347,
+      "node_bbls_without_candidate": 0,
+      "node_bbls_unique_contact": 170705,
+      "node_bbls_ambiguous_contact": 642,
+      "nodes_matched_to_an_identity": 118380,
+      "nodes_unmatched": 113,
+      "nodes_with_2plus_identities": 5437,
+      "nodes_straddling_2plus_clusters": 751,
+      "straddling_nodes_tied": 639,
+      "identities": 145388,
+      "identities_excluded": 24,
+      "identity_bbl_pairs": 196710,
+      "identity_bbl_pairs_without_observation": 0,
+      "identity_bbl_pairs_on_tied_registration": 2247,
+      "identities_without_node": 21405,
+      "decision_events": 29772,
+      "decision_events_by_outcome": {
+        "identity.curated/excluded": 24,
+        "identity.splink_base/accepted": 19838,
+        "identity.splink_base/masked": 5298,
+        "identity.splink_base/rejected": 2585,
+        "identity.splink_feedback/accepted": 1197,
+        "identity.splink_feedback/rejected": 830
+      },
+      "decision_support": 17310,
+      "observations": 209029
+    },
+    "deed": {
+      "parcels_without_a_node": 151,
+      "deed_evidence_items": 839,
+      "deed_items_linked_successor": 77,
+      "deed_evidence_members": 2454,
+      "deed_events_by_reason": {
+        "coop_condo_dominated": 134,
+        "deed_not_latest": 1409,
+        "deed_parcels_out_of_range": 54,
+        "institutional_screen": 664,
+        "successor_not_shell": 565,
+        "successor_transfer_not_nominal": 419
+      },
+      "held_trace_matches_sql": true,
+      "joint_trace_matches_sql": true
+    },
+    "owner_portfolio": {
+      "owner_portfolio_groups": 6523,
+      "owner_portfolio_nodes": 15623,
+      "witness_steps": 9100,
+      "witness_steps_by_stage": {
+        "deed.held_since": 119,
+        "deed.linked_successor": 30,
+        "identity.curated": 9,
+        "identity.registered_llc": 1036,
+        "identity.splink_base": 7328,
+        "identity.splink_feedback": 578
+      },
+      "groups_using_feedback": 492,
+      "groups_using_the_successor_guard": 28,
+      "groups_dropped_as_coop_dominated": 219,
+      "lots_left_out_of_a_footprint": 412,
+      "curated_sets": 4,
+      "registered_llc_sets": 1709
+    },
+    "operational_network": {
+      "operational_networks": 9673,
+      "components": 9632,
+      "network_edges": 57202,
+      "edges_crossing_networks": 416,
+      "louvain_networks": 46,
+      "split_attempts": 6,
+      "split_attempts_without_a_useful_split": 1,
+      "networks_not_connected_by_their_own_edges": 0,
+      "witness_steps": 21251,
+      "masked_addresses": 73,
+      "nodes_at_masked_addresses": 4117
+    },
+    "absence": {
+      "pluto_lots": 858602,
+      "lots_with_status": 858625,
+      "status": {
+        "operational_network/in_group": 71256,
+        "operational_network/not_in_group": 787369,
+        "owner_portfolio/excluded_from_footprint": 412,
+        "owner_portfolio/in_group": 43318,
+        "owner_portfolio/not_in_group": 814895
+      },
+      "reasons": {
+        "operational_network/address_evidence_masked": 113,
+        "operational_network/aggregator_address_masked": 5470,
+        "operational_network/common_name_veto": 523,
+        "operational_network/first_name_veto": 778,
+        "operational_network/no_linkage": 92991,
+        "operational_network/no_owner_contact": 9507,
+        "operational_network/no_registration": 677771,
+        "operational_network/shared_company_degree_cap": 12,
+        "operational_network/shared_company_degree_unknown": 112,
+        "operational_network/shared_company_first_name_conflict": 18,
+        "operational_network/shared_company_name_not_rare": 74,
+        "owner_portfolio/address_evidence_masked": 6849,
+        "owner_portfolio/common_name_veto": 733,
+        "owner_portfolio/coop_condo_dominated": 2576,
+        "owner_portfolio/coop_condo_excluded": 412,
+        "owner_portfolio/deed_not_latest": 363,
+        "owner_portfolio/deed_parcels_out_of_range": 6,
+        "owner_portfolio/first_name_veto": 1923,
+        "owner_portfolio/institutional_screen": 528,
+        "owner_portfolio/no_linkage": 114002,
+        "owner_portfolio/no_owner_contact": 9507,
+        "owner_portfolio/no_registration": 677771,
+        "owner_portfolio/shared_company_degree_cap": 15,
+        "owner_portfolio/shared_company_degree_unknown": 160,
+        "owner_portfolio/shared_company_first_name_conflict": 25,
+        "owner_portfolio/shared_company_name_not_rare": 99,
+        "owner_portfolio/successor_not_shell": 84,
+        "owner_portfolio/successor_transfer_not_nominal": 88,
+        "owner_portfolio/unmatched_node": 166
+      }
+    }
+  },
+  "excerpt": {
+    "of_run_id": "2026-10-21-b1e2cf2a",
+    "seed_groups": [
+      "OP-67966"
+    ],
+    "rule": "bor.excerpt: the groups, their lots and nodes, what their witness cites, events wholly inside",
+    "tables_omitted": [
+      "network_edges",
+      "network_membership",
+      "split_attempts"
+    ],
+    "events_omitted": 36224,
+    "evidence_omitted": 838
+  },
+  "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. The parent was built from an uncommitted tree (code.bor.dirty); the release candidate regenerates this fixture.",
+  "output_checksums": {
+    "bbl_status.csv": "40ac377eff7cd64500de509384bf12f6b048c8675f0f279d93eff2fe4295728b",
+    "decision_events.csv": "71816d2920e922e79f7ed8c8883b569ad33d068c9d5068c857a3b72b15dfce84",
+    "decision_support.csv": "69bd7112bccdcc3091c8d52d23d9cc12b52a0aaebd9897ec78ebb350aadad687",
+    "evidence_items.csv": "bac8d39a5db5020b3d7428102db5f656827103ca8a3e2dbeaa9dba3cdb6edae3",
+    "evidence_members.csv": "0abb9b17cae98c8fd5830d50c6d20eec11fd80c20ccae2e56b5317f3ed292169",
+    "group_bbls.csv": "b3480dc218af67ca7ca4a982f37bc0ac0db5396ee3c3620b6e009bdb2745af3d",
+    "group_members.csv": "0439c891f31cbc5803f62e9d839d6af3d2bd15dda40b153d74aa4f0be2b97f1e",
+    "group_witness.csv": "d83576ffffbf2150796c91e642cf982a07c3b1f1fd1a2cf8c047434fdfe8ee0d",
+    "groups.csv": "b800a7022a8993b73196a025c0779b74d0bad0377573cf33bb543d297a755836",
+    "identity_clusters.csv": "b4591f616cf225f95545c289e36843ceabde72d666f54f50c6794e7a193437e6",
+    "identity_observations.csv": "e99de5bf21de013c570d3c95c9b34b9d6754f35a4dd856989896eb95fca46cee",
+    "link_set_members.csv": "a6331f5cc074cc039c42e6b75375c64cb4c1c1b5ccc51abb89d004a207b31fb6",
+    "link_sets.csv": "c5285d217d39850123412558ad2479491a0660bd5fbd680db07969ee55485798",
+    "masked_address_nodes.csv": "f67fe490e6bcb39544d47ef56298ed8ccd658c3ff7100bfc8023176187997632",
+    "masked_addresses.csv": "41f979fc320a67c71d3b7ff0aeba9a41e70a16ad4efb116011db9c0889b63eff",
+    "node_cluster.csv": "35f228af8f178a8fcd38499ea70e2d280f02a545ae2044427c40fd0ff99d3d1f",
+    "node_cluster_alternatives.csv": "d9f0bc29736acada3472669eb0ef80f13be9f817f7384a6610540515a723f9a8",
+    "node_identity_matches.csv": "c7d28ba4179adcdca627fb2d3a7b34dc29d84709ff54408b8960c5bd97a44a5a",
+    "node_observation_alternatives.csv": "5ef5f4a80aef7404ec538355ff1a0635bde631592d75c520c26f2a8f1b81ff50",
+    "node_observations.csv": "eeac3f8527d6e34a38bab1b5cc3410d9934301640e69623396a4c77f716cdf17",
+    "observations.csv": "3861f885b82ef2d4785560cc5018df439019578a84a41cdee44510ab725f5dd4"
+  }
+}

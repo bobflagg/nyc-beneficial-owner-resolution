@@ -22,7 +22,17 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Depends on [`nlr`](https://github.com/bobflagg/nyc-landlord-resolution) `v0.1.0` for record
   linkage; `splink` pinned to `4.0.16`.
 
+- **Fixtures and the approval gate (W9).** `tests/fixtures/synthetic_release` (all 25 tables, every case
+  and absence reason, made-up lots), `tests/fixtures/citadel_excerpt` (real rows: Owner Portfolio
+  `OP-67966`), and `tests/test_kg_fixture.py`, which runs the gate with no database. `bor.excerpt`
+  (`make excerpt`) cuts a self-contained, validating excerpt of a release around chosen Owner
+  Portfolios; the manifest says it is one (`excerpt`) and a made-up release says `synthetic`.
+- `explain pair` shows the closest evidence for a pair that is not in one group: a blocked decision, a
+  shared deed that did not link them, or a tied alternative reading of a node.
+
 ### Changed
+- The manifest no longer records the builder's local checkout path (`code.*.checkout`).
+- The validator checks that every assertion key begins with the manifest's `run_id`.
 - **Group id prefixes:** Owner Portfolios are `OP-<min nodeid>` (was `OG-`) and Operational
   Network groups are `ON-<min nodeid>` (was `PF-`). A clean break: nothing had been released with the
   old prefixes, and ids were never stable across builds. The `owner_portfolio_id` and `operational_network_id`

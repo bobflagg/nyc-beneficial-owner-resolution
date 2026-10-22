@@ -1,4 +1,4 @@
-.PHONY: install test lint build-lwc eval export build-release validate-release explain help
+.PHONY: install test lint build-lwc eval export build-release validate-release explain fixtures excerpt help
 
 # Release build (see docs/release-contract.md). Until nlr 0.2.0 is released and pinned in
 # pyproject.toml, point NLR at a local checkout of nlr's capture-decisions branch:
@@ -18,6 +18,8 @@ help:
 	@echo "                   make build-release SNAPSHOT_ID=<id> [AS_OF=YYYY-MM-DD] [RUN_ID=<id>] [REQUIRE_CLEAN=1] [NLR=<path>]"
 	@echo "validate-release - validate the release in OUT against the contract"
 	@echo "explain          - explain a lot, pair or group of the release in OUT: make explain ARGS=\"lot <bbl>\""
+	@echo "fixtures         - regenerate tests/fixtures/synthetic_release (no database)"
+	@echo "excerpt          - cut an excerpt of the release in OUT: make excerpt SEEDS=\"OP-67966\" EXCERPT_OUT=tests/fixtures/citadel_excerpt"
 
 install:
 	uv sync
@@ -47,3 +49,11 @@ validate-release:
 explain:
 	@test -n "$(ARGS)" || { echo "usage: make explain ARGS=\"lot <bbl>\"  |  \"pair <bbl> <bbl> [layer]\"  |  \"group <id>\""; exit 2; }
 	$(UVRUN) python -m bor.explain $(OUT) $(ARGS)
+
+fixtures:
+	uv run python tests/fixtures/make_synthetic_release.py
+
+EXCERPT_OUT ?= tests/fixtures/citadel_excerpt
+excerpt:
+	@test -n "$(SEEDS)" || { echo "usage: make excerpt SEEDS=\"OP-67966\" [OUT=<release>] [EXCERPT_OUT=<dir>]"; exit 2; }
+	$(UVRUN) python -m bor.excerpt $(OUT) $(EXCERPT_OUT) $(SEEDS)

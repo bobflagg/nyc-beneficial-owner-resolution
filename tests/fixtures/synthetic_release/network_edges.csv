@@ -1,0 +1,7 @@
+edge_id,component_id,node_a,node_b,name_weight,address_weight,identity_weight,weight,crosses_networks
+NE9000001,NC-1,9060,9061,1.5,0.0,100.0,101.5,False
+NE9000002,NC-1,9060,9062,1.5,0.0,0.0,1.5,False
+NE9000003,NC-1,9061,9062,1.5,1.0,0.0,2.5,False
+NE9000004,NC-1,9062,9063,1.5,0.0,0.0,1.5,True
+NE9000005,NC-1,9063,9064,0.0,2.0,0.0,2.0,False
+NE9000006,NC-1,9064,9065,1.5,0.0,0.0,1.5,False

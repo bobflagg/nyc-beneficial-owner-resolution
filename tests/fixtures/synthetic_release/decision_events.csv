@@ -1,0 +1,21 @@
+decision_id,layer,stage,subject_type,subject_id,counterpart_type,counterpart_id,outcome,reason_code,rule,rule_version,score,threshold,cluster_id,detail
+D9000001,identity,identity.splink_base,identity,I9000001,identity,I9000002,accepted,,splink_model,synthetic-0,0.9995,0.999,C9000001,
+D9000002,identity,identity.splink_feedback,base_cluster,BC9000001,base_cluster,BC9000002,accepted,,shared_company_feedback,synthetic-0,,,C9000001,"{""note"": ""shared private company; degree cap passed""}"
+D9000003,identity,identity.splink_base,identity,I9000005,identity,I9000003,rejected,first_name_veto,first_name_veto,synthetic-0,0.9996,0.999,,"{""note"": ""scored above threshold; blocked by the gate""}"
+D9000004,identity,identity.splink_feedback,base_cluster,BC9000003,base_cluster,BC9000001,rejected,shared_company_name_not_rare,shared_company_guard,synthetic-0,,,,"{""note"": ""the shared company's name is common""}"
+D9000005,identity,identity.splink_base,identity,I9000003,identity,I9000004,accepted,,splink_model,synthetic-0,0.9997,0.999,C9000001,
+D9000006,identity,identity.splink_base,identity,I9000006,identity,I9000007,accepted,,splink_model,synthetic-0,0.9993,0.999,C9000003,
+G9000001,owner_portfolio,owner_portfolio.footprint,bbl,9000100005,group,OP-9001,excluded,coop_condo_excluded,coop_condo_contact_rule,synthetic-0,,,,"{""note"": ""co-op lot in a surviving group""}"
+G9000002,owner_portfolio,owner_portfolio.footprint,group,OP-9006,,,dropped,coop_condo_dominated,group_footprint_rule,synthetic-0,,,,"{""lots"": 2, ""rental_lots"": 0}"
+G9000003,owner_portfolio,owner_portfolio.footprint,bbl,9000100006,group,OP-9006,excluded,coop_condo_dominated,group_footprint_rule,synthetic-0,,,,
+G9000004,owner_portfolio,owner_portfolio.footprint,bbl,9000100007,group,OP-9006,excluded,coop_condo_dominated,group_footprint_rule,synthetic-0,,,,
+E9000001,owner_portfolio,deed.linked_successor,parcel,9000200005,deed_document,2999010100001001,rejected,successor_transfer_not_nominal,deed_successor_guard,synthetic-0,,,,"{""latest_amount"": 3200000.0}"
+D9000007,identity,identity.splink_base,identity,I9000012,identity,I9000013,accepted,,splink_model,synthetic-0,0.9996,0.999,C9000008,
+E9000002,owner_portfolio,deed.group,node,9030,,,excluded,deed_hub_capped,deed_hub_cap,synthetic-0,,,,"{""deeds"": 21, ""hub_cap"": 20}"
+E9000003,owner_portfolio,deed.held_since,deed_document,2999040400005001,,,excluded,coop_condo_dominated,coop_condo_deed_rule,synthetic-0,,,,"{""n_parcels"": 2, ""screen"": ""co-op/condo parcels are the majority""}"
+D9000008,identity,identity.splink_base,identity,I9000035,identity,I9000036,accepted,,splink_model,synthetic-0,0.9994,0.999,C9000027,
+D9000009,identity,identity.splink_base,identity,I9000037,identity,I9000038,accepted,,splink_model,synthetic-0,0.9994,0.999,C9000028,
+D9000010,identity,identity.splink_base,identity,I9000018,identity,I9000019,accepted,,splink_model,synthetic-0,0.9998,0.999,C9000013,
+N9000001,operational_network,network.address,address,A9000001,,,masked,aggregator_address_masked,aggregator_address_mask,synthetic-0,,,,"{""degree"": 4, ""threshold"": 3}"
+D9000011,identity,identity.splink_base,identity,I9000026,identity,I9000027,accepted,,splink_model,synthetic-0,0.9996,0.999,C9000020,
+D9000012,identity,identity.splink_base,identity,I9000028,identity,I9000029,accepted,,splink_model,synthetic-0,0.9996,0.999,C9000021,

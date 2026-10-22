@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from bor import absence
-from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
+from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, EXCERPT_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
                                 REASON_CODES, SCHEMA_VERSION, SOURCE_TABLE_FIELDS, TABLES, Table)
 
 
@@ -493,7 +493,7 @@ def _inv_link_sets(T):
     return v
 
 
-def _inv_network(T):
+def _inv_network(T, excerpt=False):
     e, mem = T.get("network_edges"), T.get("network_membership")
     v = []
     if e is not None:
@@ -544,9 +544,12 @@ def _inv_network(T):
     ma, mn, nobs = T.get("masked_addresses"), T.get("masked_address_nodes"), T.get("node_observations")
     if ma is not None and mn is not None:
         cnt = mn.groupby("address_id").size()
-        n = int((ma.set_index("address_id")["degree"] != cnt.reindex(ma["address_id"]).fillna(0).to_numpy()).sum())
+        degree, listed = ma.set_index("address_id")["degree"], cnt.reindex(ma["address_id"]).fillna(0).to_numpy()
+        # an excerpt lists only the nodes it kept, and `degree` stays the parent run's
+        n = int(((degree < listed) if excerpt else (degree != listed)).sum())
         if n:
-            v.append(Violation("masked_addresses", "degree", "degree must equal the number of nodes at the address", n))
+            v.append(Violation("masked_addresses", "degree", "degree must equal the number of nodes at the address"
+                               + (" (at least, in an excerpt)" if excerpt else ""), n))
         if nobs is not None:
             m = _missing_from(mn["node_id"], nobs["node_id"])
             if m:
@@ -556,6 +559,20 @@ def _inv_network(T):
 
 _INVARIANTS = (_inv_network, _inv_witness_basis, _inv_link_sets, _inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
                _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
+_EXCERPT_AWARE = (_inv_network,)
+
+
+def _check_run(T, manifest) -> list[Violation]:
+    """Every assertion key starts with the manifest's run_id: the tables and the manifest describe one run."""
+    run = (manifest or {}).get("run_id")
+    if not run:
+        return []
+    bad = 0
+    for name in ("groups", "group_members", "group_witness"):
+        df = T.get(name)
+        if df is not None and "assertion_key" in df.columns:
+            bad += int((~df["assertion_key"].astype(str).str.startswith(f"{run}/")).sum())
+    return [Violation("manifest", "run_id", "assertion keys must start with the manifest's run_id", bad)] if bad else []
 
 
 # ---- manifest ------------------------------------------------------------------------------------
@@ -573,6 +590,13 @@ def check_manifest(manifest: dict | None, path: str | None = None) -> list[Viola
     rule = manifest.get("deed_selection_rule")
     if rule is not None and (not isinstance(rule, dict) or any(f not in rule for f in DEED_RULE_FIELDS)):
         v.append(Violation("manifest", "deed_selection_rule", f"needs {list(DEED_RULE_FIELDS)}"))
+    ex = manifest.get("excerpt")
+    if ex is not None:
+        miss = [f for f in EXCERPT_FIELDS if not isinstance(ex, dict) or f not in ex]
+        if miss:
+            v.append(Violation("manifest", "excerpt", f"needs {miss}"))
+        elif ex["of_run_id"] != manifest.get("run_id"):
+            v.append(Violation("manifest", "excerpt", "an excerpt keeps its parent's run_id"))
     for name, kind in (manifest.get("artifacts") or {}).items():
         if name not in TABLES:
             v.append(Violation("manifest", "artifacts", f"unknown artifact {name}"))
@@ -609,8 +633,11 @@ def validate_release(tables: dict[str, pd.DataFrame], manifest: dict | None = No
         v += bad
     v += _check_fks(typed)
     if not any(x.severity == "error" and x.check in ("columns", "type") for x in v):
+        if check_manifest_too:
+            v += _check_run(typed, manifest)
+        excerpt = bool(manifest and manifest.get("excerpt"))
         for inv in _INVARIANTS:
-            v += inv(typed)
+            v += inv(typed, excerpt=excerpt) if inv in _EXCERPT_AWARE else inv(typed)
     return v
 
 

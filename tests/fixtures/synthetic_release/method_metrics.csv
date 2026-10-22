@@ -1,0 +1,3 @@
+stage,metric,unit,population,n,numerator,denominator,precision,ci_lower,ci_upper,confidence_level,interval_method,estimator,strata_ref,eval_artifact,eval_version,adjudication_status,provisional,note
+identity.splink_base,precision,pair,synthetic,10.0,5.0,10.0,0.5,0.25,0.75,0.95,synthetic,synthetic,,synthetic,synthetic-0,synthetic,True,"SYNTHETIC fixture value, not a measurement"
+identity.splink_feedback,precision,pair,,,,,,,,,,,,,,none,True,synthetic fixture: unevaluated

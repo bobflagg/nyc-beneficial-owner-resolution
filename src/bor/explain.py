@@ -363,6 +363,54 @@ def explain_pair(rel: Release, bbl_a: str, bbl_b: str, layer: str = "owner_portf
         out.details += _network_boundary(rel, na, nb)
     elif not ga or not gb:
         out.details.append("See `lot` for why a lot is not in a group.")
+    if layer == "owner_portfolio":
+        out.details += _near_misses(rel, na, nb)
+    return out
+
+
+def _near_misses(rel: Release, na: str, nb: str) -> list[str]:
+    """What the release holds that bears on two nodes that are not in one Owner Portfolio: a decision
+    between their identities that a gate did not accept, a deed they share that did not link them, and
+    another reading of a node whose registration lists several contacts."""
+    out: list[str] = []
+    nim, ic, de = rel.table("node_identity_matches"), rel.table("identity_clusters"), rel.table("decision_events")
+    if nim is not None and de is not None:
+        def entities(n):
+            ids = set(nim.loc[nim["node_id"].astype(str) == n, "identity_id"])
+            if ic is not None and "base_cluster_id" in ic.columns:
+                ids |= set(ic.loc[ic["identity_id"].isin(ids), "base_cluster_id"].dropna())
+            return ids
+        ea, eb = entities(na), entities(nb)
+        hit = de[(de["outcome"] != "accepted")
+                 & ((de["subject_id"].isin(ea) & de["counterpart_id"].isin(eb))
+                    | (de["subject_id"].isin(eb) & de["counterpart_id"].isin(ea)))]
+        for _, r in hit.iterrows():
+            out.append(f"Closest evidence: a decision between them was not accepted: {_describe_event(r)} "
+                       f"({_desc(r['reason_code'])}).")
+    items, mem = rel.table("evidence_items"), rel.table("evidence_members")
+    if items is not None and mem is not None:
+        node = mem["node_id"].astype(str)
+        for eid in sorted(set(mem.loc[node == na, "evidence_id"]) & set(mem.loc[node == nb, "evidence_id"])):
+            doc = items.loc[items["evidence_id"] == eid, "document_id"].iloc[0]
+            for r in mem[(mem["evidence_id"] == eid) & node.isin([na, nb]) & mem["excluded_reason"].notna()].itertuples():
+                why = _desc(r.excluded_reason) if r.excluded_reason in REASON_CODES else r.excluded_reason
+                out.append(f"Closest evidence: they share ACRIS deed {doc}, but it did not link them: "
+                           f"the node of lot {r.bbl} was left out of every deed link ({why}).")
+    ncl, nca, nobs = rel.table("node_cluster"), rel.table("node_cluster_alternatives"), rel.table("node_observations")
+    if ncl is not None and nca is not None:
+        chosen = dict(zip(ncl["node_id"].astype(str), ncl["cluster_id"]))
+        for x, y in ((na, nb), (nb, na)):
+            alt = nca[nca["node_id"].astype(str) == x]
+            other = chosen.get(y)
+            if other and other != chosen.get(x) and other in set(alt["cluster_id"]):
+                votes = dict(zip(alt["cluster_id"], alt["votes"]))
+                tie = ncl.loc[ncl["node_id"].astype(str) == x, "tied"].iloc[0] == "True"
+                ambiguous = nobs is not None and (nobs.loc[nobs["node_id"].astype(str) == x, "ambiguous"] == "True").any()
+                out.append(f"Closest evidence: {rel.node_label(x)} has more than one reading"
+                           + (" (its registration lists several contacts and the release cannot say which is the owner)"
+                              if ambiguous else "") + f". The method kept cluster {chosen[x]}; cluster {other}, which holds "
+                           f"{rel.node_label(y)}, had {votes[other]} vote(s) against {votes[chosen[x]]}"
+                           + (" and the tie was broken by a fixed rule." if tie else "."))
     return out
 
 

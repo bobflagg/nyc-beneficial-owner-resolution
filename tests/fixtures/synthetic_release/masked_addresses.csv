@@ -1,0 +1,2 @@
+address_id,method,normalizer_version,degree,degree_unit,threshold,decision
+A9000001,network_address_edge_mask,synthetic,4,landlords (lwc nodes),3,masked

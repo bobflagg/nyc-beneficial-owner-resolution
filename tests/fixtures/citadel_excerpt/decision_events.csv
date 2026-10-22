@@ -1,0 +1,5 @@
+decision_id,layer,stage,subject_type,subject_id,counterpart_type,counterpart_id,outcome,reason_code,rule,rule_version,score,threshold,cluster_id,detail
+D0021674,identity,identity.splink_base,identity,I0050128,,,masked,address_evidence_masked,splink_address_evidence_mask,nlr-0.2.0,,,,"{""addr_degree"": 35}"
+D0022061,identity,identity.splink_base,identity,I0060779,,,masked,address_evidence_masked,splink_address_evidence_mask,nlr-0.2.0,,,,"{""addr_degree"": 35}"
+D0024953,identity,identity.splink_base,identity,I0140218,,,masked,address_evidence_masked,splink_address_evidence_mask,nlr-0.2.0,,,,"{""addr_degree"": 35}"
+N0000005,operational_network,network.address,address,A0000005,,,masked,aggregator_address_masked,aggregator_address_mask,c92693351768,,,,"{""degree"": 33, ""threshold"": 25}"
