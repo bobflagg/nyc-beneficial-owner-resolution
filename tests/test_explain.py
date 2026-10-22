@@ -58,7 +58,7 @@ def test_a_lot_blocked_by_a_gate_gets_the_event_that_did_it(mini):
     e = ex.explain_lot(mini, "3000010004", "owner_portfolio")
     text = e.render()
     assert "Primary reason: first_name_veto" in e.answer
-    assert "rule first_name_veto rejected identity I0000004 against identity I0000003 (score 0.9996 vs threshold 0.999)" in text
+    assert "rule first_name_veto rejected identity I0000003 against identity I0000004 (score 0.9996 vs threshold 0.999)" in text
     assert "never evidence that the owners differ" in text
 
 

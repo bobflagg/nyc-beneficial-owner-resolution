@@ -108,6 +108,12 @@ ADJUDICATION_STATUSES = ("none", "synthetic", "human_llm_provisional", "blind_hu
 LINK_STAGES = ("identity.splink_base", "identity.splink_feedback", "identity.curated", "identity.registered_llc",
                "deed.held_since", "deed.linked_successor", "network.identity", "network.name", "network.address")
 
+class ReleaseInputError(ValueError):
+    """Something the caller supplied cannot be built into a release: a snapshot id of the wrong form or date,
+    an evaluation without its gold status or counts. The command line reports it in one line; any other
+    exception is a bug and keeps its traceback."""
+
+
 EVIDENCE_ROLES = ("held_under_joint_deed", "transferred_onward")
 ARTIFACT_KINDS = ("complete", "representative")
 

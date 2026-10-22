@@ -183,12 +183,12 @@ event("D", "identity", "identity.splink_base", ("identity", IDENT[9001]), "accep
 event("D", "identity", "identity.splink_feedback", ("base_cluster", BC_ID["A/ab"]), "accepted", "shared_company_feedback",
       counterpart=("base_cluster", BC_ID["A/ce"]), cluster=CL_ID["A"], detail={"note": "shared private company; degree cap passed"},
       support=[("observation", CORP[0], "bridging_company"), ("observation", CORP[1], "bridging_company")])
-event("D", "identity", "identity.splink_base", ("identity", IDENT[9004]), "rejected", "first_name_veto",
-      counterpart=("identity", IDENT[9003]), reason="first_name_veto", score=0.9996, threshold=0.999,
+event("D", "identity", "identity.splink_base", ("identity", IDENT[9003]), "rejected", "first_name_veto",
+      counterpart=("identity", IDENT[9004]), reason="first_name_veto", score=0.9996, threshold=0.999,
       detail={"note": "scored above threshold; blocked by the gate"},
-      support=[("observation", OBS[first_lot(9004)], "endpoint_a"), ("observation", OBS[first_lot(9003)], "endpoint_b")])
-event("D", "identity", "identity.splink_feedback", ("base_cluster", BC_ID["Ad/"]), "rejected", "shared_company_guard",
-      counterpart=("base_cluster", BC_ID["A/ab"]), reason="shared_company_name_not_rare",
+      support=[("observation", OBS[first_lot(9003)], "endpoint_a"), ("observation", OBS[first_lot(9004)], "endpoint_b")])
+event("D", "identity", "identity.splink_feedback", ("base_cluster", BC_ID["A/ab"]), "rejected", "shared_company_guard",
+      counterpart=("base_cluster", BC_ID["Ad/"]), reason="shared_company_name_not_rare",
       detail={"note": "the shared company's name is common"})
 event("D", "identity", "identity.splink_base", ("identity", IDENT[9003]), "accepted", "splink_model",
       counterpart=("identity", IDENT[9005]), score=0.9997, threshold=0.999, cluster=CL_ID["A"],

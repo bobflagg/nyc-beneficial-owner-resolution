@@ -114,6 +114,13 @@ def identity_clusters(res_clusters: pd.DataFrame, res_base: pd.DataFrame, imap: 
         "base_cluster_id": m["base"].astype(str).map(bmap).to_numpy()})
 
 
+def _ordered(a: str, b: str) -> tuple[str, str]:
+    """The two ids of a symmetric pair, smaller first. nlr lists a pair as left and right in whatever order
+    its fit produced, which varies between fits; a decision about an unordered pair is recorded one way.
+    Ids are zero-padded (I0000001, BC0000866), so string order is numeric order."""
+    return (a, b) if a <= b else (b, a)
+
+
 def _detail(**kv) -> str | None:
     kv = {k: v for k, v in kv.items() if v is not None and not (isinstance(v, float) and pd.isna(v))}
     return json.dumps(kv, sort_keys=True) if kv else None
@@ -136,11 +143,12 @@ def decision_tables(trace: dict, excluded: pd.DataFrame, res_clusters: pd.DataFr
     rows = []
     for r in trace["pairs"].itertuples():
         accepted = r.outcome == "accepted"
+        a, b = _ordered(imap[r.unique_id_l], imap[r.unique_id_r])
         rule = "splink_model" if accepted else r.reason
         extra = _detail(name_rarity=getattr(r, "name_rarity", None), same_address=getattr(r, "same_address", None)) \
             if r.reason == "common_name_veto" else None
-        rows.append(blank(stage="identity.splink_base", subject_type="identity", subject_id=imap[r.unique_id_l],
-                          counterpart_type="identity", counterpart_id=imap[r.unique_id_r], outcome=r.outcome,
+        rows.append(blank(stage="identity.splink_base", subject_type="identity", subject_id=a,
+                          counterpart_type="identity", counterpart_id=b, outcome=r.outcome,
                           reason_code=None if accepted else r.reason, rule=rule, rule_version=nlr_version,
                           score=float(r.match_probability), threshold=threshold,
                           cluster_id=cmap[final_of[r.unique_id_l]] if accepted else None, detail=extra))
@@ -155,9 +163,10 @@ def decision_tables(trace: dict, excluded: pd.DataFrame, res_clusters: pd.DataFr
                           rule_version=bor_version))
     for r in trace["feedback"].itertuples():
         accepted = r.outcome == "accepted"
+        a, b = _ordered(bmap[r.base_cluster_l], bmap[r.base_cluster_r])
         rows.append(blank(stage="identity.splink_feedback", subject_type="base_cluster",
-                          subject_id=bmap[r.base_cluster_l], counterpart_type="base_cluster",
-                          counterpart_id=bmap[r.base_cluster_r], outcome=r.outcome,
+                          subject_id=a, counterpart_type="base_cluster",
+                          counterpart_id=b, outcome=r.outcome,
                           reason_code=None if accepted else FEEDBACK_REASONS[r.reason],
                           rule="shared_company_feedback" if accepted else "shared_company_guard",
                           rule_version=nlr_version,

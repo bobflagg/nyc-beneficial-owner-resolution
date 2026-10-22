@@ -44,6 +44,11 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   the frozen release and its no-names policy.
 
 ### Changed
+- A decision about a pair of identities or base clusters is recorded with the smaller id as its subject, whichever way
+  nlr listed the pair; the validator checks it. Two fits of the same partition used to differ in the orientation of a
+  few symmetric events (and so in the numbering of the decisions after them).
+- `bor.release build` reports a caller's mistake (a snapshot id of the wrong form or date, a missing gold status, a
+  missing evaluation, an unclean tree under `--require-clean`) as one line, before any work, instead of a traceback.
 - Snapshot id (KG design note 0008): `<source>-<YYYY-MM-DD>[-rN]`, one source dump, with the date of the data, not the build
   (`justfixwow-2026-05-29` for the reference dump): the earlier of the newest ACRIS `recordedfiled` and HPD
   `lastregistrationdate`. The manifest gains `snapshot_date` and `snapshot_date_basis` (both newest dates) and

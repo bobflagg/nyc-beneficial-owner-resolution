@@ -32,7 +32,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from bor.release_schema import ADJUDICATION_STATUSES, LINK_STAGES, TABLES
+from bor.release_schema import ADJUDICATION_STATUSES, LINK_STAGES, TABLES, ReleaseInputError
 
 COLUMNS = [c.name for c in TABLES["method_metrics"].columns]
 CONFIDENCE = 0.95
@@ -89,6 +89,8 @@ LINK_NOTE = ("A precision on a stratified sample of pairs, not the probability t
 def load_evaluation(eval_dir) -> dict:
     """``metrics.json`` and ``frame_manifest.json`` of an evaluation directory, with the metrics file's hash."""
     d = Path(eval_dir)
+    if not (d / "metrics.json").is_file():
+        raise ReleaseInputError(f"no metrics.json in {d}: run `python -m bor.eval.score` first, or build without --eval-dir")
     raw = (d / "metrics.json").read_bytes()
     frame_file = d / "frame_manifest.json"
     return {"metrics": json.loads(raw), "frame": json.loads(frame_file.read_text()) if frame_file.exists() else {},
@@ -109,7 +111,7 @@ def method_metrics_table(evaluation: dict | None, gold_status: str = "none") -> 
     """The table: a row for every link-creating stage and, when an evaluation is given, for every sampled
     stratum. ``gold_status`` says who produced the gold (a value of ``ADJUDICATION_STATUSES``)."""
     if gold_status not in ADJUDICATION_STATUSES:
-        raise ValueError(f"gold_status must be one of {ADJUDICATION_STATUSES}")
+        raise ReleaseInputError(f"gold_status must be one of {ADJUDICATION_STATUSES}")
     rows, covered = [], set()
     if evaluation:
         m, frame = evaluation["metrics"], evaluation.get("frame") or {}
@@ -118,7 +120,7 @@ def method_metrics_table(evaluation: dict | None, gold_status: str = "none") -> 
             if stage is None:
                 raise ValueError(f"unknown stratum {st!r}: add it to STRATUM_STAGE or STRATUM_SCOPE")
             if "counts" not in s:
-                raise ValueError("metrics.json has no counts; rerun `python -m bor.eval.score` (it now records them)")
+                raise ReleaseInputError("metrics.json has no counts; rerun `python -m bor.eval.score` (it now records them)")
             size = (frame.get("strata") or {}).get(st, {}).get("frame")
             census = size is not None and s["n"] == size
             population = POPULATION[st] + (f" (frame {size:,}, sampled {s['n']})" if size else f" (sampled {s['n']})")

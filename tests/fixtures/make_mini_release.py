@@ -51,7 +51,7 @@ EV = ["decision_id", "layer", "stage", "subject_type", "subject_id", "counterpar
 w("decision_events", EV, [
     ["d1", "identity", "identity.splink_base", "identity", I[0], "identity", I[1], "accepted", "", "splink_model", "fixture-0", 0.9995, 0.999, C["abce"], ""],
     ["d2", "identity", "identity.splink_feedback", "base_cluster", BC["ab"], "base_cluster", BC["ce"], "accepted", "", "shared_company_feedback", "fixture-0", "", "", C["abce"], "shared private company; degree cap passed"],
-    ["d3", "identity", "identity.splink_base", "identity", I[3], "identity", I[2], "rejected", "first_name_veto", "first_name_veto", "fixture-0", 0.9996, 0.999, "", "scored above threshold; blocked by the gate"],
+    ["d3", "identity", "identity.splink_base", "identity", I[2], "identity", I[3], "rejected", "first_name_veto", "first_name_veto", "fixture-0", 0.9996, 0.999, "", "scored above threshold; blocked by the gate"],
     ["d4", "identity", "identity.splink_base", "identity", I[2], "identity", I[4], "accepted", "", "splink_model", "fixture-0", 0.9997, 0.999, C["abce"], ""],
     ["d5", "owner_portfolio", "owner_portfolio.footprint", "bbl", B[4], "", "", "excluded", "coop_condo_excluded", "coop_condo_contact_rule", "fixture-0", "", "", "", "co-op lot in a surviving group"],
     ["d6", "identity", "identity.splink_base", "identity", I[5], "identity", I[6], "accepted", "", "splink_model", "fixture-0", 0.9993, 0.999, C["fg"], ""],
@@ -62,7 +62,7 @@ w("decision_events", EV, [
 w("decision_support", ["decision_id", "support_type", "support_id", "role"], [
     ["d1", "observation", OBS[0], "endpoint_a"], ["d1", "observation", OBS[1], "endpoint_b"],
     ["d2", "observation", CORP[0], "bridging_company"], ["d2", "observation", CORP[1], "bridging_company"],
-    ["d3", "observation", OBS[3], "endpoint_a"], ["d3", "observation", OBS[2], "endpoint_b"],
+    ["d3", "observation", OBS[2], "endpoint_a"], ["d3", "observation", OBS[3], "endpoint_b"],
     ["d4", "observation", OBS[2], "endpoint_a"], ["d4", "observation", OBS[4], "endpoint_b"],
     ["d6", "observation", OBS[5], "endpoint_a"], ["d6", "observation", OBS[6], "endpoint_b"],
     ["d5", "bbl", B[4], "excluded_lot"],

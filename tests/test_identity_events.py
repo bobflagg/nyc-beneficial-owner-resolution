@@ -48,8 +48,18 @@ def _run():
     return ident, excluded, clusters, base, trace, keys
 
 
-def _tables():
+def _swapped(trace):
+    """The same trace with every pair listed the other way round: nlr's left and right vary between fits."""
+    flip = lambda df, l, r: df.rename(columns={l: r, r: l})[df.columns]
+    return {**trace, "pairs": flip(trace["pairs"], "unique_id_l", "unique_id_r"),
+            "feedback": flip(trace["feedback"], "base_cluster_l", "base_cluster_r"),
+            "feedback_sources": flip(trace["feedback_sources"], "base_cluster_l", "base_cluster_r")}
+
+
+def _tables(swap=False):
     ident, excluded, clusters, base, trace, keys = _run()
+    if swap:
+        trace = _swapped(trace)
     imap = ie.identity_ids(ident, excluded)
     cmap, bmap = ie.cluster_ids(clusters, "C"), ie.cluster_ids(base, "BC")
     events, support = ie.decision_tables(trace, excluded, clusters, base, 0.999, imap, cmap, bmap, keys, NLR, BOR)
@@ -112,6 +122,23 @@ def test_an_ambiguous_contact_pair_is_attached_to_every_content():
     keys = pd.DataFrame([(1, 101, 0), (1, 101, 1)], columns=["registrationid", "registrationcontactid", "k"])
     io = ie.identity_observations(ident, ident.iloc[0:0], {"u1": "I0000001"}, keys, set())
     assert sorted(io["observation_id"]) == ["1:101:0", "1:101:1"]
+
+
+def test_a_symmetric_pair_is_recorded_smaller_id_first():
+    ev = _tables()["events"]
+    pairs = ev[ev["counterpart_id"].notna()]
+    assert len(pairs) == 5 and set(pairs["stage"]) == {"identity.splink_base", "identity.splink_feedback"}
+    assert (pairs["subject_id"] < pairs["counterpart_id"]).all()
+    veto = pairs[pairs["reason_code"] == "first_name_veto"].iloc[0]       # nlr listed this one u4, u3
+    imap = _tables()["imap"]
+    assert (veto["subject_id"], veto["counterpart_id"]) == (imap["u3"], imap["u4"])
+
+
+def test_the_events_do_not_depend_on_which_way_nlr_oriented_its_pairs():
+    """Two fits of the same data can list a pair as (a, b) or (b, a); the release must not differ."""
+    a, b = _tables(), _tables(swap=True)
+    pd.testing.assert_frame_equal(a["events"], b["events"])                # decision numbers included
+    pd.testing.assert_frame_equal(a["support"], b["support"])
 
 
 def test_ids_and_decision_numbers_do_not_depend_on_splinks_labels():

@@ -3,8 +3,8 @@ D9000001,observation,700001:70000105:0,endpoint_a
 D9000001,observation,700002:70000205:0,endpoint_b
 D9000002,observation,700001:70000101:0,bridging_company
 D9000002,observation,700003:70000301:0,bridging_company
-D9000003,observation,700004:70000405:0,endpoint_a
-D9000003,observation,700003:70000305:0,endpoint_b
+D9000003,observation,700003:70000305:0,endpoint_a
+D9000003,observation,700004:70000405:0,endpoint_b
 D9000005,observation,700003:70000305:0,endpoint_a
 D9000005,observation,700005:70000505:0,endpoint_b
 D9000006,observation,700006:70000605:0,endpoint_a

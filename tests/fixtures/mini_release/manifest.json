@@ -69,8 +69,8 @@
   "output_checksums": {
     "DATA.md": "52a482d05fcbbc0a14887b5597df7956788122232b13ee7cb8a139b588fc6116",
     "bbl_status.csv": "97c6cdf63ec8a779cf808127c34e17379c8dd5590d2286cc626a80e9adf8852f",
-    "decision_events.csv": "cee1c87ca3a13e5322e5c38077bb2a29f7cd006028bd232e785cebf726dc77fc",
-    "decision_support.csv": "7b70f26b510d3024b8032db9b9f0165e101df40227f2a24c13ac79ab10870241",
+    "decision_events.csv": "1f7f22b141f15352848ff41cb984e5ecaf54f046e41e35d3c9b8530227b05f6e",
+    "decision_support.csv": "15aebea5c58193de6034619eb037f5f000f9f49525d46b06c9eb6816b63a0d42",
     "group_bbls.csv": "b179e0bbebade26dfed52a72495f7c9548a936708f7d4e4dbdf4469ab5382959",
     "group_members.csv": "41511a2111214c81243f53355a385a669a7e1d482eef96f023b87f47e23b3ba1",
     "group_witness.csv": "d3c777a6034e299ab3edb681c93f5728b6632e3740dce0dd261a09982a32ab81",

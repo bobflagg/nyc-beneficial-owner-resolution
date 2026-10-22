@@ -207,7 +207,7 @@ def snapshot_date(basis: dict) -> date:
     """The data's date: the earlier of the newest dates, so the snapshot is complete through it."""
     newest = [e["newest"] for e in basis.values()]
     if not newest or any(n is None for n in newest):
-        raise ValueError(f"cannot date the snapshot: a source column has no usable date ({basis})")
+        raise schema.ReleaseInputError(f"cannot date the snapshot: a source column has no usable date ({basis})")
     return date.fromisoformat(min(newest))
 
 
@@ -215,10 +215,10 @@ def check_snapshot_id(snapshot_id: str, data_date: date) -> None:
     """Raise unless ``snapshot_id`` has the agreed form and carries the data's date."""
     m = re.match(schema.SNAPSHOT_ID_RE, snapshot_id or "")
     if not m or len(snapshot_id) > schema.SNAPSHOT_ID_MAX:
-        raise ValueError(f"snapshot id {snapshot_id!r} must look like <source>-<YYYY-MM-DD>[-rN] "
+        raise schema.ReleaseInputError(f"snapshot id {snapshot_id!r} must look like <source>-<YYYY-MM-DD>[-rN] "
                          f"(lowercase letters, digits, hyphens; at most {schema.SNAPSHOT_ID_MAX} characters)")
     if m.group(1) != data_date.isoformat():
-        raise ValueError(f"snapshot id {snapshot_id!r} carries {m.group(1)}, but the data is complete through "
+        raise schema.ReleaseInputError(f"snapshot id {snapshot_id!r} carries {m.group(1)}, but the data is complete through "
                          f"{data_date.isoformat()} (the earlier of the newest ACRIS recordedfiled and HPD "
                          f"lastregistrationdate); the build day is not the snapshot date")
 

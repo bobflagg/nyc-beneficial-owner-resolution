@@ -21,7 +21,7 @@ from pathlib import Path
 from bor import manifest as mf
 from bor.metrics import load_evaluation
 from bor.release_docs import write_data_md
-from bor.release_schema import ADJUDICATION_STATUSES
+from bor.release_schema import ADJUDICATION_STATUSES, ReleaseInputError
 from bor.release_validate import read_release, validate_release
 
 
@@ -40,13 +40,15 @@ def build_release(conn, out_dir, *, snapshot_id: str,
 
     as_of = as_of or date.today()
     run_id = run_id or f"{as_of.isoformat()}-{uuid.uuid4().hex[:8]}"      # fixed first: assertion keys embed it
+    if evaluation and gold_status == "none":
+        raise ReleaseInputError("say who produced the gold (--gold-status) when supplying an evaluation (--eval-dir)")
     basis = mf.snapshot_basis(conn)                                       # refuse a wrong snapshot id now, not
     mf.check_snapshot_id(snapshot_id, mf.snapshot_date(basis))            # after ten minutes of work
     code = mf.code_state()
     if require_clean:
         dirty = [k for k, v in code.items() if v["dirty"] is not False]
         if dirty:
-            raise RuntimeError(f"refusing to build a release from an unclean or unidentified tree: {dirty}")
+            raise ReleaseInputError(f"refusing to build a release from an unclean or unidentified tree: {dirty}")
 
     res = resolution or resolve(conn, DEFAULT_THRESHOLD if threshold is None else threshold, capture=True)
     tables, report = build_mapping(conn, res)
@@ -54,8 +56,6 @@ def build_release(conn, out_dir, *, snapshot_id: str,
     tables, portfolio_report = add_owner_portfolio_layer(conn, tables, deed_edge_frame, as_of, run_id)
     tables, network_report = add_operational_network_layer(conn, tables, run_id)
     tables, absence_report = add_absence_summary(conn, tables)
-    if evaluation and gold_status == "none":
-        raise ValueError("say who produced the gold (gold_status) when supplying an evaluation")
     tables["method_metrics"] = method_metrics_table(evaluation, gold_status)
 
     out = Path(out_dir)
@@ -220,6 +220,8 @@ def main() -> None:  # pragma: no cover - needs the database
                               threshold=args.threshold, require_clean=args.require_clean,
                               evaluation=load_evaluation(args.eval_dir) if args.eval_dir else None,
                               gold_status=args.gold_status)
+        except ReleaseInputError as e:                     # a caller mistake: one line, not a traceback
+            sys.exit(f"error: {e}")
         finally:
             conn.close()
         found = r["violations"]

@@ -1,8 +1,8 @@
 decision_id,layer,stage,subject_type,subject_id,counterpart_type,counterpart_id,outcome,reason_code,rule,rule_version,score,threshold,cluster_id,detail
 D9000001,identity,identity.splink_base,identity,I9000001,identity,I9000002,accepted,,splink_model,synthetic-0,0.9995,0.999,C9000001,
 D9000002,identity,identity.splink_feedback,base_cluster,BC9000001,base_cluster,BC9000002,accepted,,shared_company_feedback,synthetic-0,,,C9000001,"{""note"": ""shared private company; degree cap passed""}"
-D9000003,identity,identity.splink_base,identity,I9000005,identity,I9000003,rejected,first_name_veto,first_name_veto,synthetic-0,0.9996,0.999,,"{""note"": ""scored above threshold; blocked by the gate""}"
-D9000004,identity,identity.splink_feedback,base_cluster,BC9000003,base_cluster,BC9000001,rejected,shared_company_name_not_rare,shared_company_guard,synthetic-0,,,,"{""note"": ""the shared company's name is common""}"
+D9000003,identity,identity.splink_base,identity,I9000003,identity,I9000005,rejected,first_name_veto,first_name_veto,synthetic-0,0.9996,0.999,,"{""note"": ""scored above threshold; blocked by the gate""}"
+D9000004,identity,identity.splink_feedback,base_cluster,BC9000001,base_cluster,BC9000003,rejected,shared_company_name_not_rare,shared_company_guard,synthetic-0,,,,"{""note"": ""the shared company's name is common""}"
 D9000005,identity,identity.splink_base,identity,I9000003,identity,I9000004,accepted,,splink_model,synthetic-0,0.9997,0.999,C9000001,
 D9000006,identity,identity.splink_base,identity,I9000006,identity,I9000007,accepted,,splink_model,synthetic-0,0.9993,0.999,C9000003,
 G9000001,owner_portfolio,owner_portfolio.footprint,bbl,9000100005,group,OP-9001,excluded,coop_condo_excluded,coop_condo_contact_rule,synthetic-0,,,,"{""note"": ""co-op lot in a surviving group""}"

@@ -244,6 +244,13 @@ def _inv_decision_events(T):
     n = int((acc & de["reason_code"].notna()).sum() + (~acc & de["reason_code"].isna()).sum())
     if n:
         v.append(Violation("decision_events", "reason", "accepted events carry no reason; every other outcome has one", n))
+    # A decision about an unordered pair is recorded one way: the smaller id is the subject, so two builds
+    # of the same partition give the same rows however the pair was listed.
+    sym = (de["subject_type"] == de["counterpart_type"]) & de["subject_type"].isin(["identity", "base_cluster"])
+    n = int((sym & (de["subject_id"].astype(str) >= de["counterpart_id"].astype(str))).sum())
+    if n:
+        v.append(Violation("decision_events", "orientation",
+                           "a pair of identities or base clusters has the smaller id as its subject", n))
     for side in ("subject", "counterpart"):
         ids = de.loc[de[f"{side}_type"] == "identity", f"{side}_id"].astype(str)
         known = set()
