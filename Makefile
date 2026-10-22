@@ -1,4 +1,4 @@
-.PHONY: install test lint build-lwc eval export build-release validate-release help
+.PHONY: install test lint build-lwc eval export build-release validate-release explain help
 
 # Release build (see docs/release-contract.md). Until nlr 0.2.0 is released and pinned in
 # pyproject.toml, point NLR at a local checkout of nlr's capture-decisions branch:
@@ -17,6 +17,7 @@ help:
 	@echo "build-release    - build and validate a contract release in OUT (default release/contract)"
 	@echo "                   make build-release SNAPSHOT_ID=<id> [AS_OF=YYYY-MM-DD] [RUN_ID=<id>] [REQUIRE_CLEAN=1] [NLR=<path>]"
 	@echo "validate-release - validate the release in OUT against the contract"
+	@echo "explain          - explain a lot, pair or group of the release in OUT: make explain ARGS=\"lot <bbl>\""
 
 install:
 	uv sync
@@ -42,3 +43,7 @@ build-release:
 
 validate-release:
 	$(UVRUN) python -m bor.release validate $(OUT)
+
+explain:
+	@test -n "$(ARGS)" || { echo "usage: make explain ARGS=\"lot <bbl>\"  |  \"pair <bbl> <bbl> [layer]\"  |  \"group <id>\""; exit 2; }
+	$(UVRUN) python -m bor.explain $(OUT) $(ARGS)
