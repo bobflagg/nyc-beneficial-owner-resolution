@@ -32,7 +32,8 @@ No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS do
 | Groups and paths | `groups`, `group_members`, `group_bbls`, `group_witness`, `link_sets`, `link_set_members` | implemented for both layers (`bor.group_tables` for Owner Portfolios, W4; `bor.network_tables` for Operational Networks, W5) |
 | Operational network | `network_edges`, `network_membership`, `split_attempts` | implemented (`bor.network_tables`, W5) |
 | Absence, masking, metrics | `masked_addresses`, `masked_address_nodes` | implemented (W5) |
-| | `bbl_status`, `method_metrics` | planned (W6b, W7) |
+| | `bbl_status` | implemented (`bor.absence`, W6) |
+| | `method_metrics` | planned (W7) |
 
 The worked example below is a synthetic fixture, but every table it uses for the identity layer is now produced from the real dump. Columns, types, enums, keys and foreign keys are in `release_schema.py`; the table descriptions there are the reference.
 
@@ -107,6 +108,16 @@ So the 1–3 link is explained through both decisions, the weak feedback stage i
 **Tied nodes.** 639 nodes straddling several clusters are assigned by a tied plurality vote resolved by an arbitrary rule. A witness step that rests on such a node (`node_cluster.tied`) must be shown with that caveat, with its `node_cluster_alternatives` listed.
 
 ## Absence
+
+`bbl_status` has one row per lot **per layer**, over every lot in the PLUTO snapshot plus any lot that is in a node or a group (on the reference dump 858,625 lots, 137 MB as CSV; a missing row means nothing). The detail, with every reason that applies, is in `decision_events`; this table is the summary.
+
+How the primary reason is chosen (`bor.absence`): the facts about the source and the lot's own events are pooled, and the reason from the earliest stage wins (precedence below; ties follow the order of the codes).
+
+- **Facts:** the lot has no HPD registration (`no_registration`); it has one but no qualifying person owner contact (`no_owner_contact`); in the Owner Portfolio layer only, its node matched no resolved identity (`unmatched_node`). A lot in a group has none of these.
+- **Events:** an event bears on a lot when it names the lot (a `bbl` or `parcel`), or a node, identity, base cluster, masked address or published group that contains it, or (a deed-level screen) cites it as a parcel in `decision_support`. Events of layer `identity` bear on both layers; deed and Owner Portfolio events only on theirs; the network's address mask only on the network. The validator uses the same rule, so the summary and its check cannot drift apart.
+- **Group-level policy events** (stage `owner_portfolio.footprint`) are emitted for the co-op/condo rule: a group dropped as co-op dominated has one `dropped` event on the group and an `excluded` event on each of its lots; a co-op lot left out of a surviving group's footprint has its own `excluded` event.
+
+On the reference dump, in the Owner Portfolio layer 43,318 lots are in a group, 412 are co-ops left out of a footprint and 814,895 are not in a group. Of the latter 677,771 have no HPD registration (outside source coverage), 114,002 have no linkage, 9,507 are registered with no qualifying contact, 2,576 belong to the 219 groups dropped as co-op dominated, and the rest carry a gate reason (for example 1,923 first-name veto, 528 institutional screen, 363 not their latest deed, 166 unmatched node). The Operational Network has 71,256 lots in a network. These describe what the pipeline decided; none establishes that no real relationship exists.
 
 `bbl_status` is a **summary** over the PLUTO-snapshot lot universe (the manifest names the snapshot); a missing row means nothing. A lot has one status:
 

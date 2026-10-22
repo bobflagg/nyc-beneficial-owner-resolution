@@ -120,6 +120,7 @@ def event_tables(trace: dict, rule_version: str) -> tuple[pd.DataFrame, pd.DataF
                     reason_code=r.reason, rule=rule,
                     detail=_detail(n_parcels=int(r.n_parcels), screen=r.screen))
             support.append((k, "document", r.doc, "deed"))
+            support += [(k, "bbl", b, "parcel") for b in sorted(set(r.bbls)) if b in bbl_nodes]
 
     # Parcel-level linked-successor outcomes: a rejected parcel of a deed that could have linked nodes.
     parcels = trace["parcels"]

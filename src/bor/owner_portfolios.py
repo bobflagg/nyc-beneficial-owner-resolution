@@ -178,13 +178,16 @@ def _identity_and_deed_pairs(conn, *, threshold: float, include_deed: bool, as_o
 
 def resolve_owner_portfolios(conn, *, threshold: float = DEFAULT_THRESHOLD,
                          include_deed: bool = True, min_size: int = 2, as_of=None,
-                         node_cluster_frame=None, deed_edge_frame=None) -> list[OwnerPortfolio]:
+                         node_cluster_frame=None, deed_edge_frame=None,
+                         trace: dict | None = None) -> list[OwnerPortfolio]:
     """Resolve Owner Portfolios off-graph. Runs the four edge builders, union-finds their
     pairs (CONNECTED_BY_SPLINK ∪ CONNECTED_BY_DEED), maps components to buildings via lwc, applies
     the co-op/condo exclusion, and returns the surviving groups. KG-free.
     ``as_of`` is the deed cut-off date (default today); a release records it. ``node_cluster_frame``
     (``[nodeid, cluster_id]``) and ``deed_edge_frame`` reuse a resolution and deed edges already in
-    hand, so a release builds every layer from one Splink fit and one deed run."""
+    hand, so a release builds every layer from one Splink fit and one deed run. ``trace`` (a dict)
+    receives ``dropped``: each group removed as co-op/condo dominated, with its nodes, all its lots and
+    its rental lots; the result is unchanged."""
     id_pairs, deed_pairs = _identity_and_deed_pairs(conn, threshold=threshold, include_deed=include_deed,
                                                      as_of=as_of, node_cluster_frame=node_cluster_frame,
                                                      deed_edge_frame=deed_edge_frame)
@@ -218,6 +221,9 @@ def resolve_owner_portfolios(conn, *, threshold: float = DEFAULT_THRESHOLD,
         rental = rental_bbls[gid]
         # drop co-op/condo-DOMINATED groups (>50% of buildings co-op/condo): management artifacts
         if len(total) > 0 and 2 * len(rental) < len(total):
+            if trace is not None:
+                trace.setdefault("dropped", []).append({
+                    "group_id": gid, "members": sorted(mem), "bbls": sorted(total), "rental": sorted(rental)})
             continue
         mem_sorted = sorted(mem)
         groups.append(OwnerPortfolio(

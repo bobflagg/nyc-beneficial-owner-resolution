@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
+from bor import absence
 from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
                                 REASON_CODES, SCHEMA_VERSION, SOURCE_TABLE_FIELDS, TABLES, Table)
 
@@ -384,29 +385,12 @@ def _inv_bbl_status(T):
         if n:
             v.append(Violation("bbl_status", "footprint",
                                "excluded_from_footprint must match group_bbls.rental = false", n))
-    de, nobs = T.get("decision_events"), T.get("node_observations")
-    if de is not None and nobs is not None:
-        ev = de[de["outcome"] != "accepted"].dropna(subset=["reason_code"]).copy()
-        ev["rank"] = ev["reason_code"].map(_RANK)
-        node_bbl = nobs[["node_id", "bbl"]].assign(node_id=lambda d: d["node_id"].astype(str))
-        parts = [ev[ev["subject_type"] == "bbl"].rename(columns={"subject_id": "bbl"})[["layer", "bbl", "rank"]],
-                 ev[ev["subject_type"] == "node"].merge(node_bbl, left_on="subject_id", right_on="node_id")[["layer", "bbl", "rank"]]]
-        nim = T.get("node_identity_matches")
-        if nim is not None:
-            for side in ("subject", "counterpart"):
-                idev = ev[ev[f"{side}_type"] == "identity"]
-                parts.append(idev.merge(nim[["identity_id", "bbl"]], left_on=f"{side}_id", right_on="identity_id")
-                             [["layer", "bbl", "rank"]])
-        grp = s.dropna(subset=["group_id"])[["layer", "bbl", "group_id"]]
-        parts.append(ev[ev["subject_type"] == "group"].merge(grp, left_on=["layer", "subject_id"], right_on=["layer", "group_id"])[["layer", "bbl", "rank"]])
-        lot_ev = pd.concat(parts, ignore_index=True)
-        # identity-layer events (vetoes, guards) bear on both layers
-        ident = lot_ev[lot_ev["layer"] == "identity"].drop(columns="layer")
-        best = pd.concat([lot_ev[lot_ev["layer"] != "identity"], *[ident.assign(layer=l) for l in s["layer"].unique()]])
-        best = best.groupby(["layer", "bbl"])["rank"].min().rename("best").reset_index()
-        m = s.dropna(subset=["reason_code"]).assign(rank=lambda d: d["reason_code"].map(_RANK)).merge(
+    ranks = absence.lot_event_ranks(T)
+    if len(ranks):
+        best = ranks.groupby(["layer", "bbl"])["score"].min().rename("best").reset_index()
+        m = s.dropna(subset=["reason_code"]).assign(score=lambda d: d["reason_code"].map(absence._SCORE)).merge(
             best, on=["layer", "bbl"])
-        n = int((m["rank"] > m["best"]).sum())
+        n = int((m["score"] > m["best"]).sum())
         if n:
             v.append(Violation("bbl_status", "precedence",
                                "reason_code must be the highest-precedence reason among the lot's events", n))

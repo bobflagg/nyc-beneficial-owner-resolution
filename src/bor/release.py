@@ -43,6 +43,7 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
     tables, deed_report, deed_edge_frame = add_deed_layer(conn, tables, as_of)
     tables, portfolio_report = add_owner_portfolio_layer(conn, tables, deed_edge_frame, as_of, run_id)
     tables, network_report = add_operational_network_layer(conn, tables, run_id)
+    tables, absence_report = add_absence_summary(conn, tables)
 
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -54,11 +55,11 @@ def build_release(conn, out_dir, *, snapshot_id: str, pluto_snapshot_id: str | N
         resolution_params=res.params,
         artifacts={name: ("representative" if name == "group_witness" else "complete") for name in tables},
         diagnostics={"partial": "lineage, identity layer, deed evidence, and both layers' groups with their "
-                                "paths; the per-lot absence summaries and the method metrics are added by "
-                                "later work packages",
+                                "paths, and the per-lot absence summary; the method metrics are added by "
+                                "a later work package",
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
                      "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report,
-                     "operational_network": network_report})
+                     "operational_network": network_report, "absence": absence_report})
     mf.write_manifest(out, manifest)
 
     loaded, written = read_release(str(out))
@@ -91,12 +92,16 @@ def add_owner_portfolio_layer(conn, tables: dict, deed_edge_frame, as_of: date |
                               ) -> tuple[dict, dict]:
     """Owner Portfolios, lots and witness paths, built from the identity resolution and the deed
     edges already in ``tables`` (one Splink fit and one deed run per release)."""
+    import pandas as pd
+
     import bor
-    from bor import curated_owners, group_tables
+    from bor import curated_owners, group_events, group_tables
     from bor.owner_portfolios import resolve_owner_portfolios
 
     nc = tables["node_cluster"].rename(columns={"node_id": "nodeid"})[["nodeid", "cluster_id"]]
-    portfolios = resolve_owner_portfolios(conn, as_of=as_of, node_cluster_frame=nc, deed_edge_frame=deed_edge_frame)
+    drop_trace: dict = {}
+    portfolios = resolve_owner_portfolios(conn, as_of=as_of, node_cluster_frame=nc, deed_edge_frame=deed_edge_frame,
+                                          trace=drop_trace)
 
     version = f"bor-{bor.__version__}"
     named = group_tables.named_link_sets(curated_owners.curated_node_groups(conn), group_tables.llc_sources(conn),
@@ -109,6 +114,10 @@ def add_owner_portfolio_layer(conn, tables: dict, deed_edge_frame, as_of: date |
     out = dict(tables)
     out.update(new)
     out["link_sets"], out["link_set_members"] = named.sets, named.members
+    events = group_events.portfolio_events(portfolios, drop_trace.get("dropped", []), version)
+    out["decision_events"] = pd.concat([tables["decision_events"], events], ignore_index=True)
+    report.update({"groups_dropped_as_coop_dominated": len(drop_trace.get("dropped", [])),
+                   "lots_left_out_of_a_footprint": int((events["reason_code"] == "coop_condo_excluded").sum())})
     report.update({"curated_sets": int((named.sets["stage"] == "identity.curated").sum()),
                    "registered_llc_sets": int((named.sets["stage"] == "identity.registered_llc").sum())})
     return out, report
@@ -139,6 +148,29 @@ def add_operational_network_layer(conn, tables: dict, run_id: str) -> tuple[dict
     report["masked_addresses"] = len(masked)
     report["nodes_at_masked_addresses"] = len(masked_nodes)
     return out, report
+
+
+def add_absence_summary(conn, tables: dict) -> tuple[dict, dict]:
+    """``bbl_status``: for every lot in the PLUTO snapshot (and every lot that is in a node or a group),
+    in each layer, whether it is in a group and, if not, the primary reason."""
+    from bor import absence
+
+    universe = [r[0] for r in _query(conn, "SELECT DISTINCT trim(bbl) FROM pluto_latest WHERE bbl IS NOT NULL")]
+    registered = [r[0] for r in _query(conn, "SELECT DISTINCT trim(bbl) FROM hpd_registrations WHERE bbl IS NOT NULL")]
+    status = absence.bbl_status_table(universe, registered, tables)
+    out = dict(tables)
+    out["bbl_status"] = status
+    by = status.groupby(["layer", "status"]).size()
+    reasons = status[status["status"] != "in_group"].groupby(["layer", "reason_code"]).size()
+    return out, {"pluto_lots": len(universe), "lots_with_status": int(status["bbl"].nunique()),
+                 "status": {f"{l}/{s}": int(n) for (l, s), n in by.items()},
+                 "reasons": {f"{l}/{c}": int(n) for (l, c), n in reasons.items()}}
+
+
+def _query(conn, sql):
+    cur = conn.cursor()
+    cur.execute(sql)
+    return cur.fetchall()
 
 
 def main() -> None:  # pragma: no cover - needs the database
