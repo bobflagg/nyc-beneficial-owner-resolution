@@ -15,8 +15,8 @@ authors:
     # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO
 license: MIT
 repository-code: "https://github.com/bobflagg/nyc-beneficial-owner-resolution"
-version: 0.1.0.dev0
-# doi: "10.5281/zenodo.XXXXXXX"   # TODO — mint on first tagged release (Phase 3)
+version: 0.1.0
+# No DOI yet: the release is a tagged GitHub release. Add `doi:` here if the project is archived (e.g. on Zenodo).
 keywords:
   - beneficial ownership
   - entity resolution

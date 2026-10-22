@@ -1,4 +1,4 @@
-.PHONY: install test test-offline lint build-lwc eval export build-release validate-release explain fixtures excerpt help
+.PHONY: install test test-offline package-release lint build-lwc eval export build-release validate-release explain fixtures excerpt help
 
 # Release build (see docs/release-contract.md). nlr is pinned in pyproject.toml (v0.2.0); to try an
 # unreleased nlr, point NLR at a local checkout:
@@ -18,6 +18,7 @@ help:
 	@echo "build-release    - build and validate a contract release in OUT (default release/contract)"
 	@echo "                   make build-release SNAPSHOT_ID=<id> [AS_OF=YYYY-MM-DD] [RUN_ID=<id>] [REQUIRE_CLEAN=1] [EVAL_DIR=eval_out GOLD_STATUS=<status>] [NLR=<path>]"
 	@echo "validate-release - validate the release in OUT against the contract"
+	@echo "package-release  - zip the validated release in OUT for publication: dist/bor-v<version>-<snapshot>.zip, .sha256, -NOTES.md"
 	@echo "explain          - explain a lot, pair or group of the release in OUT: make explain ARGS=\"lot <bbl>\""
 	@echo "fixtures         - regenerate tests/fixtures/synthetic_release (no database)"
 	@echo "excerpt          - cut an excerpt of the release in OUT: make excerpt SEEDS=\"OP-67966\" EXCERPT_OUT=tests/fixtures/citadel_excerpt [NOTE=\"text\"]"
@@ -47,6 +48,9 @@ export:
 build-release:
 	@test -n "$(SNAPSHOT_ID)" || { echo "SNAPSHOT_ID is required, in the form the KG defines: make build-release SNAPSHOT_ID=<id>"; exit 2; }
 	$(UVRUN) python -m bor.release build $(OUT) --snapshot-id $(SNAPSHOT_ID) $(if $(AS_OF),--as-of $(AS_OF)) $(if $(RUN_ID),--run-id $(RUN_ID)) $(if $(REQUIRE_CLEAN),--require-clean) $(if $(EVAL_DIR),--eval-dir $(EVAL_DIR) --gold-status $(GOLD_STATUS))
+
+package-release:
+	$(UVRUN) python -m bor.release_package $(OUT) --out dist
 
 validate-release:
 	$(UVRUN) python -m bor.release validate $(OUT)

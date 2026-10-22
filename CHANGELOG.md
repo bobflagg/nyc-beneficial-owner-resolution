@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.1.0] - unreleased (the date is added when the release is tagged)
 
 ### Added
 - **Owner Portfolio layer** (`bor.owner_portfolios`) — Owner Portfolios off-graph (union-find over
@@ -79,4 +79,4 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   input, alongside HPD registrations.
 
 ### Notes
-- Not yet released. Cut a versioned, DOI'd release per [`docs/release.md`](docs/release.md).
+- First release, `v0.1.0`: a tagged GitHub release with the data attached, cut per [`docs/release.md`](docs/release.md). No DOI yet.

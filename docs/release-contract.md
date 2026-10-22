@@ -1,6 +1,6 @@
-# Release contract (draft v0.1.0)
+# Release contract v0.1.0
 
-Status: draft for review with the KG, 2026-10-20, amended after the KG developer's review (a working paper, not kept in this repository). Background: the plan is [kg-handoff-plan-v2.md](kg-handoff-plan-v2.md) and the measurements behind the lineage tables are [w0-findings.md](w0-findings.md). This is the minimal W8 contract from the plan: the shape of a bor release, a worked explanation, and a validator. The machine-readable form is `src/bor/release_schema.py`; `python -m bor.release_validate <dir>` checks a release against it. Fixtures to load and test against live in `tests/fixtures/` (see [Fixtures](#fixtures)).
+Status: v0.1.0, agreed with the KG (design notes 0007 and 0008, both accepted); drafted 2026-10-20 and amended after the KG developer's review (a working paper, not kept in this repository). Background: the plan is [kg-handoff-plan-v2.md](kg-handoff-plan-v2.md) and the measurements behind the lineage tables are [w0-findings.md](w0-findings.md). This is the minimal W8 contract from the plan: the shape of a bor release, a worked explanation, and a validator. The machine-readable form is `src/bor/release_schema.py`; `python -m bor.release_validate <dir>` checks a release against it. Fixtures to load and test against live in `tests/fixtures/` (see [Fixtures](#fixtures)).
 
 Where this document and the plan disagree on table names or columns, **this document wins**; the plan's section 4 was a first sketch.
 
@@ -135,7 +135,7 @@ A detailed `reason_code` maps to one of five top-level reasons, listed in **prec
 | `below_eligibility_rule` | `deed_parcels_out_of_range`, `deed_not_latest`, `successor_not_shell`, `successor_transfer_not_nominal`, `first_name_veto`, `common_name_veto`, `shared_company_name_not_rare`, `shared_company_first_name_conflict`, `shared_company_degree_cap`, `shared_company_degree_unknown`, `group_below_min_size` |
 | `no_qualifying_linkage` | `no_linkage`, `pair_below_threshold` |
 
-`outside_method_input` is the KG's proposed fifth reason (KG note 0007, awaiting acceptance): the source holds the record but the method did not use it. **No user-facing sentence should call those codes "source coverage".** All of these describe what the pipeline decided; none establishes that no real relationship exists, and comparisons beyond the candidates bor evaluated (for example Q7, Q22) are the KG's to make.
+`outside_method_input` is the KG's fifth reason (KG note 0007, accepted): the source holds the record but the method did not use it. **No user-facing sentence should call those codes "source coverage".** All of these describe what the pipeline decided; none establishes that no real relationship exists, and comparisons beyond the candidates bor evaluated (for example Q7, Q22) are the KG's to make.
 
 ## Metrics
 
@@ -198,8 +198,7 @@ Opaque identity ids; one polymorphic `decision_events` table; gate-blocked rejec
 
 1. **Witness only, or the full network graph?** Decided after the W5 size spike.
 2. **Run-scoped nodes versus edge expansion** onto identities in the graph (KG note 0007, item 5). The KG's call once the node and edge tables exist.
-3. **The fingerprint method** for large source tables (W1), and the form of `snapshot_id` (proposed above; the KG confirms).
-4. **Whether the fifth reason is accepted** (KG note 0007); the codes under it are ready either way.
+3. **The fingerprint method** for large source tables, which a loader can run on its own load (`bor.manifest.fingerprint_sql`; the KG's tiers are in [kg-mapping.md](kg-mapping.md)). The form of `snapshot_id` is settled (KG note 0008).
 
 ## Not promised
 

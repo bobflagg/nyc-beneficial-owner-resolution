@@ -2,7 +2,7 @@
 
 This is bor's side of the boundary agreed with the KG (the `nyc-landlord-research-kg` repository, design notes 0001, 0002, 0005 and 0007). It says which release field feeds which graph property, what a loader must check before it trusts a release, and what it must never do. It is documentation, not an import: bor does not adopt the KG's ontology and the KG does not import bor's schema (note 0007). The release itself is described in [release-contract.md](release-contract.md) and, per release, in its generated `DATA.md`.
 
-Status of the KG notes this rests on: 0002 and 0005 are accepted; **0007 is proposed**, so the fifth absence reason and the node-versus-edge choice below are the KG's to confirm.
+Status of the KG notes this rests on: 0002, 0005, 0007 (the fifth absence reason, `outside_method_input`) and 0008 (the snapshot identifier) are accepted. The node-versus-edge choice below (note 0007, item 5) is still the KG's call once the node and edge tables exist.
 
 ## Field mapping
 
@@ -47,4 +47,4 @@ The questions this serves are the KG's Q9 and Q10 (footprint and comparison of t
 
 ## Open on the KG side
 
-Acceptance of note 0007 (the fifth reason, `outside_method_input`, and the building-level `coop_condo_excluded` code); run-scoped nodes versus edge expansion (item 5); the `AbsenceReason` vocabulary; and whether reviews should survive across runs once a review process exists.
+Run-scoped nodes versus edge expansion (note 0007, item 5); the `AbsenceReason` vocabulary; and whether reviews should survive across runs once a review process exists.

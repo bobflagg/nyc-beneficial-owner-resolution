@@ -1,6 +1,6 @@
 """bor.export — the citeable dataset export.
 
-Writes the resolved layers as a small set of CSVs suitable for a versioned, DOI'd data release.
+Writes the resolved layers as a small set of CSVs suitable for a versioned data release.
 
 **Person-free by default.** The project's dual-use reflection argues for capability governance over a
 one-click bulk person-profiling affordance, and flags the doxxing / mosaic risk of a person-linked

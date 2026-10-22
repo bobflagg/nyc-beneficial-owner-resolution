@@ -1,4 +1,4 @@
-"""The release contract (draft v0.1.0): table schemas and controlled vocabularies.
+"""The release contract (v0.1.0): table schemas and controlled vocabularies.
 
 This is the machine-readable form of docs/release-contract.md. A release is a directory of CSVs
 plus ``manifest.json``; :mod:`bor.release_validate` checks one against these specs.
@@ -46,7 +46,7 @@ OUTCOMES = ("accepted", "rejected", "masked", "excluded", "dropped")
 
 # The top-level reasons a lot is absent, in precedence order: when several apply, the earliest
 # stage that removed the lot is the primary reason. The KG's contract names the first four plus
-# outside_method_input (KG design note 0007, proposed).
+# outside_method_input (KG design note 0007, accepted).
 TOP_LEVEL_REASONS = ("outside_source_coverage", "outside_method_input", "excluded_by_policy",
                      "below_eligibility_rule", "no_qualifying_linkage")
 PRECEDENCE = TOP_LEVEL_REASONS

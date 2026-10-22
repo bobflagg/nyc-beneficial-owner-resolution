@@ -1,6 +1,6 @@
 # Release checklist: the citeable artifact
 
-How to cut a versioned, DOI'd release. Steps marked **(you)** need account access or a decision that belongs to the maintainer. Nothing here pushes or tags for you.
+How to cut a versioned release. Steps marked **(you)** need account access or a decision that belongs to the maintainer. Nothing here pushes or tags for you.
 
 There are two products. The **contract release** is the handoff to the knowledge graph and the thing to cite: a directory of CSVs and a manifest, frozen and checksummed, with the evidence behind every grouping ([release-contract.md](release-contract.md), [kg-mapping.md](kg-mapping.md)). The **legacy dataset** (`bor.export`) is the four-file membership list the first release was going to be. The graph treats it as superseded; it stays for people who want only memberships (see Open decisions).
 
@@ -12,7 +12,7 @@ A release is **person-free**. The contract release has no name column anywhere, 
 
 - **nlr is released and pinned.** The release is built with `nyc-landlord-resolution` v0.2.0 (it returns the captured decisions the evidence tables come from), pinned in `pyproject.toml` and `uv.lock`. A clean install (`uv sync`) is enough; `NLR=<path>` points a build or the tests at a local nlr checkout instead, for trying an unreleased one.
 - **The work is merged and the trees are clean.** The manifest records each package's revision, a dirty flag and a hash of the code itself. A tagged release is built with `REQUIRE_CLEAN=1`, which refuses an unclean tree.
-- **Versions.** `splink==4.0.16` stays pinned (the version behind the published partition). Drop `.dev0` from `pyproject.toml` and `CITATION.cff` at tag time.
+- **Versions.** `splink==4.0.16` stays pinned (the version behind the published partition). The version is `0.1.0` (`pyproject.toml`, `bor.__version__`, `CITATION.cff`): **bump it before the final build**, because it is written into the data (every decision and evidence row carries `rule_version: bor-<version>`, and the manifest records it). The packaging step refuses a `.dev` version.
 - **The test suite passes against the reference Postgres** (`PGDATABASE=justfixwow make test`; about half an hour). `make test-offline` runs the subset that needs no database (about ten seconds). A plain `make test` runs the database tests too whenever `PGDATABASE` is set, including by bor's `.env`.
 - **The evaluation is scored with counts.** `uv run python -m bor.eval.score --key eval_out/blinding_key.jsonl --annotations eval_out/annotations.jsonl --out eval_out` records the counts behind each proportion and the gold's annotators (the figures themselves do not change). A `metrics.json` from an older scorer is refused with this instruction.
 
@@ -48,32 +48,37 @@ uv run python -m bor.eval.divergence     # expect ~760 crossing / 616 hiding
 
 Cross-check against [parity.md](parity.md). Report figures as stable to about 99.9%, not exact integers (Splink's u-sampling jitters). Check the loader's side too: compare `manifest.source_tables` with the same fingerprint query on the graph's own load ([kg-mapping.md](kg-mapping.md)).
 
-## 5. Tag and release **(you)**
+## 5. Package the release
 
 ```bash
-git tag -a vX.Y.Z -m "Beneficial Ownership Resolution vX.Y.Z"
-git push origin vX.Y.Z
+make package-release
 ```
 
-Create a GitHub Release from the tag and attach the zipped `release/contract` with its sha256. In `CHANGELOG.md` rename "Unreleased" to the version and date.
+This writes `dist/bor-v0.1.0-justfixwow-2026-05-29.zip`, its `.sha256` and a `-NOTES.md` for the GitHub release. It **refuses** anything that should not be published: a release that does not validate, a synthetic release or an excerpt, one built from unclean trees or a `.dev` version, and any file in the directory that is not a contract table, `DATA.md` or `manifest.json` (it names the file). That last check is the guard that matters, because the `release/` directory of a checkout can hold an older export that includes owner names. Package `release/contract`, never `release/`. The zip is reproducible: the same release always gives the same checksum.
 
-## 6. Mint a DOI on Zenodo **(you)**
+## 6. Tag and publish **(you)**
 
-Enable the GitHub–Zenodo integration (or upload the archive directly). Zenodo issues a DOI on the release.
+```bash
+git tag -a v0.1.0 -m "Beneficial Ownership Resolution v0.1.0"
+git push origin v0.1.0
+```
 
-## 7. Fill the DOI back in
+Then create a GitHub release from the tag, paste the `-NOTES.md` as its description, and attach the zip and its `.sha256`. Tag the commit that holds the regenerated fixtures: the manifest names the commit the release was built from, which is one commit earlier and differs only in test fixtures (the manifest's `source_tree_hash` covers the code and is the same for both). Do not move a tag once it is pushed; if something is wrong, release `v0.1.1`. In `CHANGELOG.md`, replace "unreleased" in the heading with the date, in the commit you tag.
 
-Edit `CITATION.cff`: set `doi:`, bump `version:` to the tag, add your ORCID. Commit.
+## No DOI yet
+
+A DOI is a later step, taken when the project has earned it. GitHub's "Cite this repository" button works from `CITATION.cff` without one. When you want one, enable the repository in Zenodo and create the next release. Zenodo archives only releases created after it is enabled, so `v0.1.0` would have to be uploaded by hand. Whether Zenodo includes a release asset (the data zip) in its archive is not stated in the pages checked on 2026-10-22; confirm before relying on it. A published DOI is permanent, so mint one for a real release, not a rehearsal. A DOI cannot be inside the release: the files are checksummed before it exists.
 
 ## Decisions
 
 Settled by the maintainer, 2026-10-22:
 
+- **Version `0.1.0`, tag `v0.1.0`, no DOI yet.** A tagged GitHub release with the data zip and its checksum attached; Zenodo later, if the project proves itself.
 - **Legacy dataset.** `bor.export` stays as a documented convenience: four membership files, person-free by default, one Splink fit shared by both layers. It is not the handoff, its group ids are per-build and it carries no evidence; the contract release is what to cite and what the graph loads.
 - **The gold.** The release ships with the provisional gold, labeled `human_llm_provisional` in every metric row and in `DATA.md`: one human annotator, an LLM second reader and an LLM-run resolution of their disagreements. A release rebuilt after the blind human re-adjudication carries `blind_human`. Public wording about the evaluation ("blind human adjudication", "inter-annotator") does not go out ahead of that.
 - **`bbl_status` keeps every PLUTO lot in both layers.** It is 1.7 million rows and 137 MB, but 6.6 MB gzipped, and 79% of the rows are `no_registration`. Dropping them would save 112 MB raw and 5 MB compressed and break the promise that a missing row means nothing. A loader that does not want them can skip them and answer "no HPD registration" from its own HPD data ([kg-mapping.md](kg-mapping.md)).
 
-Settled by the KG (design note 0008, accepted 2026-10-22): the snapshot id form above. Still the KG's: acceptance of design note 0007 (the fifth absence reason).
+Settled by the KG: design note 0007 (the fifth absence reason) and design note 0008 (the snapshot id form above), both accepted.
 
 ## Still open before a "1.0"
 
