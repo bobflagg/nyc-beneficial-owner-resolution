@@ -42,7 +42,7 @@ def test_a_clean_validated_release_is_zipped_with_a_checksum_and_notes(tmp_path)
     notes = " ".join(r["notes"].read_text().split())                     # the paragraphs are wrapped
     assert "No owner names" in notes and "synthetic-0001" in notes and "complete through 2026-10-22" in notes
     assert "shasum -a 256 -c bor-v0.1.0-synthetic-2026-10-22.zip.sha256" in notes and r["digest"] in notes
-    assert "lead, not a determination of ownership" in notes
+    assert "lead, not a determination of ownership" in notes and "the data is CC BY 4.0; the code is MIT" in notes
 
 
 def test_the_same_release_always_gives_the_same_checksum(tmp_path):

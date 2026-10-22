@@ -38,3 +38,14 @@ def test_relative_links_point_at_files_that_exist(doc):
         if not _exists(doc.parent / target.split("#")[0], tracked):
             broken.append(target)
     assert broken == []
+
+
+def test_the_version_is_the_same_everywhere_and_the_author_is_citable():
+    import tomllib
+
+    import bor
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    citation = (ROOT / "CITATION.cff").read_text()
+    assert re.search(r"^version: (\S+)", citation, re.M).group(1) == version == bor.__version__
+    assert 'orcid: "https://orcid.org/0009-0000-2910-0599"' in citation and "TODO" not in citation.split("keywords:")[0]
+    assert "CC BY 4.0" in (ROOT / "README.md").read_text()

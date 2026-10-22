@@ -12,8 +12,8 @@ type: software
 authors:
   - family-names: Flagg
     given-names: Robert
-    # orcid: "https://orcid.org/0000-0000-0000-0000"   # TODO
-license: MIT
+    orcid: "https://orcid.org/0009-0000-2910-0599"
+license: MIT          # the code; the data of a release is CC BY 4.0 (README, and DATA.md inside each release)
 repository-code: "https://github.com/bobflagg/nyc-beneficial-owner-resolution"
 version: 0.1.0
 # No DOI yet: the release is a tagged GitHub release. Add `doi:` here if the project is archived (e.g. on Zenodo).

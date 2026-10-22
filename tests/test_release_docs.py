@@ -47,6 +47,13 @@ def test_the_snapshot_date_and_what_it_rests_on_are_stated(syn):
     assert "`hpd_registrations.lastregistrationdate`" in text
 
 
+def test_the_license_and_how_to_cite_are_stated(syn):
+    manifest, _, text = syn
+    text = " ".join(text.split())
+    assert "licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the code that produced it is MIT" in text
+    assert "https://github.com/bobflagg/nyc-beneficial-owner-resolution" in text and f"`{manifest['run_id']}`" in text
+
+
 def test_row_counts_come_from_the_tables(syn):
     _, tables, text = syn
     assert f"| `groups.csv` | {len(tables['groups']):,} |" in text

@@ -73,6 +73,7 @@ A DOI is a later step, taken when the project has earned it. GitHub's "Cite this
 
 Settled by the maintainer, 2026-10-22:
 
+- **License.** The code is MIT; the data of a release is **CC BY 4.0**. It is stated in the README, in each release's `DATA.md` and in the release notes. The author's ORCID is in `CITATION.cff`.
 - **Version `0.1.0`, tag `v0.1.0`, no DOI yet.** A tagged GitHub release with the data zip and its checksum attached; Zenodo later, if the project proves itself.
 - **Legacy dataset.** `bor.export` stays as a documented convenience: four membership files, person-free by default, one Splink fit shared by both layers. It is not the handoff, its group ids are per-build and it carries no evidence; the contract release is what to cite and what the graph loads.
 - **The gold.** The release ships with the provisional gold, labeled `human_llm_provisional` in every metric row and in `DATA.md`: one human annotator, an LLM second reader and an LLM-run resolution of their disagreements. A release rebuilt after the blind human re-adjudication carries `blind_human`. Public wording about the evaluation ("blind human adjudication", "inter-annotator") does not go out ahead of that.

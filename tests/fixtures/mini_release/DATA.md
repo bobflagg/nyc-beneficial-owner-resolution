@@ -367,3 +367,7 @@ Not promised: that a rerun gives identical groups (resolution is stochastic; a f
 deterministically and is checksummed), recall, identity of groups across releases, and that any grouping is
 true. A release is valid only with the source snapshot named in the manifest; a refreshed snapshot needs a newly
 frozen release.
+
+## License and citation
+
+The data in this release is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the code that produced it is MIT. Please cite the repository (https://github.com/bobflagg/nyc-beneficial-owner-resolution, see its `CITATION.cff`) and name the release by its run id (`mini-0001`) and source snapshot (`fixture-2026-10-20`).

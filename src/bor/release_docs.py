@@ -47,6 +47,8 @@ _KEYS = """\
 - **Counting unit** is the tax lot (BBL), not the building.
 """
 
+REPO_URL = "https://github.com/bobflagg/nyc-beneficial-owner-resolution"
+
 _LIMITS = """\
 Not promised: that a rerun gives identical groups (resolution is stochastic; a fixed run serializes
 deterministically and is checksummed), recall, identity of groups across releases, and that any grouping is
@@ -122,6 +124,12 @@ def render_data_md(manifest: dict, tables: dict | None = None) -> str:
             "**Reasons a lot is absent.** The primary reason is the earliest of these levels that applies:", ""]
     out += [f"{i}. `{top}`" for i, top in enumerate(PRECEDENCE, 1)] + ["", "| code | level | meaning |", "|---|---|---|"]
     out += [f"| `{c}` | `{top}` | {d} |" for c, (top, d) in REASON_CODES.items()] + ["", "## Limits", "", _LIMITS]
+    version = ((m.get("code") or {}).get("bor") or {}).get("version")
+    out += ["## License and citation", "",
+            "The data in this release is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the code "
+            f"that produced it is MIT. Please cite the repository ({REPO_URL}, see its `CITATION.cff`"
+            + (f"; version {version}" if version else "") + f") and name the release by its run id (`{m['run_id']}`) and "
+            f"source snapshot (`{m['snapshot_id']}`).", ""]
     return "\n".join(out)
 
 

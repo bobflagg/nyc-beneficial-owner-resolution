@@ -275,4 +275,4 @@ one run).
 
 ## License
 
-MIT.
+**Code:** MIT ([LICENSE](LICENSE)). **Data** (the files of a release, with the evidence behind each grouping): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Please cite the repository (see `CITATION.cff`) and name the release by its run id and source snapshot.

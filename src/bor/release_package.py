@@ -107,6 +107,9 @@ ownership, and a precision is the share of sampled pairs judged correct, not the
 
 {gold}
 
+**License:** the data is CC BY 4.0; the code is MIT. Please cite the repository (see `CITATION.cff`) and name
+the release by its run id and source snapshot.
+
 The release is valid only with the matching source snapshot: compare `manifest.json`'s `source_tables`
 with your own load of the same dump. Start with `DATA.md` inside the archive. The format and the checks a
 loader makes are in `docs/release-contract.md` and `docs/kg-mapping.md` in the repository.

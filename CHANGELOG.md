@@ -44,6 +44,8 @@ All notable changes to this project are documented here. Format: [Keep a Changel
   the frozen release and its no-names policy.
 
 ### Changed
+- Licenses: the code is MIT and the data of a release is CC BY 4.0, stated in the README, each release's `DATA.md`
+  (a new "License and citation" section) and the release notes; the author's ORCID is in `CITATION.cff`.
 - A decision about a pair of identities or base clusters is recorded with the smaller id as its subject, whichever way
   nlr listed the pair; the validator checks it. Two fits of the same partition used to differ in the orientation of a
   few symmetric events (and so in the numbering of the decisions after them).

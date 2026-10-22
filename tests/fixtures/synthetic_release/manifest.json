@@ -70,7 +70,7 @@
   "reason_vocabulary_version": "0.1.0",
   "note": "Synthetic fixture for the release contract. Not real data: every BBL starts with 9 and no id is a real one.",
   "output_checksums": {
-    "DATA.md": "409b9e096aad0b58d265d5ce1aefc7383b9791610653ab05a3157f1de7a65228",
+    "DATA.md": "30759017d39a1b02f61509ab5b4b671644719000413cb21edf3790052cdf0cd1",
     "bbl_status.csv": "77ee1e9f9f948b960ac2ba51ceb1230e97941f1d8dff772f6efa9ddc53a7e23d",
     "decision_events.csv": "6cb46acbd06fe5e52be9a1a42d0ba517db00af582159f23caab5fd0cbf6a34de",
     "decision_support.csv": "b17c5107a6a7da35dee3a37fd07878123bda105a6ffb6613f85978b461266fd1",
