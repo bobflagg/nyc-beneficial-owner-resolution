@@ -2,7 +2,7 @@
 
 This is bor's side of the boundary agreed with the KG (the `nyc-landlord-research-kg` repository, design notes 0001, 0002, 0005 and 0007). It says which release field feeds which graph property, what a loader must check before it trusts a release, and what it must never do. It is documentation, not an import: bor does not adopt the KG's ontology and the KG does not import bor's schema (note 0007). The release itself is described in [release-contract.md](release-contract.md) and, per release, in its generated `DATA.md`.
 
-Status of the KG notes this rests on: 0002, 0005, 0007 (the fifth absence reason, `outside_method_input`) and 0008 (the snapshot identifier) are accepted. The node-versus-edge choice below (note 0007, item 5) is still the KG's call once the node and edge tables exist.
+Status of the KG notes this rests on: 0002, 0005, 0007 (the fifth absence reason, `outside_method_input`) and 0008 (the snapshot identifier) are accepted. Note 0007's item 5 is decided: bor nodes enter the graph as run-scoped nodes (below).
 
 ## Field mapping
 
@@ -15,13 +15,24 @@ Status of the KG notes this rests on: 0002, 0005, 0007 (the fifth absence reason
 | (constants set by the loader) | `reliability: II`, `source_category: project_derived`, `review_status: unreviewed` | Notes 0002 to 0004 and 0007. bor never marks anything reviewed. |
 | `group_witness` rows | the evidence for a link: one record per step | Each step: `stage`, the two nodes it joins, the evidence it cites (`basis_type`, `basis_id`), and its own `assertion_key`. Held as list properties on the link or as one relationship per step (note 0005, open until the graph needs more). The path is *representative*, not the only or strongest one. |
 | `decision_support` / `observations` | the HPD contacts behind a decision | An observation is `registration:contact:k`. Join to the graph's role nodes on `registration_id` and `registrationcontactid`, never on a name. Where `observations.pair_variants > 1` the pair repeats with differing content: attach to every row of the pair and mark it ambiguous. |
-| `node_observations`, `node_identity_matches`, `node_cluster` | how a bor node maps to recorded parties | bor nodes are `landlords_with_connections` rows. Whether to load them as run-scoped nodes or expand edges onto identities is open (note 0007, item 5). `ambiguous` and `tied` rows are shown, not hidden. |
+| `node_observations`, `node_identity_matches`, `node_cluster` | how a bor node maps to recorded parties | bor nodes are `landlords_with_connections` rows and are **loaded as run-scoped nodes** (decided, note 0007 item 5; see below). `ambiguous` and `tied` rows are shown, not hidden. |
 | `evidence_items`, `evidence_members` | ACRIS deed evidence | `original_document_id` and `latest_document_id` are ACRIS document ids; a member either still sits under the joint deed or was transferred onward. |
 | `decision_events` | why a link was made or refused | One row per decision, with the rule and its version, outcome, reason code, score and threshold where there is one. Absence of an event means the rule did not run. |
 | `bbl_status` | the answer to "why is this building not in a group?" | Five top-level reasons, in precedence order: `outside_source_coverage`, `outside_method_input`, `excluded_by_policy`, `below_eligibility_rule`, `no_qualifying_linkage`. The detailed `reason_code`s are narrower terms of these (the KG's `AbsenceReason` scheme). A missing row means nothing. `no_registration` is about 79% of the rows (a lot HPD does not register): a loader may skip them and answer "no HPD registration" from its own HPD data, which is the source record itself. |
 | `method_metrics` | the published precision shown beside a link | Show `precision` with its interval and `adjudication_status` exactly as stored. Do not recompute it and do not call it a probability. |
 
 The questions this serves are the KG's Q9 and Q10 (footprint and comparison of the two layers), Q19 (why are these grouped?) and Q26 (absence).
+
+## bor nodes are run-scoped nodes
+
+Decided with the KG (note 0007, item 5): a bor node is a **run-scoped, `project_derived` node**, keyed by the run and node id (the `/n<node>` of `assertion_key`: `<run_id>/<layer>/<group_id>/n<node>`). It is a `landlords_with_connections` row, and it is the grain at which bor groups, joins and explains.
+
+- It maps to the graph's role nodes through `node_observations`: the selected observation, or every candidate in `node_observation_alternatives` when the node is `ambiguous`. Its lots are its `node_observations` rows (a node covers one or more lots; 14,242 of the 118,493 nodes cover two or more, up to 384).
+- Identity ids stay properties of the release, not nodes. The graph derives its own recorded-party key from the observations (note 0007, item 4), and `node_identity_matches` is there to cross-reference events.
+- An explanation path runs building, role node, bor node, bor node, role node, building. Only the 31,035 nodes that are in a group (of the 118,493) are needed to explain a grouping.
+- `ambiguous` (616 nodes, covering 642 lots) and straddling (751 nodes, 639 of them tied) stay flags on the node, with their alternatives, so a reader sees the choice bor made.
+
+Why not expand the edges onto identities instead: most of the evidence does not join identities. Of the 21,251 Operational Network path steps, 11,771 are shared-address and 156 are name matches between landlord *records*, and deeds and owner-entity link sets join nodes through lots. 113 nodes match no identity, so their steps would vanish, and a node that straddles clusters would connect to both readings, undoing a tie bor resolved by a recorded rule. (Expanding would only multiply edges by about 1.2 to 1.3, so cost was not the deciding reason.) Counts are from the v0.1.0 release.
 
 ## What a loader checks before it trusts a release
 
@@ -47,4 +58,4 @@ The questions this serves are the KG's Q9 and Q10 (footprint and comparison of t
 
 ## Open on the KG side
 
-Run-scoped nodes versus edge expansion (note 0007, item 5); the `AbsenceReason` vocabulary; and whether reviews should survive across runs once a review process exists.
+The `AbsenceReason` vocabulary; and whether reviews should survive across runs once a review process exists.

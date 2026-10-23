@@ -197,7 +197,7 @@ Opaque identity ids; one polymorphic `decision_events` table; gate-blocked rejec
 ## Still open
 
 1. **Witness only, or the full network graph?** Decided after the W5 size spike.
-2. **Run-scoped nodes versus edge expansion** onto identities in the graph (KG note 0007, item 5). The KG's call once the node and edge tables exist.
+2. ~~Run-scoped nodes versus edge expansion~~ Decided (KG note 0007, item 5): bor nodes are loaded as run-scoped nodes; see [kg-mapping.md](kg-mapping.md).
 3. **The fingerprint method** for large source tables, which a loader can run on its own load (`bor.manifest.fingerprint_sql`; the KG's tiers are in [kg-mapping.md](kg-mapping.md)). The form of `snapshot_id` is settled (KG note 0008).
 
 ## Not promised
