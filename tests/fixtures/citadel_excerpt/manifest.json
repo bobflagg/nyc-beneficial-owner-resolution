@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1.0",
-  "run_id": "2026-05-29-39ad2213",
+  "run_id": "2026-05-29-28e86828",
   "snapshot_id": "justfixwow-2026-05-29",
   "snapshot_date": "2026-05-29",
   "snapshot_date_basis": {
@@ -14,15 +14,15 @@
     }
   },
   "effective_date": "2026-05-29",
-  "created_at": "2026-10-22T18:45:59+00:00",
-  "bor_revision": "73bc6cdd2d39c0fc4aa075c3aef7c05f794b6f84",
+  "created_at": "2026-10-22T20:50:10+00:00",
+  "bor_revision": "94b03b284e73c56709a44e39d86ed50193ca7a3a",
   "nlr_revision": "6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79",
-  "source_tree_hash": "204e2e085b0a697afd187c1dc7dc9a3322643d7831f09399530397142b3f5cb7",
+  "source_tree_hash": "035fe4ccc2a44e7e789a1f8d26e88e646b0c64cb209743fd3384ca60009d86f8",
   "code": {
     "bor": {
-      "version": "0.1.0.dev0",
-      "tree_hash": "310538e0ba2793538dac889c9faef6b9a8fccbadd66ab6af3e83b436148983e6",
-      "revision": "73bc6cdd2d39c0fc4aa075c3aef7c05f794b6f84",
+      "version": "0.1.0",
+      "tree_hash": "baf470491d9c37aa633c32b0a3ad70b80a40bcc6cca7f1f93e63ac6644d27742",
+      "revision": "94b03b284e73c56709a44e39d86ed50193ca7a3a",
       "dirty": false
     },
     "nlr": {
@@ -32,7 +32,7 @@
       "dirty": false
     }
   },
-  "dependency_lock_digest": "ba882e9c5ec55c64e8b3b5a97ea7b0078b4b0a75cbd2e6f3b2f876ced67aaead",
+  "dependency_lock_digest": "b11d39a92a78cbf02ab808e673792ca7981251c1dc578ae463dc3e5dede9a278",
   "environment": {
     "python": "3.13.3",
     "platform": "macOS-26.7.1-arm64-arm-64bit-Mach-O",
@@ -293,7 +293,7 @@
     }
   },
   "excerpt": {
-    "of_run_id": "2026-05-29-39ad2213",
+    "of_run_id": "2026-05-29-28e86828",
     "seed_groups": [
       "OP-67966"
     ],
@@ -306,18 +306,18 @@
     "events_omitted": 36224,
     "evidence_omitted": 838
   },
-  "note": "Excerpt of a real release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. Cut from a release built from clean commits (bor 73bc6cd) with the pinned nlr v0.2.0, snapshot justfixwow-2026-05-29 and the provisional gold.",
+  "note": "Excerpt of the v0.1.0 release: Owner Portfolio OP-67966, the Citadel deed veil-pierce (README). Public-record identifiers only; no names. Cut from a release built from clean commits (bor 94b03b2) with the pinned nlr v0.2.0, snapshot justfixwow-2026-05-29 and the provisional gold.",
   "output_checksums": {
-    "DATA.md": "6950b942b200c38195347db06a134800b7f8fc2f07e66d5198bd14d01296ed42",
+    "DATA.md": "002e6d72666920eed7cacf7abeb4911cdf1972e440c503de6393dee8c5043a4b",
     "bbl_status.csv": "40ac377eff7cd64500de509384bf12f6b048c8675f0f279d93eff2fe4295728b",
     "decision_events.csv": "71816d2920e922e79f7ed8c8883b569ad33d068c9d5068c857a3b72b15dfce84",
     "decision_support.csv": "69bd7112bccdcc3091c8d52d23d9cc12b52a0aaebd9897ec78ebb350aadad687",
-    "evidence_items.csv": "bac8d39a5db5020b3d7428102db5f656827103ca8a3e2dbeaa9dba3cdb6edae3",
+    "evidence_items.csv": "2d18917786f7b21cc09ddaa27d7805ef6c77a69d913c2934e9062bc20b6bf51e",
     "evidence_members.csv": "0abb9b17cae98c8fd5830d50c6d20eec11fd80c20ccae2e56b5317f3ed292169",
     "group_bbls.csv": "b3480dc218af67ca7ca4a982f37bc0ac0db5396ee3c3620b6e009bdb2745af3d",
-    "group_members.csv": "cd28349b4914f51f4c7e78ba6a099ced5ef2fa5a3a0d9a3afdeadcf958267fd6",
-    "group_witness.csv": "4ba22db071e4d810814014c21b7552ecf6ba5dcd75b4a76ba213b1a21e4dc067",
-    "groups.csv": "8051c998ba282dbc64741f8850cd68d2a376304f827b91613d6b4effe2bff937",
+    "group_members.csv": "e06d4bf19cd2211aa0a6852932e3d698a2106883ef803a17715cae33066281f2",
+    "group_witness.csv": "0133df07fc71f4392c75cb8c40e73262724c7c03177a5d48aeeea08975f3dcd2",
+    "groups.csv": "57ee7ccee6a2eab8606f6ffb8ec7c5c1d2865e22d4c3e65dabf38a03731887b6",
     "identity_clusters.csv": "b4591f616cf225f95545c289e36843ceabde72d666f54f50c6794e7a193437e6",
     "identity_observations.csv": "e99de5bf21de013c570d3c95c9b34b9d6754f35a4dd856989896eb95fca46cee",
     "link_set_members.csv": "a6331f5cc074cc039c42e6b75375c64cb4c1c1b5ccc51abb89d004a207b31fb6",

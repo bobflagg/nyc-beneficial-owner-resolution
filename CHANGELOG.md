@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.1.0] - unreleased (the date is added when the release is tagged)
+## [0.1.0] - 2026-10-22
 
 ### Added
 - **Owner Portfolio layer** (`bor.owner_portfolios`) — Owner Portfolios off-graph (union-find over

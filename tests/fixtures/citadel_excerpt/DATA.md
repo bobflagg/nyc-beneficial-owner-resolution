@@ -1,6 +1,6 @@
-# Beneficial Ownership Resolution: release `2026-05-29-39ad2213`
+# Beneficial Ownership Resolution: release `2026-05-29-28e86828`
 
-This directory is an **excerpt** of run 2026-05-29-39ad2213 (a few Owner Portfolios and what they cite). Contract version 0.1.0.
+This directory is an **excerpt** of run 2026-05-29-28e86828 (a few Owner Portfolios and what they cite). Contract version 0.1.0.
 
 Owner Portfolios and Operational Networks resolved from NYC public records (HPD registrations and
 contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release contains no owner
@@ -17,15 +17,15 @@ missing row in `bbl_status` means nothing.
 
 | | |
 |---|---|
-| Run | `2026-05-29-39ad2213` |
+| Run | `2026-05-29-28e86828` |
 | Source snapshot | `justfixwow-2026-05-29` |
 | Complete through | `2026-05-29` |
 | Deed cut-off | `2026-05-29` |
-| Built | `2026-10-22T18:45:59+00:00` |
-| bor revision | `73bc6cdd2d39c0fc4aa075c3aef7c05f794b6f84` |
+| Built | `2026-10-22T20:50:10+00:00` |
+| bor revision | `94b03b284e73c56709a44e39d86ed50193ca7a3a` |
 | nlr revision | `6a9b1a19ac1b16c9a4f217c34e8711b5634d9c79` |
-| Source-tree hash | `204e2e085b0a697afd187c1dc7dc9a3322643d7831f09399530397142b3f5cb7` |
-| Lockfile digest | `ba882e9c5ec55c64e8b3b5a97ea7b0078b4b0a75cbd2e6f3b2f876ced67aaead` |
+| Source-tree hash | `035fe4ccc2a44e7e789a1f8d26e88e646b0c64cb209743fd3384ca60009d86f8` |
+| Lockfile digest | `b11d39a92a78cbf02ab808e673792ca7981251c1dc578ae463dc3e5dede9a278` |
 | Splink threshold | `0.999` |
 
 The snapshot is complete through the **earlier** of the newest dates of these columns, so it never claims more recent data than the dump holds (rows dated after the build are ignored and counted):
@@ -503,3 +503,7 @@ Not promised: that a rerun gives identical groups (resolution is stochastic; a f
 deterministically and is checksummed), recall, identity of groups across releases, and that any grouping is
 true. A release is valid only with the source snapshot named in the manifest; a refreshed snapshot needs a newly
 frozen release.
+
+## License and citation
+
+The data in this release is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the code that produced it is MIT. Please cite the repository (https://github.com/bobflagg/nyc-beneficial-owner-resolution, see its `CITATION.cff`; version 0.1.0) and name the release by its run id (`2026-05-29-28e86828`) and source snapshot (`justfixwow-2026-05-29`).
