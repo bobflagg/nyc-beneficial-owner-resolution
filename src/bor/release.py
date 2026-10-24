@@ -56,6 +56,7 @@ def build_release(conn, out_dir, *, snapshot_id: str,
     tables, portfolio_report = add_owner_portfolio_layer(conn, tables, deed_edge_frame, as_of, run_id)
     tables, network_report = add_operational_network_layer(conn, tables, run_id)
     tables, absence_report = add_absence_summary(conn, tables)
+    tables, names_report = add_names(conn, tables, res)
     tables["method_metrics"] = method_metrics_table(evaluation, gold_status)
 
     out = Path(out_dir)
@@ -68,13 +69,14 @@ def build_release(conn, out_dir, *, snapshot_id: str,
         resolution_params=res.params,
         artifacts={name: ("representative" if name == "group_witness" else "complete") for name in tables},
         diagnostics={"partial": "lineage, identity layer, deed evidence, and both layers' groups with their "
-                                "paths, the per-lot absence summary and the method metrics",
+                                "paths, the per-lot absence summary, the method metrics and the names",
                      "evaluation": None if not evaluation else {
                          "frame": (evaluation.get("frame") or {}).get("frame"),
                          "metrics_sha256": evaluation["sha256"], "gold_status": gold_status},
                      "latest_deed_ties": deed_edges.latest_deed_ties(conn, as_of),
                      "mapping": report, "deed": deed_report, "owner_portfolio": portfolio_report,
-                     "operational_network": network_report, "absence": absence_report})
+                     "operational_network": network_report, "absence": absence_report,
+                     "names": names_report})
     write_data_md(out, manifest, tables)            # before the checksums, so DATA.md is covered by them
     mf.write_manifest(out, manifest)
 
@@ -181,6 +183,14 @@ def add_absence_summary(conn, tables: dict) -> tuple[dict, dict]:
     return out, {"pluto_lots": len(universe), "lots_with_status": int(status["bbl"].nunique()),
                  "status": {f"{l}/{s}": int(n) for (l, s), n in by.items()},
                  "reasons": {f"{l}/{c}": int(n) for (l, c), n in reasons.items()}}
+
+
+def add_names(conn, tables: dict, res) -> tuple[dict, dict]:
+    """Add the name tables (:mod:`bor.names`): who the ids of the other tables stand for, as filed."""
+    from bor import names
+
+    new, report = names.name_tables(conn, tables, res)
+    return {**tables, **new}, report
 
 
 def _query(conn, sql):

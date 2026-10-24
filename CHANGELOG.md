@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- **Names in a release (contract 0.2.0).** Six tables (`observation_contacts`, `identity_names`, `node_names`,
+  `deed_documents`, `deed_parties`, `lot_addresses`, built by `bor.names`) say who the ids stand for, as HPD,
+  ACRIS and PLUTO filed them, so the evidence can be read. They are for reading, never for joining. The validator
+  checks that each covers every id it is for; `bor.explain` and `bor.excerpt` use and carry them; `DATA.md` and the
+  release notes say whether a release has names. A 0.1.0 release still validates. This reverses v0.1.0's
+  person-free policy (docs/release.md section 0).
+
 ## [0.1.0] - 2026-10-22
 
 ### Added

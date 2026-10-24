@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "run_id": "synthetic-0001",
   "snapshot_id": "synthetic-2026-10-22",
   "snapshot_date": "2026-10-22",
@@ -70,10 +70,12 @@
   "reason_vocabulary_version": "0.1.0",
   "note": "Synthetic fixture for the release contract. Not real data: every BBL starts with 9 and no id is a real one.",
   "output_checksums": {
-    "DATA.md": "30759017d39a1b02f61509ab5b4b671644719000413cb21edf3790052cdf0cd1",
+    "DATA.md": "dd9e5e4172571c49f11205d44c4e69de7ce0355eae21a2d5ee64c882961e8977",
     "bbl_status.csv": "77ee1e9f9f948b960ac2ba51ceb1230e97941f1d8dff772f6efa9ddc53a7e23d",
     "decision_events.csv": "6cb46acbd06fe5e52be9a1a42d0ba517db00af582159f23caab5fd0cbf6a34de",
     "decision_support.csv": "b17c5107a6a7da35dee3a37fd07878123bda105a6ffb6613f85978b461266fd1",
+    "deed_documents.csv": "5734919c593580d642a121718bc8bfe02bfbc4ac09e66eb38bf6afbb898a1cef",
+    "deed_parties.csv": "4c819dcbe15c1a58106e91a3d73cf3290067915715a99729959b6e2e375c8bd6",
     "evidence_items.csv": "35329dc83ac0929004dc2962f382aae1212ce03d3e2e0bb5eea85ee230ec51f1",
     "evidence_members.csv": "752f0c8898297061e2b41964da49d4b3e4d37fb653d1d5aeec87ac68324f556a",
     "group_bbls.csv": "dc2a923e67a9ba9e87e79bffc8e368ba4e9b3d5a13a0f39d24e8efc7f517577c",
@@ -81,9 +83,11 @@
     "group_witness.csv": "500c492afb53c91e9ff5b85a7186e8b669bf6918ecbc50b15396461ca56ddbe5",
     "groups.csv": "e6b41890fb6754764c5512fe893716d92ba7593b66592d83b742fc2e66a7b84f",
     "identity_clusters.csv": "485dabef2ada64f3db4b7b4b9f89322164060e4a99ce7fece960a13631782436",
+    "identity_names.csv": "86f8ff3e57b25cb777db457cdcf2feb3a39191c0990e9bbc6c29f9379e72976d",
     "identity_observations.csv": "a87debeabbb6e34c6c58cf426fe8ad73a4367b22f42851e95b68f8584943ec1e",
     "link_set_members.csv": "cf7d5f644dc6526576f085ab8ddbae995227172fc71656aabbc9aa3f39ffd4a8",
     "link_sets.csv": "4144ab806b37af15b625d0e415a5f92f84a6433001730399bffca3b55f47c520",
+    "lot_addresses.csv": "01721c5d427f80bc1da4f579cf7429dcdfa357dbccffceee9769b65b10621cc6",
     "masked_address_nodes.csv": "e391717d0ef858c1bf01b91db93ae87180bc8f25a893f7f6e67e43926426ae2a",
     "masked_addresses.csv": "2b9704f1853cbd9293930d9c32c5d4ce14358b4a76ad3d61739423e583a1f407",
     "method_metrics.csv": "3d081b3856bb19f24823e165556c0951cfc107d626560b9ee502032781676b40",
@@ -92,8 +96,10 @@
     "node_cluster.csv": "81c25a7d5ba5487dc1243ac0993306020e742a3752c124d693f16196c8732fe2",
     "node_cluster_alternatives.csv": "eca118012179cab9d71c22ac8dbf8fe1b4ed28181f1031ff5dfa60441c25a72a",
     "node_identity_matches.csv": "c4dee9bf3b8cddad3564450580a234f7ff7a9d30ee7acaed2e2d969506b4c571",
+    "node_names.csv": "31008d800434db010c2b6c45c934114ed0f36dddd8ddba187e4d6db921b184c5",
     "node_observation_alternatives.csv": "017405a326a52caec2435426a25c4ba5611a681212a60751420ef59087d67704",
     "node_observations.csv": "96a5d888996434502690ce526be6ccd4d9e3c703fca164177130af118f576872",
+    "observation_contacts.csv": "55fe61bb9e6c1288db794f8a9b226969e29e0e2ae6b1efc1478438a3cdf32bb6",
     "observations.csv": "80dd3d55f5f70c3961c50cb3e3dae1adaa3bdbc0189965a3d1f9501187662c0c",
     "split_attempts.csv": "c57359b26b48d119b119c7207650ab6198ce5a62596c19255ea5972cd9a0e275"
   }

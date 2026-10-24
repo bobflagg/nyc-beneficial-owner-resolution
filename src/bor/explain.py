@@ -125,6 +125,48 @@ class Release:
         m = g[(g["layer"] == layer) & (g["group_id"] == group_id)] if g is not None else None
         return None if m is None or m.empty else m.iloc[0]
 
+    # ---- names (present in a 0.2.0 release; every method returns None or the bare id without them)
+    def _name_of(self, table: str, key: str, value: str, col: str):
+        df = self.table(table)
+        if df is None or key not in df.columns:
+            return None
+        m = df[df[key].astype(str) == str(value)]
+        v = None if m.empty else m.iloc[0][col]
+        return v if isinstance(v, str) and v else None
+
+    def node_name(self, node: str):
+        return self._name_of("node_names", "node_id", node, "name")
+
+    def lot_address(self, bbl: str):
+        return self._name_of("lot_addresses", "bbl", bbl, "address")
+
+    def contact_name(self, observation_id: str):
+        oc = self.table("observation_contacts")
+        if oc is None:
+            return None
+        m = oc[oc["observation_id"] == observation_id]
+        if m.empty:
+            return None
+        r = m.iloc[0]
+        person = " ".join(x for x in (r.get("first_name"), r.get("middle_initial"), r.get("last_name")) if isinstance(x, str) and x)
+        return person or (r.get("corporation_name") if isinstance(r.get("corporation_name"), str) else None)
+
+    def deed_text(self, document_id: str, noun: str = "ACRIS deed") -> str:
+        """``ACRIS deed 123 (SELLER to BUYER, recorded 2015-05-04)``, or the bare id without the name tables."""
+        parties, docs = self.table("deed_parties"), self.table("deed_documents")
+        who = []
+        if parties is not None:
+            p = parties[parties["document_id"].astype(str) == str(document_id)]
+            for kind in ("grantor", "grantee"):
+                names = list(p.loc[p["party_type"] == kind, "name"])
+                if names:
+                    who.append(" and ".join(names[:2]) + (f" and {len(names) - 2} more" if len(names) > 2 else ""))
+        when = self._name_of("deed_documents", "document_id", document_id, "recorded_filed") if docs is not None else None
+        bits = [" to ".join(who)] if len(who) == 2 else who
+        if when:
+            bits.append(f"recorded {when}")
+        return f"{noun} {document_id}" + (f" ({', '.join(b for b in bits if b)})" if bits else "")
+
     def node_label(self, node: str) -> str:
         """``lot 3000010001 (HPD registration 101, contact 10105)`` for a node, as far as the release says."""
         nobs = self.table("node_observations")
@@ -134,10 +176,13 @@ class Release:
         r = m.iloc[0]
         more = f"; the node covers {len(m) - 1} more lot{'s' if len(m) > 2 else ''}" if len(m) > 1 else ""
         sel = r.get("selected_observation_id")
+        name, addr = self.node_name(node), self.lot_address(r["bbl"])
+        who = f"{name}, " if name else ""
+        where = f"lot {r['bbl']}" + (f", {addr}" if addr else "")
         if isinstance(sel, str) and sel:
             reg, contact, _ = sel.split(":")
-            return f"lot {r['bbl']} (HPD registration {reg}, contact {contact}{more})"
-        return f"lot {r['bbl']} (HPD registration {r['registration_id']}, contact not unique{more})"
+            return f"{who}{where} (HPD registration {reg}, contact {contact}{more})"
+        return f"{who}{where} (HPD registration {r['registration_id']}, contact not unique{more})"
 
 
 def _desc(code: str) -> str:
@@ -199,7 +244,7 @@ def _explain_step(rel: Release, s: dict) -> dict:
             if sup is not None and len(d):
                 contacts = sorted(set(sup[sup["decision_id"].isin(d["decision_id"]) & (sup["support_type"] == "observation")]["support_id"]))
                 if contacts:
-                    ev.append("The company appears on HPD contacts " + ", ".join(contacts[:6]) +
+                    ev.append("The company appears on HPD contacts " + ", ".join(_contact(rel, c) for c in contacts[:6]) +
                               (f" and {len(contacts) - 6} more" if len(contacts) > 6 else "") + ".")
     elif btype == "link_set":
         ls, lm = rel.table("link_sets"), rel.table("link_set_members")
@@ -216,14 +261,14 @@ def _explain_step(rel: Release, s: dict) -> dict:
         if items is not None and mem is not None:
             it = items[items["evidence_id"] == bid]
             if len(it):
-                ev.append(f"ACRIS deed {it.iloc[0]['document_id']} ({it.iloc[0]['stage']}).")
+                ev.append(f"{rel.deed_text(it.iloc[0]['document_id'])} ({it.iloc[0]['stage']}).")
             for n in (a, b):
                 for r in mem[(mem["evidence_id"] == bid) & (mem["node_id"].astype(str) == n)].itertuples():
                     if r.role == "held_under_joint_deed":
-                        ev.append(f"Lot {r.bbl}: the joint deed is still its latest.")
+                        ev.append(f"Lot {r.bbl}{_at(rel, r.bbl)}: the joint deed is still its latest.")
                     else:
                         amt = f" for ${float(r.latest_amount):,.0f}" if pd.notna(r.latest_amount) and r.latest_amount != "" else ""
-                        ev.append(f"Lot {r.bbl}: conveyed on by deed {r.latest_document_id}{amt}.")
+                        ev.append(f"Lot {r.bbl}{_at(rel, r.bbl)}: conveyed on by {rel.deed_text(r.latest_document_id, "deed")}{amt}.")
     elif btype == "network_edge":
         e = rel.table("network_edges")
         if e is not None:
@@ -286,10 +331,20 @@ def _weak_list(steps: list[dict], rel: Release | None = None) -> list[str]:
 
 # ---- the three questions -----------------------------------------------------------------------
 
+def _at(rel: Release, bbl: str) -> str:
+    addr = rel.lot_address(bbl)
+    return f" ({addr})" if addr else ""
+
+
+def _contact(rel: Release, observation_id: str) -> str:
+    name = rel.contact_name(observation_id)
+    return f"{observation_id} ({name})" if name else observation_id
+
+
 def explain_lot(rel: Release, bbl: str, layer: str | None = None) -> Explanation:
     """Is the lot in an Owner Portfolio / Operational Network, and if not, why."""
     layers = [layer] if layer else list(LAYERS)
-    out = Explanation(f"Lot {bbl}: is it in a group, and why or why not?", "")
+    out = Explanation(f"Lot {bbl}{_at(rel, bbl)}: is it in a group, and why or why not?", "")
     s = rel.table("bbl_status")
     answers, details = [], []
     node = rel.node_of(bbl)
@@ -482,6 +537,10 @@ def explain_group(rel: Release, group_id: str, layer: str | None = None) -> Expl
                                                           else " (a Louvain community of a larger component)") + ".")
     steps = [_explain_step(rel, s) for s in w[(w["layer"] == lay) & (w["group_id"] == group_id)].sort_values("step", key=pd.to_numeric).to_dict("records")]
     by = pd.Series([s["stage"] for s in steps]).value_counts() if steps else pd.Series(dtype=int)
+    named = [(n, rel.node_name(n)) for n in nodes]
+    if any(nm_ for _, nm_ in named):
+        shown = ", ".join(f"{nm_} (node {n})" for n, nm_ in named[:6] if nm_)
+        out.details.append("Its nodes: " + shown + (f" and {len(named) - 6} more" if len(named) > 6 else "") + ".")
     out.details.append("Its path uses: " + (", ".join(f"{n} × {k}" for k, n in by.items()) or "no steps (a single node)") + ".")
     out.weakest = _weak_list(steps, rel)
     pieces = pd.to_numeric(r.get("witness_pieces"), errors="coerce")

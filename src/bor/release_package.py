@@ -91,10 +91,12 @@ def release_notes(manifest: dict, tables: dict, version: str, zip_name: str, dig
     gold = (f"The method's measured precision rests on a gold of status `{status[0]}`"
             + (" (provisional)." if mm is not None and (mm["provisional"] == "True").any() else ".")) if status else \
         "No method precision is published with this release."
+    names_line = ("**Names of people and companies are included**, as HPD and ACRIS filed them, in their own tables "
+                  "(see `DATA.md`)." if "observation_contacts" in tables else "**No owner names.**")
     return f"""# Beneficial Ownership Resolution v{version}: release data
 
 Owner Portfolios and Operational Networks resolved from NYC public records (HPD, ACRIS, PLUTO), with the
-evidence behind every grouping. **No owner names.** Every grouping is a lead, not a determination of
+evidence behind every grouping. {names_line} Every grouping is a lead, not a determination of
 ownership, and a precision is the share of sampled pairs judged correct, not the chance that a given link is right.
 
 | | |

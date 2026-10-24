@@ -173,7 +173,8 @@ def test_a_deed_that_mixes_held_and_transferred_parcels_says_which_is_which(syn)
     assert m.groupby("role").size().to_dict() == {"held_under_joint_deed": 2, "transferred_onward": 2}
     assert syn.t["evidence_items"].set_index("evidence_id").loc["DV9000001", "stage"] == "deed.linked_successor"
     text = " ".join(ex.explain_pair(syn, "9000200001", "9000200003").steps[1]["evidence"])
-    assert "joint deed is still its latest" in text and "conveyed on by deed 2999060100002001 for $0" in text
+    assert "joint deed is still its latest" in text and "conveyed on by deed 2999060100002001" in text and "for $0" in text
+    assert "FIXTURE GRANTOR LLC to FIXTURE GRANTEE LLC" in text          # the parties, from the name tables
     # the fifth parcel was rejected: the onward deed was not nominal
     rej = ex.explain_lot(syn, "9000200005", OP)
     assert "successor_transfer_not_nominal" in rej.answer and "$3,200,000" in " ".join(rej.details)

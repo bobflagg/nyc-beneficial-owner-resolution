@@ -1,4 +1,4 @@
-"""The release contract (v0.1.0): table schemas and controlled vocabularies.
+"""The release contract (v0.2.0): table schemas and controlled vocabularies.
 
 This is the machine-readable form of docs/release-contract.md. A release is a directory of CSVs
 plus ``manifest.json``; :mod:`bor.release_validate` checks one against these specs.
@@ -8,14 +8,20 @@ Status marks what exists today:
 * ``implemented`` — produced by bor now. As of W7 every table is.
 * ``planned``     — specified here so the KG can review the shape; built by a later work package.
 
-No table holds names. Keys are HPD ids, BBLs, ACRIS document ids, opaque run-local ids and nlr's
-content-hash identity ids. ``run_id`` comes from the manifest and is not repeated per row.
+Names are in the release, in tables of their own (``observation_contacts``, ``identity_names``,
+``node_names``, ``deed_documents``, ``deed_parties``, ``lot_addresses``), as HPD and ACRIS filed them. They are for
+reading, never for joining: keys are HPD ids, BBLs, ACRIS document ids, opaque run-local ids and nlr's
+content-hash identity ids, and every other table is exactly as it was without them. The name tables are optional
+in a directory (an excerpt may omit them), and when present each must cover every id it describes.
+``run_id`` comes from the manifest and is not repeated per row.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-SCHEMA_VERSION = "0.1.0"
+SCHEMA_VERSION = "0.2.0"
+# 0.2.0 adds the name tables and changes nothing else, so a 0.1.0 release (no names) still validates.
+SUPPORTED_SCHEMA_VERSIONS = ("0.1.0", SCHEMA_VERSION)
 
 LAYERS = ("owner_portfolio", "operational_network")
 DECISION_LAYERS = ("identity",) + LAYERS
@@ -191,6 +197,41 @@ _TABLES = [
         _c("node_id", "int"), _c("cluster_id"), _c("votes", "int"), _c("selected", "bool")),
         fks=(_fk("node_id", "node_cluster"), _fk("cluster_id", "identity_clusters")),
         description="Every cluster a straddling node matched, with votes and the selected one."),
+
+    # ---- names, as filed (implemented, bor.names): for reading evidence, never for joining ------
+    Table("observation_contacts", "implemented", ("observation_id",), (
+        _c("observation_id"), _c("contact_type", nullable=True), _c("first_name", nullable=True),
+        _c("middle_initial", nullable=True), _c("last_name", nullable=True), _c("corporation_name", nullable=True),
+        _c("business_house", nullable=True), _c("business_street", nullable=True),
+        _c("business_apartment", nullable=True), _c("business_city", nullable=True),
+        _c("business_state", nullable=True), _c("business_zip", nullable=True)),
+        fks=(_fk("observation_id", "observations"),),
+        description="The HPD contact an observation stands for: its role, name and business address as filed. "
+                    "One row per observation; where pair_variants > 1 each variant has its own row."),
+    Table("identity_names", "implemented", ("identity_id",), (
+        _c("identity_id"), _c("name"), _c("business_house", nullable=True), _c("business_street", nullable=True),
+        _c("business_apartment", nullable=True), _c("business_city", nullable=True),
+        _c("business_state", nullable=True), _c("business_zip", nullable=True)),
+        description="The name and business address that define an nlr identity (a person owner contact). "
+                    "One row per identity, including identities a curated list removed."),
+    Table("node_names", "implemented", ("node_id",), (_c("node_id", "int"), _c("name")),
+        description="The landlord name of each node (a WoW landlords_with_connections row): one name and "
+                    "business address, whose contacts are in node_observations."),
+    Table("deed_documents", "implemented", ("document_id",), (
+        _c("document_id"), _c("doc_type", nullable=True), _c("doc_date", nullable=True),
+        _c("recorded_filed", nullable=True), _c("doc_amount", "float", nullable=True)),
+        description="The ACRIS deed documents the release cites (evidence, decisions): type, dates and the "
+                    "recorded consideration."),
+    Table("deed_parties", "implemented", ("document_id", "party_type", "party_index"), (
+        _c("document_id"), _c("party_type", enum=("grantor", "grantee")), _c("party_index", "int"),
+        _c("name"), _c("address1", nullable=True), _c("address2", nullable=True), _c("city", nullable=True),
+        _c("state", nullable=True), _c("zip", nullable=True)),
+        fks=(_fk("document_id", "deed_documents"),),
+        description="The grantors and grantees of those documents, as ACRIS recorded them."),
+    Table("lot_addresses", "implemented", ("bbl",), (
+        _c("bbl"), _c("borough", nullable=True), _c("address", nullable=True), _c("zip", nullable=True)),
+        description="PLUTO's street address of each lot the release's groups, evidence or decisions name. "
+                    "Lots only the absence summary names are not listed."),
 
     # ---- decisions and evidence (implemented) --------------------------------------------
     Table("decision_events", "implemented", ("decision_id",), (
