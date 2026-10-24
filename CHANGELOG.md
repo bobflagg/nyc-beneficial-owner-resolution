@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [0.2.0] - 2026-10-24
 
 ### Added
 - **Names in a release (contract 0.2.0).** Six tables (`observation_contacts`, `identity_names`, `node_names`,
