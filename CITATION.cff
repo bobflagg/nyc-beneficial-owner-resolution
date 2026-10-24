@@ -15,7 +15,7 @@ authors:
     orcid: "https://orcid.org/0009-0000-2910-0599"
 license: MIT          # the code; the data of a release is CC BY 4.0 (README, and DATA.md inside each release)
 repository-code: "https://github.com/bobflagg/nyc-beneficial-owner-resolution"
-version: 0.1.0
+version: 0.2.0
 # No DOI yet: the release is a tagged GitHub release. Add `doi:` here if the project is archived (e.g. on Zenodo).
 keywords:
   - beneficial ownership
