@@ -1,17 +1,23 @@
 # Beneficial Ownership Resolution: release `synthetic-0001`
 
-This directory is a **synthetic** release of made-up lots, for testing. Contract version 0.1.0.
+This directory is a **synthetic** release of made-up lots, for testing. Contract version 0.2.0.
 
 Owner Portfolios and Operational Networks resolved from NYC public records (HPD registrations and
-contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release contains no owner
-names.** Lots are identified by BBL (the public tax-lot id); people, companies and decisions by opaque ids
-that are local to one run.
+contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release names people and
+companies**, as HPD and ACRIS filed them, in six tables (`observation_contacts`, `identity_names`, `node_names`,
+`deed_documents`, `deed_parties`, `lot_addresses`) so that the evidence can be read. Lots are identified by BBL
+(the public tax-lot id); people, companies and decisions by opaque ids that are local to one run. A name is for
+reading and is never a key.
 
 **Read it as leads, not verdicts.** Every grouping is inferred by a method whose precision was measured on a
 sample (`method_metrics`). A precision is the share of sampled pairs judged correct in one stratum; it is *not*
 the probability that a given link is right, and a group's path chains several pairs. A lot's absence from a
 group is a rule the method applied or a record it never saw. It is never evidence that the owners differ, and a
 missing row in `bbl_status` means nothing.
+
+**Handle the names with care.** They are public records copied as filed, typos included, and many individual
+owners registered their own address. A shared name is not evidence that two records are one person: the evidence
+is the decisions. Do not present a grouping as a finding about a named person without checking the source records.
 
 ## Provenance
 
@@ -72,6 +78,12 @@ Method metrics rest on a gold of status: `synthetic`. Rows are `provisional` unl
 | `node_identity_matches.csv` | 39 | The (name, bbl) matches that attach identities to nodes. |
 | `node_cluster.csv` | 37 | The cluster each matched node is assigned. |
 | `node_cluster_alternatives.csv` | 2 | Every cluster a straddling node matched, with votes and the selected one. |
+| `observation_contacts.csv` | 42 | The HPD contact an observation stands for: its role, name and business address as filed. |
+| `identity_names.csv` | 38 | The name and business address that define an nlr identity (a person owner contact). |
+| `node_names.csv` | 38 | The landlord name of each node (a WoW landlords_with_connections row): one name and business address, whose contacts are in node_observations. |
+| `deed_documents.csv` | 7 | The ACRIS deed documents the release cites (evidence, decisions): type, dates and the recorded consideration. |
+| `deed_parties.csv` | 14 | The grantors and grantees of those documents, as ACRIS recorded them. |
+| `lot_addresses.csv` | 39 | PLUTO's street address of each lot the release's groups, evidence or decisions name. |
 | `decision_events.csv` | 20 | One row per decision at the grain where a rule ran: accepted links and policy outcomes alike. |
 | `decision_support.csv` | 28 | The source records a decision rests on. |
 | `evidence_items.csv` | 3 | Multi-member assertions: a qualifying deed bundle. |
@@ -212,6 +224,104 @@ References `identity_clusters` on `cluster_id`.
 | `cluster_id` | str |  |  |
 | `votes` | int |  |  |
 | `selected` | bool |  |  |
+
+### `observation_contacts`
+
+The HPD contact an observation stands for: its role, name and business address as filed. One row per observation; where pair_variants > 1 each variant has its own row.
+
+Key: `observation_id`.
+
+References `observations` on `observation_id`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `observation_id` | str |  |  |
+| `contact_type` | str | yes |  |
+| `first_name` | str | yes |  |
+| `middle_initial` | str | yes |  |
+| `last_name` | str | yes |  |
+| `corporation_name` | str | yes |  |
+| `business_house` | str | yes |  |
+| `business_street` | str | yes |  |
+| `business_apartment` | str | yes |  |
+| `business_city` | str | yes |  |
+| `business_state` | str | yes |  |
+| `business_zip` | str | yes |  |
+
+### `identity_names`
+
+The name and business address that define an nlr identity (a person owner contact). One row per identity, including identities a curated list removed.
+
+Key: `identity_id`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `identity_id` | str |  |  |
+| `name` | str |  |  |
+| `business_house` | str | yes |  |
+| `business_street` | str | yes |  |
+| `business_apartment` | str | yes |  |
+| `business_city` | str | yes |  |
+| `business_state` | str | yes |  |
+| `business_zip` | str | yes |  |
+
+### `node_names`
+
+The landlord name of each node (a WoW landlords_with_connections row): one name and business address, whose contacts are in node_observations.
+
+Key: `node_id`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `node_id` | int |  |  |
+| `name` | str |  |  |
+
+### `deed_documents`
+
+The ACRIS deed documents the release cites (evidence, decisions): type, dates and the recorded consideration.
+
+Key: `document_id`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `document_id` | str |  |  |
+| `doc_type` | str | yes |  |
+| `doc_date` | str | yes |  |
+| `recorded_filed` | str | yes |  |
+| `doc_amount` | float | yes |  |
+
+### `deed_parties`
+
+The grantors and grantees of those documents, as ACRIS recorded them.
+
+Key: `document_id`, `party_type`, `party_index`.
+
+References `deed_documents` on `document_id`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `document_id` | str |  |  |
+| `party_type` | str |  | `grantor`, `grantee` |
+| `party_index` | int |  |  |
+| `name` | str |  |  |
+| `address1` | str | yes |  |
+| `address2` | str | yes |  |
+| `city` | str | yes |  |
+| `state` | str | yes |  |
+| `zip` | str | yes |  |
+
+### `lot_addresses`
+
+PLUTO's street address of each lot the release's groups, evidence or decisions name. Lots only the absence summary names are not listed.
+
+Key: `bbl`.
+
+| column | type | null | values |
+|---|---|---|---|
+| `bbl` | str |  |  |
+| `borough` | str | yes |  |
+| `address` | str | yes |  |
+| `zip` | str | yes |  |
 
 ### `decision_events`
 

@@ -8,8 +8,9 @@ A hand-written dictionary drifts from the files it describes. This one is render
 ``build_release`` writes it before the checksums are taken. It never lists the checksums (the manifest does),
 so rendering it again from the finished release gives the same bytes and the manifest still holds.
 
-It says what a release is and is not. It carries no names; every grouping is a lead, not a determination
-of ownership; a precision is not a link probability; and a missing row means nothing.
+It says what a release is and is not. A 0.1.0 release carries no names and a 0.2.0 one carries them, in tables of their
+own; either way every grouping is a lead, not a determination of ownership, a precision is not a link probability,
+and a missing row means nothing.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ from bor.release_schema import (ADJUDICATION_STATUSES, METRIC_NAMES, METRIC_SCOP
                                 RULES, SCHEMA_VERSION, STAGES, TABLES)
 from bor.release_validate import read_release
 
-_INTRO = """\
+_INTRO_NO_NAMES = """\
 Owner Portfolios and Operational Networks resolved from NYC public records (HPD registrations and
 contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release contains no owner
 names.** Lots are identified by BBL (the public tax-lot id); people, companies and decisions by opaque ids
@@ -31,6 +32,25 @@ sample (`method_metrics`). A precision is the share of sampled pairs judged corr
 the probability that a given link is right, and a group's path chains several pairs. A lot's absence from a
 group is a rule the method applied or a record it never saw. It is never evidence that the owners differ, and a
 missing row in `bbl_status` means nothing.
+"""
+
+_INTRO_NAMES = """\
+Owner Portfolios and Operational Networks resolved from NYC public records (HPD registrations and
+contacts, ACRIS deeds, PLUTO), with the evidence behind every grouping. **This release names people and
+companies**, as HPD and ACRIS filed them, in six tables (`observation_contacts`, `identity_names`, `node_names`,
+`deed_documents`, `deed_parties`, `lot_addresses`) so that the evidence can be read. Lots are identified by BBL
+(the public tax-lot id); people, companies and decisions by opaque ids that are local to one run. A name is for
+reading and is never a key.
+
+**Read it as leads, not verdicts.** Every grouping is inferred by a method whose precision was measured on a
+sample (`method_metrics`). A precision is the share of sampled pairs judged correct in one stratum; it is *not*
+the probability that a given link is right, and a group's path chains several pairs. A lot's absence from a
+group is a rule the method applied or a record it never saw. It is never evidence that the owners differ, and a
+missing row in `bbl_status` means nothing.
+
+**Handle the names with care.** They are public records copied as filed, typos included, and many individual
+owners registered their own address. A shared name is not evidence that two records are one person: the evidence
+is the decisions. Do not present a grouping as a finding about a named person without checking the source records.
 """
 
 _KEYS = """\
@@ -61,6 +81,13 @@ def _enum(c) -> str:
     return ", ".join(f"`{v}`" for v in c.enum) if c.enum and len(c.enum) <= 6 else (f"{len(c.enum)} values, see below" if c.enum else "")
 
 
+def has_names(tables: dict | None, manifest: dict) -> bool:
+    """Does this release carry the name tables? A release read without its tables is judged by its contract version."""
+    if tables is not None:
+        return "observation_contacts" in tables
+    return manifest.get("schema_version") not in (None, "0.1.0")
+
+
 def render_data_md(manifest: dict, tables: dict | None = None) -> str:
     """The dictionary as Markdown. ``tables`` (as from ``read_release``) adds row counts."""
     m = manifest
@@ -68,7 +95,8 @@ def render_data_md(manifest: dict, tables: dict | None = None) -> str:
             if m.get("excerpt") else "a **synthetic** release of made-up lots, for testing" if m.get("synthetic")
             else "a frozen release")
     out = [f"# Beneficial Ownership Resolution: release `{m['run_id']}`", "",
-           f"This directory is {kind}. Contract version {m.get('schema_version', SCHEMA_VERSION)}.", "", _INTRO,
+           f"This directory is {kind}. Contract version {m.get('schema_version', SCHEMA_VERSION)}.", "",
+           _INTRO_NAMES if has_names(tables, m) else _INTRO_NO_NAMES,
            "## Provenance", ""]
     rows = [("Run", m["run_id"]), ("Source snapshot", m["snapshot_id"]),
             ("Complete through", m.get("snapshot_date")), ("Deed cut-off", m.get("effective_date")), ("Built", m.get("created_at")),

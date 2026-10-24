@@ -4,9 +4,15 @@ How to cut a versioned release. Steps marked **(you)** need account access or a 
 
 There are two products. The **contract release** is the handoff to the knowledge graph and the thing to cite: a directory of CSVs and a manifest, frozen and checksummed, with the evidence behind every grouping ([release-contract.md](release-contract.md), [kg-mapping.md](kg-mapping.md)). The **legacy dataset** (`bor.export`) is the four-file membership list the first release was going to be. The graph treats it as superseded; it stays for people who want only memberships (see Open decisions).
 
-## 0. Policy: no names (blocking)
+## 0. Policy: names, for reading (blocking)
 
-A release is **person-free**. The contract release has no name column anywhere, by construction (the validator and `DATA.md` both say so). The legacy export is person-free by default; `bor.export --include-names` writes person anchors and is never part of a release. The person name is the sensitive join and the doxxing vector; the public good (grouping public parcels, labeled as inferred) is fully delivered without it. A directory produced with `--include-names` carries a `DATA.md` that says "person-linked" and must not be attached to anything.
+**Decided 2026-10-24: a release from contract 0.2.0 on carries names.** v0.1.0 was person-free; it stays published as it is. The evidence behind a grouping could not be followed without the names of the people and companies it concerns (JustFix's own results carry them), so six tables say what the ids stand for, as HPD, ACRIS and PLUTO filed them: `observation_contacts` (role, name and business address of each HPD contact), `identity_names`, `node_names`, `deed_documents` and `deed_parties` (the grantors and grantees), and `lot_addresses`. They are copied without cleaning. They are **for reading, never for joining**: every key is still an HPD id, a BBL, an ACRIS document id or a run-local opaque id, and a shared name is not evidence that two records are one person (the decisions are).
+
+What this takes on, and what keeps it honest:
+
+- The names are public records, but a release groups individuals' names with the buildings they are said to control, and many small owners registered their own address. Every grouping is a lead, not a finding about a named person; `DATA.md`, the release notes and the explain output say so, and the CC BY 4.0 licence says only that the data may be reused with credit. Nothing here makes the groupings suitable for publishing about a named person without checking the source records.
+- A release without the name tables (an older one, or an excerpt that omits them) is still valid, and says so in its `DATA.md`.
+- The packaging guard is unchanged: only the contract's tables, `DATA.md` and `manifest.json` are zipped, so an old export with person anchors in `release/` still cannot be attached. `bor.export --include-names` (the legacy person-linked export) remains separate and is never part of a release.
 
 ## 1. Preconditions
 
@@ -75,7 +81,7 @@ Settled by the maintainer, 2026-10-22:
 
 - **License.** The code is MIT; the data of a release is **CC BY 4.0**. It is stated in the README, in each release's `DATA.md` and in the release notes. The author's ORCID is in `CITATION.cff`.
 - **Version `0.1.0`, tag `v0.1.0`, no DOI yet.** A tagged GitHub release with the data zip and its checksum attached; Zenodo later, if the project proves itself.
-- **Legacy dataset.** `bor.export` stays as a documented convenience: four membership files, person-free by default, one Splink fit shared by both layers. It is not the handoff, its group ids are per-build and it carries no evidence; the contract release is what to cite and what the graph loads.
+- **Legacy dataset.** `bor.export` stays as a documented convenience: four membership files, person-free by default (the contract release now carries names; the legacy export does not), one Splink fit shared by both layers. It is not the handoff, its group ids are per-build and it carries no evidence; the contract release is what to cite and what the graph loads.
 - **The gold.** The release ships with the provisional gold, labeled `human_llm_provisional` in every metric row and in `DATA.md`: one human annotator, an LLM second reader and an LLM-run resolution of their disagreements. A release rebuilt after the blind human re-adjudication carries `blind_human`. Public wording about the evaluation ("blind human adjudication", "inter-annotator") does not go out ahead of that.
 - **`bbl_status` keeps every PLUTO lot in both layers.** It is 1.7 million rows and 137 MB, but 6.6 MB gzipped, and 79% of the rows are `no_registration`. Dropping them would save 112 MB raw and 5 MB compressed and break the promise that a missing row means nothing. A loader that does not want them can skip them and answer "no HPD registration" from its own HPD data ([kg-mapping.md](kg-mapping.md)).
 

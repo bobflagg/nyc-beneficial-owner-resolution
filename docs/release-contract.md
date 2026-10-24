@@ -1,4 +1,6 @@
-# Release contract v0.1.0
+# Release contract v0.2.0
+
+**0.2.0 (2026-10-24) adds six name tables and changes nothing else.** A 0.1.0 release (no names) is still valid; the sections below describe both, and "Names" says what is new.
 
 Status: v0.1.0, agreed with the KG (design notes 0007 and 0008, both accepted); drafted 2026-10-20 and amended after the KG developer's review (a working paper, not kept in this repository). Background: the plan is [kg-handoff-plan-v2.md](kg-handoff-plan-v2.md) and the measurements behind the lineage tables are [w0-findings.md](w0-findings.md). This is the minimal W8 contract from the plan: the shape of a bor release, a worked explanation, and a validator. The machine-readable form is `src/bor/release_schema.py`; `python -m bor.release_validate <dir>` checks a release against it. Fixtures to load and test against live in `tests/fixtures/` (see [Fixtures](#fixtures)).
 
@@ -10,7 +12,20 @@ Only the lineage tables are produced today (`bor.lineage`). Everything else is *
 
 A directory of CSVs plus `manifest.json`. It is frozen: the KG loads a release with the matching source snapshot and never re-runs bor per build (KG note 0007). Both layers (Owner Portfolio, Operational Network) come from one identity resolution (P0).
 
-No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS document ids, and run-local opaque ids.
+Keys are HPD registration and contact ids, BBLs, ACRIS document ids, and run-local opaque ids. A 0.1.0 release holds no name; a 0.2.0 release holds names only in the six tables below, which are for reading and never joined on.
+
+## Names (0.2.0)
+
+| Table | One row per | Source |
+|---|---|---|
+| `observation_contacts` | observation | `hpd_contacts`: role, first and last name, corporation, business address |
+| `identity_names` | nlr identity | the name and business address that define it (including identities a curated list removed) |
+| `node_names` | node | `landlords_with_connections.name` |
+| `deed_documents` | cited ACRIS document | `real_property_master`: type, dates, recorded consideration |
+| `deed_parties` | party of those documents | `real_property_parties`: grantors and grantees, with address as recorded |
+| `lot_addresses` | lot the groups, evidence and decisions name | `pluto_latest`: borough, street address, ZIP |
+
+Values are copied as filed, without cleaning, and blank is null. A contact HPD repeats with differing content (`observations.pair_variants > 1`) has one row per variant, found with the same ranking that numbers `k`. A document ACRIS lists more than once is described by its most recently recorded row. Each table must cover every id it is for (the validator's `names_cover` check; lots PLUTO does not list are a warning), and each is optional in a directory, so an excerpt may omit them. The tables answer "who is this?"; whether two records are one owner is still only what the decisions say.
 
 ## Keys and namespace
 
@@ -34,6 +49,7 @@ No table holds a name. Keys are HPD registration and contact ids, BBLs, ACRIS do
 | Absence, masking, metrics | `masked_addresses`, `masked_address_nodes` | implemented (W5) |
 | | `bbl_status` | implemented (`bor.absence`, W6) |
 | | `method_metrics` | implemented (`bor.metrics`, W7) |
+| Names (0.2.0) | `observation_contacts`, `identity_names`, `node_names`, `deed_documents`, `deed_parties`, `lot_addresses` | implemented (`bor.names`) |
 
 The worked example below is a synthetic fixture, but every table it uses for the identity layer is now produced from the real dump. Columns, types, enums, keys and foreign keys are in `release_schema.py`; the table descriptions there are the reference.
 

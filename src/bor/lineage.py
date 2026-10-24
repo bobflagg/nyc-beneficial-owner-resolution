@@ -5,7 +5,7 @@ identities (``unique_id`` = md5 of a person owner contact's kind, name and addre
 to get from either back to HPD contact records. This module builds the lookup tables and a report
 of what does not map cleanly; see docs/w0-findings.md for the measurements behind the design.
 
-Tables (no names; HPD ids and BBLs only):
+Tables (HPD ids and BBLs only; the names they stand for are in :mod:`bor.names`):
 
 * ``node_observations``       — one row per (lwc node, BBL): the registration WoW used and the
   contact it selected, or null with ``ambiguous`` when WoW's own ordering leaves a tie.

@@ -244,7 +244,8 @@ For a downstream system (the knowledge graph is the first), `make build-release`
 25 CSV tables and a manifest that pin the run, the source snapshot and every file's checksum. It holds
 both layers, a representative path for every group with the evidence behind each step, the decisions
 that were made and refused, a per-lot reason for every lot that is not in a group, and the method's
-measured precision. It has no names. `python -m bor.explain <release> pair <bbl> <bbl>` answers in plain
+measured precision, and (from contract 0.2.0) the names of the people and companies behind the ids, as
+HPD and ACRIS filed them, for reading and never for joining. `python -m bor.explain <release> pair <bbl> <bbl>` answers in plain
 language from the release alone, with no database. Start with
 [`docs/release-contract.md`](docs/release-contract.md); a loader's checklist is
 [`docs/kg-mapping.md`](docs/kg-mapping.md), and the procedure for cutting one is

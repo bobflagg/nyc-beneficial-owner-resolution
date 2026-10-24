@@ -153,6 +153,22 @@ def excerpt_release(tables: dict, manifest: dict, groups, *, note: str | None = 
                   | _s(out["decision_support"].loc[out["decision_support"]["support_type"] == "observation", "support_id"]))
     out["observations"] = _take(T["observations"], "observation_id", obs_needed)
 
+    # --- names, for exactly the ids the excerpt keeps -----------------------------------------------
+    from bor.names import cited_documents, named_lots
+    if "observation_contacts" in T:
+        out["observation_contacts"] = _take(T["observation_contacts"], "observation_id", _s(out["observations"]["observation_id"]))
+    if "identity_names" in T:
+        out["identity_names"] = _take(T["identity_names"], "identity_id", _s(out["identity_observations"]["identity_id"]) | idents)
+    if "node_names" in T:
+        out["node_names"] = _take(T["node_names"], "node_id", all_nodes)
+    if "deed_documents" in T:
+        docs = set(cited_documents(out))
+        out["deed_documents"] = _take(T["deed_documents"], "document_id", docs)
+        if "deed_parties" in T:
+            out["deed_parties"] = _take(T["deed_parties"], "document_id", docs)
+    if "lot_addresses" in T:
+        out["lot_addresses"] = _take(T["lot_addresses"], "bbl", set(named_lots(out)))
+
     if "method_metrics" in T:
         out["method_metrics"] = T["method_metrics"]
 

@@ -20,7 +20,7 @@ import pandas as pd
 
 from bor import absence
 from bor.release_schema import (ARTIFACT_KINDS, DEED_RULE_FIELDS, EXCERPT_FIELDS, MANIFEST_REQUIRED, PRECEDENCE,
-                                REASON_CODES, SCHEMA_VERSION, SNAPSHOT_ID_MAX, SNAPSHOT_ID_RE, SOURCE_TABLE_FIELDS, STAGES, TABLES,
+                                REASON_CODES, SCHEMA_VERSION, SNAPSHOT_ID_MAX, SUPPORTED_SCHEMA_VERSIONS, SNAPSHOT_ID_RE, SOURCE_TABLE_FIELDS, STAGES, TABLES,
                                 Table)
 
 
@@ -585,7 +585,41 @@ def _inv_network(T, excerpt=False):
     return v
 
 
-_INVARIANTS = (_inv_network, _inv_witness_basis, _inv_link_sets, _inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
+def _inv_names(T):
+    """Each name table, when present, describes every id it is for. A lot PLUTO does not list has no address row,
+    which is a warning and not an error."""
+    from bor.names import cited_documents, named_lots
+
+    v = []
+
+    def need(table, what, ids, have, severity="error"):
+        n = len(set(ids) - set(have))
+        if n:
+            v.append(Violation(table, "names_cover", f"{n} {what} have no row", n, severity))
+
+    oc, obs = T.get("observation_contacts"), T.get("observations")
+    if oc is not None and obs is not None:
+        need("observation_contacts", "observations", obs["observation_id"].astype(str), oc["observation_id"].astype(str))
+    idn = T.get("identity_names")
+    if idn is not None:
+        ids = set()
+        for name in ("identity_clusters", "identity_observations"):
+            if name in T:
+                ids |= set(T[name]["identity_id"].astype(str))
+        need("identity_names", "identities", ids, idn["identity_id"].astype(str))
+    nn, nobs = T.get("node_names"), T.get("node_observations")
+    if nn is not None and nobs is not None:
+        need("node_names", "nodes", nobs["node_id"].astype(str), nn["node_id"].astype(str))
+    dd = T.get("deed_documents")
+    if dd is not None:
+        need("deed_documents", "cited documents", cited_documents(T), dd["document_id"].astype(str))
+    la = T.get("lot_addresses")
+    if la is not None:
+        need("lot_addresses", "named lots (PLUTO does not list them)", named_lots(T), la["bbl"].astype(str), "warning")
+    return v
+
+
+_INVARIANTS = (_inv_network, _inv_names, _inv_witness_basis, _inv_link_sets, _inv_evidence, _inv_observations, _inv_node_observations, _inv_node_cluster, _inv_identity_clusters, _inv_decision_events,
                _inv_groups, _inv_witness, _inv_bbl_status, _inv_metrics)
 _EXCERPT_AWARE = (_inv_network,)
 
@@ -635,8 +669,9 @@ def check_manifest(manifest: dict | None, path: str | None = None) -> list[Viola
     if manifest is None:
         return [Violation("manifest", "missing", "manifest.json is required")]
     v = [Violation("manifest", "field", f"missing {k}") for k in MANIFEST_REQUIRED if k not in manifest]
-    if manifest.get("schema_version") not in (None, SCHEMA_VERSION):
-        v.append(Violation("manifest", "schema_version", f"{manifest['schema_version']} != {SCHEMA_VERSION}"))
+    if manifest.get("schema_version") not in (None, *SUPPORTED_SCHEMA_VERSIONS):
+        v.append(Violation("manifest", "schema_version",
+                           f"{manifest['schema_version']} not in {list(SUPPORTED_SCHEMA_VERSIONS)}"))
     for name, entry in (manifest.get("source_tables") or {}).items():
         miss = [f for f in SOURCE_TABLE_FIELDS if not isinstance(entry, dict) or f not in entry]
         if miss:

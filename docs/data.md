@@ -51,7 +51,7 @@ After that, all layers run: `resolve_owner_portfolios`, `resolve_operational_net
 
 ## What BOR writes
 
-- **The contract release** (`bor.release`, `make build-release`): 25 CSV tables, a generated `DATA.md` and `manifest.json`, in `release/contract`. Run-local opaque ids, no names. See [release-contract.md](release-contract.md) and [release.md](release.md).
+- **The contract release** (`bor.release`, `make build-release`): 25 CSV tables, a generated `DATA.md` and `manifest.json`, in `release/contract`. Run-local opaque ids; from contract 0.2.0 six name tables say what the ids stand for, as filed. See [release-contract.md](release-contract.md) and [release.md](release.md).
 - **The legacy dataset** (`bor.export`): four membership CSVs in `release/`. Person-free by default.
 - **The evaluation** (`bor.eval.*`) reads and writes `eval_out/`, which is git-ignored: the blinded packet carries public-record names, and the key joins pairs back to them. Only the scorer's aggregate `metrics.json` and the frame manifest are inputs to a release (`make build-release EVAL_DIR=eval_out`).
 

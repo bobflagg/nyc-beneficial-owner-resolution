@@ -348,6 +348,47 @@ registered = [*LOT_NODE, U_NO_CONTACT]
 status = absence.bbl_status_table(universe, registered, S)
 frames["bbl_status"] = status.sort_values(["layer", "bbl"]).reset_index(drop=True)
 
+# --- names: made up, like everything here ("FIXTURE" is every surname and every company) ------------------------
+import re                                                          # noqa: E402
+from bor import names as _names                                    # noqa: E402
+
+_cluster_of = {n: name for name, ns in CLUSTERS.items() for n in ns}
+_cluster_of.update({9050: "E", 9051: "E", 9052: "E"})
+_who = lambda n, variant="": (f"PAT{n}{variant}", "FIXTURE" + re.sub(r"\d", "", _cluster_of.get(n, "E")).upper())
+_addr = lambda n: {"business_house": str(n), "business_street": "FIXTURE STREET", "business_apartment": None,
+                   "business_city": "NOWHERE", "business_state": "ZZ", "business_zip": "00000"}
+_contact_of = {o: (LOT_NODE[b], "") for b, o in OBS.items()}
+_contact_of[E_Y] = (9050, "B")
+rows = []
+for o in sorted(all_obs):
+    if o in CORP:
+        rows.append({"observation_id": o, "contact_type": "CorporateOwner", "first_name": None, "middle_initial": None,
+                     "last_name": None, "corporation_name": "FIXTURE HOLDINGS LLC", **_addr(1)})
+    else:
+        n, variant = _contact_of[o]
+        first, last = _who(n, variant)
+        rows.append({"observation_id": o, "contact_type": "IndividualOwner", "first_name": first, "middle_initial": None,
+                     "last_name": last, "corporation_name": None, **_addr(n)})
+frames["observation_contacts"] = pd.DataFrame(rows, columns=[c.name for c in TABLES["observation_contacts"].columns])
+rows = []
+for iid in sorted({*frames["identity_clusters"]["identity_id"], *frames["identity_observations"]["identity_id"]}):
+    key = next(k for k, v in IDENT.items() if v == iid)
+    n, variant = (int(str(key)[:4]), str(key)[4:].replace("a", "").upper()) if str(key)[:4].isdigit() else (key, "")
+    first, last = _who(n, variant)
+    rows.append({"identity_id": iid, "name": f"{first} {last}", **_addr(n)})
+frames["identity_names"] = pd.DataFrame(rows, columns=[c.name for c in TABLES["identity_names"].columns])
+frames["node_names"] = pd.DataFrame(
+    [{"node_id": n, "name": " ".join(_who(n))} for n in sorted(frames["node_observations"]["node_id"].astype(int).unique())])
+docs = _names.cited_documents(frames)
+frames["deed_documents"] = pd.DataFrame([{"document_id": d, "doc_type": "DEED", "doc_date": "2020-01-01",
+                                          "recorded_filed": "2020-01-15", "doc_amount": None} for d in docs])
+frames["deed_parties"] = pd.DataFrame(
+    [{"document_id": d, "party_type": t, "party_index": 0, "name": f"FIXTURE {t.upper()} LLC", "address1": "1 FIXTURE PLAZA",
+      "address2": None, "city": "NOWHERE", "state": "ZZ", "zip": "00000"} for d in docs for t in ("grantor", "grantee")])
+frames["lot_addresses"] = pd.DataFrame(
+    [{"bbl": b, "borough": "ZZ", "address": f"{int(b[1:5])}-{int(b[5:])} FIXTURE AVENUE", "zip": "00000"}
+     for b in _names.named_lots(frames)])
+
 # A made-up evaluation, pushed through the real transform (bor.metrics) so the rows have the real shape.
 from bor.eval.score import wilson                                  # noqa: E402
 from bor.metrics import method_metrics_table                       # noqa: E402
@@ -382,7 +423,7 @@ for name, df in frames.items():
     df.to_csv(os.path.join(D, f"{name}.csv"), index=False)
 
 manifest = {
-    "schema_version": "0.1.0", "run_id": R, "snapshot_id": "synthetic-2026-10-22", "snapshot_date": "2026-10-22",
+    "schema_version": "0.2.0", "run_id": R, "snapshot_id": "synthetic-2026-10-22", "snapshot_date": "2026-10-22",
     "snapshot_date_basis": {"real_property_master.recordedfiled": {"newest": "2026-10-22", "future_dated_rows": 0},
                            "hpd_registrations.lastregistrationdate": {"newest": "2026-10-22", "future_dated_rows": 0}},
     "effective_date": "2026-10-22", "synthetic": True, "bor_revision": "fixture", "nlr_revision": "fixture",

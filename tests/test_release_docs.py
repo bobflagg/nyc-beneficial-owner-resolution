@@ -32,11 +32,25 @@ def test_every_table_column_and_vocabulary_term_is_documented(syn):
 def test_it_says_what_the_release_is_and_what_it_is_not(syn):
     manifest, _, text = syn
     text = " ".join(text.split())                                   # the intro is wrapped
-    assert "synthetic** release of made-up lots" in text and "contains no owner names" in text
+    assert "synthetic** release of made-up lots" in text and "names people and companies" in text
     assert "leads, not verdicts" in text and "not* the probability that a given link is right" in text
     assert "missing row in `bbl_status` means nothing" in text
     assert f"`{manifest['run_id']}`" in text and f"`{manifest['snapshot_id']}`" in text
     assert "`synthetic`" in text                                    # the gold status of its metrics
+
+
+def test_the_names_are_stated_when_the_release_has_them_and_denied_when_it_has_none(syn):
+    manifest, tables, text = syn
+    text = " ".join(text.split())
+    assert "A name is for reading and is never a key" in text and "Handle the names with care" in text
+    assert "contains no owner names" not in text
+    bare = {k: v for k, v in tables.items() if k not in ("observation_contacts", "identity_names", "node_names",
+                                                          "deed_documents", "deed_parties", "lot_addresses")}
+    old = " ".join(render_data_md({**manifest, "schema_version": "0.1.0"}, bare).split())
+    assert "contains no owner names" in old and "names people and companies" not in old
+    # read without its tables, a release is judged by its contract version
+    assert "names people and companies" in " ".join(render_data_md(manifest).split())
+    assert "contains no owner names" in " ".join(render_data_md({**manifest, "schema_version": "0.1.0"}).split())
 
 
 def test_the_snapshot_date_and_what_it_rests_on_are_stated(syn):

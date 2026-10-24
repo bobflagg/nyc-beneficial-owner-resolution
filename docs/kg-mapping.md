@@ -20,6 +20,7 @@ Status of the KG notes this rests on: 0002, 0005, 0007 (the fifth absence reason
 | `decision_events` | why a link was made or refused | One row per decision, with the rule and its version, outcome, reason code, score and threshold where there is one. Absence of an event means the rule did not run. |
 | `bbl_status` | the answer to "why is this building not in a group?" | Five top-level reasons, in precedence order: `outside_source_coverage`, `outside_method_input`, `excluded_by_policy`, `below_eligibility_rule`, `no_qualifying_linkage`. The detailed `reason_code`s are narrower terms of these (the KG's `AbsenceReason` scheme). A missing row means nothing. `no_registration` is about 79% of the rows (a lot HPD does not register): a loader may skip them and answer "no HPD registration" from its own HPD data, which is the source record itself. |
 | `method_metrics` | the published precision shown beside a link | Show `precision` with its interval and `adjudication_status` exactly as stored. Do not recompute it and do not call it a probability. |
+| `observation_contacts`, `identity_names`, `node_names`, `deed_documents`, `deed_parties`, `lot_addresses` (0.2.0) | display text only: who an id stands for, as HPD, ACRIS and PLUTO filed it | Not keys and not evidence. The graph already holds those sources, so a loader may skip these tables and read names from its own load; they are there so a release can be read alone. |
 
 The questions this serves are the KG's Q9 and Q10 (footprint and comparison of the two layers), Q19 (why are these grouped?) and Q26 (absence).
 
@@ -49,7 +50,7 @@ Why not expand the edges onto identities instead: most of the evidence does not 
 
 ## What a loader must never do
 
-- **Join on names.** There are none in a release. Join observations on (`registration_id`, `registration_contact_id`) and lots on BBL.
+- **Join on names.** A 0.2.0 release carries names (`observation_contacts`, `identity_names`, `node_names`, `deed_parties`, `lot_addresses`) for display only. Join observations on (`registration_id`, `registration_contact_id`), lots on BBL and documents on ACRIS document id; a name is never a key, and two records sharing one are not thereby one person.
 - **Treat ids as stable across releases.** Group, identity, cluster and decision ids are run-local. Membership is the durable content, and a review does not carry across runs (note 0007, item 2).
 - **Read a group as a determination of ownership,** or a path as the only evidence. Every group is a lead.
 - **Show a precision as the chance a link is right.** It is the share of sampled pairs judged correct in one stratum, on one snapshot. `provisional` rows stay labeled so until the gold is blind human adjudication.
