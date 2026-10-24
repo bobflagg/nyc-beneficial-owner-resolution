@@ -138,7 +138,11 @@ def test_citadel_lots_trace_to_the_2008_deed_and_each_2015_re_titling(cit):
     assert e.answer.startswith("Yes: both are in Owner Portfolio OP-67966")
     assert e.weakest and "deed.linked_successor" in e.weakest[0]
     assert "ACRIS deed 2008072300342001" in " ".join(e.steps[0]["evidence"])
-    assert any("2015050400848009 for $0" in x for x in e.steps[0]["evidence"])
+    onward = [x for x in e.steps[0]["evidence"] if "deed 2015050400848009" in x]
+    assert onward and all("for $0" in x for x in onward)
+    # the names say who conveyed to whom: the joint grantee re-titles each parcel into a single-purpose LLC
+    assert all("CITADEL ESTATES LLC to RIPPLE EP LLC" in x for x in onward)
+    assert "CITADEL ESTATES LLC" in " ".join(e.steps[0]["evidence"])
 
 
 # --- 2. name each linkage stage a path needs ------------------------------------------------------------
